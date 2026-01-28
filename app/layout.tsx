@@ -1,26 +1,27 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata } from "next";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata = {
-  title: 'Eurocopa Fantástica 2024',
-  description: 'Crea tu alineación de ensueño',
-  manifest: '/manifest.json',
-  themeColor: '#064e3b',
-  viewport:
-    'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0',
+export const metadata: Metadata = {
+  title: "EF 2024 - EuroFantasy",
+  description: "Crea tu equipo ideal para la Euro 2024 y participa en la quiniela",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="es">
+      <head>
+        {/* Esto ayuda a que el icono se vea mejor en móviles */}
+        <meta name="theme-color" content="#10b981" />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
