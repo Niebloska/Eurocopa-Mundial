@@ -1,0 +1,15 @@
+{
+  "name": "Euro Fantasy 2024",
+  "short_name": "EF 2024",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a1a2f",
+  "theme_color": "#0a1a2f",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
