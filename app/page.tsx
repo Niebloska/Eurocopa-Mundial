@@ -1,277 +1,562 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, XCircle, LockOpen, Timer, CheckCircle2, AlertCircle, ArrowUpDown, Trash2, SortAsc, SortDesc } from 'lucide-react';
-import { PLAYERS_DB } from './players'; 
+import { Plus, Timer, Globe, Check, LockOpen, X, Lock, ArrowUpDown, ArrowDownUp, Trash2, Ban, ArrowRight, Trophy, Edit3, ArrowLeft, Save } from 'lucide-react';
+import { PLAYERS_DB } from './players';
 
-const POS_COLORS = { POR: 'bg-yellow-500', DEF: 'bg-blue-600', MED: 'bg-emerald-500', DEL: 'bg-red-600' };
-const MAX_PER_COUNTRY = 7;
-const TOTAL_BUDGET = 300;
+// --- DATOS DE GRUPOS EURO 2024 ---
+const EURO_GROUPS = [
+  { name: "GRUPO A", teams: ["ALEMANIA", "ESCOCIA", "HUNGRÍA", "SUIZA"] },
+  { name: "GRUPO B", teams: ["ESPAÑA", "CROACIA", "ITALIA", "ALBANIA"] },
+  { name: "GRUPO C", teams: ["ESLOVENIA", "DINAMARCA", "SERBIA", "INGLATERRA"] },
+  { name: "GRUPO D", teams: ["POLONIA", "P. BAJOS", "AUSTRIA", "FRANCIA"] },
+  { name: "GRUPO E", teams: ["BÉLGICA", "ESLOVAQUIA", "RUMANÍA", "UCRANIA"] },
+  { name: "GRUPO F", teams: ["TURQUÍA", "GEORGIA", "PORTUGAL", "REP. CHECA"] },
+];
 
-// Diccionario robusto: Todo en MAYÚSCULAS para evitar fallos de coincidencia
-const COUNTRY_FLAGS: Record<string, string> = {
-  "ESPAÑA": "🇪🇸", "ALEMANIA": "🇩🇪", "FRANCIA": "🇫🇷", "PORTUGAL": "🇵🇹", 
-  "INGLATERRA": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "ITALIA": "🇮🇹", "BÉLGICA": "🇧🇪", "PAÍSES BAJOS": "🇳🇱",
-  "ESCOCIA": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "CROACIA": "🇭🇷", "TURQUÍA": "🇹🇷", "SUIZA": "🇨🇭", "AUSTRIA": "🇦🇹",
-  "GEORGIA": "🇬🇪", "DINAMARCA": "🇩🇰", "SERBIA": "🇷🇸", "HUNGRÍA": "🇭🇺", "POLONIA": "🇵🇱"
+// --- FUNCIONES AUXILIARES ---
+const getFlag = (country: string) => {
+  const flags: Record<string, string> = {
+    "ESPAÑA": "🇪🇸", "ALEMANIA": "🇩🇪", "FRANCIA": "🇫🇷", "INGLATERRA": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 
+    "ESCOCIA": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "TURQUÍA": "🇹🇷", "GEORGIA": "🇬🇪", "PORTUGAL": "🇵🇹", "P. BAJOS": "🇳🇱",
+    "ITALIA": "🇮🇹", "ALBANIA": "🇦🇱", "HUNGRÍA": "🇭🇺", "SUIZA": "🇨🇭", "CROACIA": "🇭🇷",
+    "ESLOVENIA": "🇸🇮", "DINAMARCA": "🇩🇰", "SERBIA": "🇷🇸", "POLONIA": "🇵🇱", "AUSTRIA": "🇦🇹",
+    "BÉLGICA": "🇧🇪", "ESLOVAQUIA": "🇸🇰", "RUMANÍA": "🇷🇴", "UCRANIA": "🇺🇦", "REP. CHECA": "🇨🇿"
+  };
+  return flags[country] || "🏳️";
 };
 
-const FIELD_POSITIONS = {
-  "DEL-1": {t:"22%", l:"30%", r:"DEL"}, "DEL-2": {t:"22%", l:"50%", r:"DEL"}, "DEL-3": {t:"22%", l:"70%", r:"DEL"},
-  "MED-1": {t:"45%", l:"20%", r:"MED"}, "MED-2": {t:"45%", l:"35%", r:"MED"}, "MED-3": {t:"45%", l:"50%", r:"MED"}, "MED-4": {t:"45%", l:"65%", r:"MED"}, "MED-5": {t:"45%", l:"80%", r:"MED"},
-  "DEF-1": {t:"70%", l:"20%", r:"DEF"}, "DEF-2": {t:"70%", l:"35%", r:"DEF"}, "DEF-3": {t:"70%", l:"50%", r:"DEF"}, "DEF-4": {t:"70%", l:"65%", r:"DEF"}, "DEF-5": {t:"70%", l:"80%", r:"DEF"},
-  "POR-1": {t:"88%", l:"50%", r:"POR"}
+const posColors: Record<string, string> = {
+  "POR": "bg-[#facc15] text-black",
+  "DEF": "bg-[#3b82f6] text-white",
+  "MED": "bg-[#10b981] text-white",
+  "DEL": "bg-[#ef4444] text-white"
 };
 
-const TypewriterText = ({ text, step }: { text: string, step: number }) => {
+// Formaciones válidas (Defensas-Medios-Delanteros)
+const VALID_FORMATIONS = [
+  "3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", "5-4-1"
+];
+
+const Typewriter = ({ text }: { text: string }) => {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
-    let i = 0; setDisplayedText("");
-    const timer = setInterval(() => {
-      if (i < text.length) { setDisplayedText(text.substring(0, i + 1)); i++; }
-      else clearInterval(timer);
-    }, 15);
-    return () => clearInterval(timer);
-  }, [step]); 
+    let i = 0; setDisplayedText(""); 
+    const intervalId = setInterval(() => {
+      setDisplayedText((prev) => text.substring(0, i + 1));
+      i++;
+      if (i === text.length) clearInterval(intervalId);
+    }, 20);
+    return () => clearInterval(intervalId);
+  }, [text]);
   return <span>{displayedText}</span>;
 };
 
-export default function EuroApp() {
-  const [teamName, setTeamName] = useState("");
-  const [selectedPlayers, setSelectedPlayers] = useState<Record<string, any>>({});
-  const [captainId, setCaptainId] = useState<string | null>(null);
-  const [activeSlot, setActiveSlot] = useState<any>(null);
-
-  const startersCount = useMemo(() => 
-    Object.keys(selectedPlayers).filter(k => !k.startsWith("SUP")).length
-  , [selectedPlayers]);
-
-  const totalSpent = useMemo(() => 
-    Object.values(selectedPlayers).reduce((acc, p) => acc + (p?.precio || 0), 0)
-  , [selectedPlayers]);
-
-  const countryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    Object.values(selectedPlayers).forEach(p => { 
-        const c = p?.seleccion?.toUpperCase().trim();
-        if(c) counts[c] = (counts[c] || 0) + 1; 
-    });
-    return counts;
-  }, [selectedPlayers]);
-
-  const step = useMemo(() => {
-    if (teamName.length < 3) return 1;
-    if (startersCount < 11) return 2;
-    if (!captainId) return 3;
-    return 4;
-  }, [teamName, startersCount, captainId]);
-
-  return (
-    <div className="min-h-screen bg-[#05080f] text-white p-4 flex flex-col items-center w-full max-w-md mx-auto pb-10">
-      
-      {/* CABECERA (RECUPERADA) */}
-      <div className="w-full bg-[#0d1526] border border-white/5 rounded-3xl p-5 mb-3 flex justify-between items-center shadow-2xl">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 text-[#22c55e]">
-            <Timer size={18} strokeWidth={3} />
-            <span className="font-black italic text-base tracking-tight">14D 23H 59M 27S</span>
-          </div>
-          <span className="text-[10px] font-black uppercase text-[#22c55e]/80 italic">TIEMPO PARA EDITAR</span>
-        </div>
-        <div className="w-12 h-12 bg-[#facc15] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(250,204,21,0.3)]">
-          <LockOpen className="text-black" size={24} strokeWidth={2.5} />
-        </div>
-      </div>
-
-      {/* ASISTENTE */}
-      <div className="w-full p-5 rounded-2xl border-l-4 mb-3 bg-[#162136] border-[#22c55e] shadow-xl min-h-[90px]">
-        <p className="text-[10px] font-black uppercase mb-1 text-[#22c55e] italic">PASO {step} DE 7</p>
-        <p className="text-xs italic text-white font-medium tracking-tight">
-            <TypewriterText text={step === 1 ? "Escribe el nombre de tu equipo arriba." : step === 2 ? "Toca en los huecos del campo para fichar." : "Configura tu capitán y banquillo."} step={step} />
-        </p>
-      </div>
-
-      <input type="text" placeholder="Nombre de tu equipo..." value={teamName} onChange={(e) => setTeamName(e.target.value)}
-        className="w-full mb-3 bg-[#0d1526] p-4 rounded-2xl text-center font-black outline-none text-xl border-2 border-white/10 text-[#22c55e]"
-      />
-
-      {/* TÁCTICA CONDICIONAL */}
-      <div className="w-full mb-4 px-2 flex items-center justify-between font-black italic uppercase text-[10px]">
-        <div className={`flex items-center gap-2 ${startersCount === 11 ? 'text-[#22c55e]' : 'text-white/40'}`}>
-            {startersCount === 11 ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-            <span>{startersCount === 11 ? 'TÁCTICA: 1-5-5' : `SELECCIONADOS: ${startersCount}/11`}</span>
-        </div>
-      </div>
-
-      {/* PRESUPUESTO */}
-      <div className="w-full bg-[#0d1526] border border-white/5 rounded-2xl p-4 mb-6 shadow-lg">
-        <div className="flex justify-between items-center mb-2 text-[10px] font-black italic uppercase">
-            <span className="text-white/40">PRESUPUESTO</span>
-            <span className="text-[#22c55e]">{totalSpent}M / {TOTAL_BUDGET}M</span>
-        </div>
-        <div className="w-full h-2 bg-black rounded-full overflow-hidden">
-            <div className="h-full bg-[#22c55e] transition-all duration-700" style={{ width: `${(totalSpent / TOTAL_BUDGET) * 100}%` }} />
-        </div>
-      </div>
-
-      {/* CAMPO DE JUEGO */}
-      <div className="relative w-full aspect-[3/4] rounded-[3rem] border-4 border-slate-800 overflow-hidden mb-8 bg-[#2e9d4a] shadow-2xl">
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-            <div className="absolute inset-4 border-[2px] border-white" />
-            <div className="absolute top-1/2 w-full h-[2px] bg-white" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-[2px] border-white rounded-full" />
-            <div className="absolute left-1/2 top-4 -translate-x-1/2 w-60 h-24 border-[2px] border-white border-t-0" />
-            <div className="absolute left-1/2 top-4 -translate-x-1/2 w-28 h-8 border-[2px] border-white border-t-0" />
-            <div className="absolute left-1/2 top-[112px] -translate-x-1/2 w-20 h-10 border-[2px] border-white border-t-0 rounded-b-full" />
-            <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-60 h-24 border-[2px] border-white border-b-0" />
-            <div className="absolute left-1/2 bottom-4 -translate-x-1/2 w-28 h-8 border-[2px] border-white border-b-0" />
-            <div className="absolute left-1/2 bottom-[112px] -translate-x-1/2 w-20 h-10 border-[2px] border-white border-b-0 rounded-t-full" />
-        </div>
-        {Object.entries(POS_COLORS).map(([pos, color]) => (
-            <div key={pos} className="absolute left-2 z-50" style={{ top: pos === 'DEL' ? '22%' : pos === 'MED' ? '45%' : pos === 'DEF' ? '70%' : '88%' }}>
-                <div className={`${color} text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-md -translate-y-1/2 border border-white/20`}>{pos}</div>
-            </div>
-        ))}
-        {Object.entries(FIELD_POSITIONS).map(([id, pos]) => (
-          <div key={id} style={{ top: pos.t, left: pos.l }} className="absolute -translate-x-1/2 -translate-y-1/2 z-30">
-            <PlayerCircle id={id} pos={pos} sel={selectedPlayers} set={setActiveSlot} count={startersCount} capId={captainId} setCap={setCaptainId} isActive={activeSlot?.id === id} isActionRequired={step === 2 && !selectedPlayers[id]} />
-          </div>
-        ))}
-      </div>
-
-      {/* BANQUILLO */}
-      <div className={`w-full bg-[#111827] p-5 rounded-3xl border mb-6 shadow-xl ${step === 4 ? 'border-white' : 'border-white/10'}`}>
-        <p className="text-[11px] font-black text-center mb-4 text-white/40 uppercase italic tracking-widest">BANQUILLO</p>
-        <div className="grid grid-cols-3 gap-3">
-          {[1,2,3,4,5,6].map(i => (
-            <BenchSlot key={i} id={`SUP-${i}`} label={`S${i}`} sel={selectedPlayers} set={setActiveSlot} active={startersCount === 11} isActive={activeSlot?.id === `SUP-${i}`} isActionRequired={step === 4 && !selectedPlayers[`SUP-${i}`]} />
-          ))}
-        </div>
-      </div>
-
-      {activeSlot && <SelectionModal activeSlot={activeSlot} setActiveSlot={setActiveSlot} selectedPlayers={selectedPlayers} setSelectedPlayers={setSelectedPlayers} countryCounts={countryCounts} />}
-    </div>
-  );
-}
-
-function SelectionModal({ activeSlot, setActiveSlot, selectedPlayers, setSelectedPlayers, countryCounts }: any) {
-  const [search, setSearch] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("TODOS");
-  const [sortMode, setSortMode] = useState<'PRECIO_DESC' | 'PRECIO_ASC' | 'ALPHA_ASC' | 'ALPHA_DESC'>('PRECIO_DESC');
-
-  const countriesList = useMemo(() => {
-    return Array.from(new Set(PLAYERS_DB.map(p => p.seleccion?.toUpperCase().trim()).filter(Boolean))).sort();
+const Countdown = () => {
+  const [timeLeft, setTimeLeft] = useState(12 * 24 * 60 * 60 + 13 * 3600 + 58 * 60 + 16);
+  useEffect(() => {
+    const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
+    return () => clearInterval(timer);
   }, []);
+  const formatTime = (s: number) => {
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${d}D ${h}H ${m}M ${sec}S`;
+  };
+  return <span className="text-xl font-black italic uppercase tracking-tighter w-44 inline-block text-[#facc15]">{formatTime(timeLeft)}</span>;
+};
 
-  const filtered = useMemo(() => {
-    let list = PLAYERS_DB.filter(p => {
-      const pCountry = p.seleccion?.toUpperCase().trim();
-      const matchPos = activeSlot.role === 'CUALQUIERA' ? true : p.posicion === activeSlot.role;
-      const matchSearch = p.nombre.toLowerCase().includes(search.toLowerCase());
-      const matchCountry = selectedCountry === "TODOS" || pCountry === selectedCountry;
-      const notInTeam = !Object.values(selectedPlayers).some((sel: any) => sel.id === p.id);
-      return matchPos && matchSearch && matchCountry && notInTeam;
-    });
-    list.sort((a, b) => sortMode === 'PRECIO_DESC' ? b.precio - a.precio : sortMode === 'PRECIO_ASC' ? a.precio - b.precio : sortMode === 'ALPHA_ASC' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre));
-    return list;
-  }, [search, selectedCountry, sortMode, activeSlot.role, selectedPlayers]);
+// --- COMPONENTE PRINCIPAL ---
+export default function EuroApp() {
+  const [view, setView] = useState<'squad' | 'quiniela'>('squad');
+  const [teamName, setTeamName] = useState("");
+  const [selected, setSelected] = useState<any>({});
+  const [bench, setBench] = useState<any>({});
+  const [extras, setExtras] = useState<any>({});
+  const [captain, setCaptain] = useState<number | null>(null);
+  const [activeSlot, setActiveSlot] = useState<any>(null);
+  const [step, setStep] = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Estados Quiniela
+  const [quinielaSelections, setQuinielaSelections] = useState<Record<string, string[]>>({});
+  const [quinielaLocked, setQuinielaLocked] = useState(false);
 
-  return (
-    <div className="fixed inset-0 bg-[#05080f] z-[100] flex flex-col p-6 overflow-hidden">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-black text-white italic uppercase tracking-tighter italic">FICHAR {activeSlot.role}</h2>
-        <button onClick={() => setActiveSlot(null)} className="p-2 bg-white/10 rounded-full"><XCircle size={24} /></button>
-      </div>
+  // Estados Filtros
+  const [sortValue, setSortValue] = useState<'desc' | 'asc'>('desc');
+  const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc');
+  const [activeSortType, setActiveSortType] = useState<'value' | 'alpha'>('value');
 
-      <div className="space-y-4 mb-4">
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-            <input className="w-full bg-[#162136] border border-white/5 p-4 pl-10 rounded-xl outline-none text-sm font-bold" 
-                   placeholder="BUSCAR JUGADOR..." value={search} onChange={e => setSearch(e.target.value)} />
+  useEffect(() => {
+    if (isEditing) return;
+    // NOTA: Eliminado el salto automático del paso 1 al 2.
+    if (step === 2 && Object.keys(selected).length === 11) setStep(3);
+    if (step === 3 && captain) setStep(4);
+    if (step === 4 && Object.keys(bench).length === 6) setStep(5);
+  }, [teamName, selected, captain, bench, step, isEditing]);
+
+  const allPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
+  const budgetSpent = allPlayers.reduce((acc, p: any) => acc + p.precio, 0);
+  const isOverBudget = budgetSpent > 300;
+  
+  const tactic = useMemo(() => {
+    const def = Object.keys(selected).filter(k => k.startsWith("DEF")).length;
+    const med = Object.keys(selected).filter(k => k.startsWith("MED")).length;
+    const del = Object.keys(selected).filter(k => k.startsWith("DEL")).length;
+    return `${def}-${med}-${del}`;
+  }, [selected]);
+
+  const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(tactic), [tactic]);
+
+  const handleValidateAndSave = () => {
+    if (isOverBudget) {
+      alert("⚠️ El presupuesto excede los 300M. Debes ajustar tu equipo.");
+      return;
+    }
+    if (Object.keys(selected).length !== 11) {
+      alert("⚠️ Debes tener 11 jugadores titulares.");
+      return;
+    }
+    if (!isValidTactic) {
+      alert(`⚠️ La táctica ${tactic} no es válida.\nEsquemas permitidos:\n${VALID_FORMATIONS.join(", ")}`);
+      return;
+    }
+    setIsEditing(false); 
+  };
+
+  // --- TEXTOS ASISTENTE CORREGIDOS ---
+  const messages: any = {
+    1: "PASO 1 DE 7. Comienza dándole un nombre a tu equipo.",
+    2: "PASO 2 DE 7. Ahora escoge tu once inicial en el terreno de juego.",
+    3: "PASO 3 DE 7. Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación.",
+    4: "PASO 4 DE 7. Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares.",
+    5: "PASO 5 DE 7. Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores.",
+    6: "PASO 6 DE 7. Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela."
+  };
+
+  // --- VISTA: EUROQUINIELA ---
+  if (view === 'quiniela') {
+    const totalSelected = Object.values(quinielaSelections).reduce((acc, curr) => acc + curr.length, 0);
+    const isComplete = totalSelected === 12;
+    const finalText = "Bien hecho, has completado todos los pasos, ya estás listo para participar. Recuerda que puedes editar lo que quieras hasta que el contador llegue a cero. ¡MUCHA SUERTE!";
+
+    return (
+      <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-32">
+        <div className="sticky top-0 z-50 p-4 bg-[#05080f]/95 backdrop-blur-md">
+           <div className={`p-4 rounded-2xl border-l-4 transition-colors ${quinielaLocked ? 'border-[#facc15] bg-[#1c2a45]' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl`}>
+             <div className="flex justify-between items-start">
+               <div className="flex-1">
+                 <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${quinielaLocked ? 'text-[#facc15]' : 'text-[#22c55e]'}`}>
+                   {quinielaLocked ? '¡COMPLETADO!' : 'ASISTENTE VIRTUAL'}
+                 </p>
+                 <p className="text-xs font-semibold italic min-h-[1.5rem] leading-relaxed">
+                    <Typewriter text={quinielaLocked ? finalText : "PASO 7 DE 7. Te explico como funciona: debes elegir a las 2 selecciones de cada grupo que pasarán a la siguiente fase."} />
+                 </p>
+               </div>
+               <button 
+                  onClick={() => setView('squad')}
+                  className="ml-2 bg-[#162136] text-white/70 hover:text-white px-3 py-2 rounded-xl flex items-center gap-2 font-black italic text-[9px] uppercase border border-white/10 transition-all active:scale-95"
+               >
+                 <ArrowLeft size={12}/> VOLVER A MI PLANTILLA
+               </button>
+             </div>
+           </div>
         </div>
 
-        {/* BARRA DE PAÍSES */}
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => setSelectedCountry("TODOS")}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all
-                    ${selectedCountry === "TODOS" ? 'bg-[#22c55e] border-[#22c55e] text-black shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'bg-[#111827] border-white/5 text-white/40'}`}>
-                🌍 TODOS
-            </button>
-            {countriesList.map(c => (
-                <button key={c} onClick={() => setSelectedCountry(c)}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all flex items-center gap-2
-                        ${selectedCountry === c ? 'bg-[#22c55e] border-[#22c55e] text-black shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'bg-[#111827] border-white/5 text-white/40'}`}>
-                    <span>{COUNTRY_FLAGS[c] || "🚩"}</span> {c}
+        <div className="max-w-md mx-auto px-4 animate-in slide-in-from-right duration-500">
+          <div className="flex justify-between items-center mb-6 mt-4">
+             <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter">EUROQUINIELA</h1>
+             <Trophy size={32} className="text-[#facc15]" />
+          </div>
+
+          <div className="space-y-6">
+             {EURO_GROUPS.map((group) => {
+               const currentPicks = quinielaSelections[group.name] || [];
+               return (
+                 <div key={group.name} className="space-y-2">
+                   <h3 className="text-[#22c55e] font-black italic text-sm ml-2">{group.name}</h3>
+                   <div className="grid grid-cols-2 gap-3">
+                     {group.teams.map((team) => {
+                       const isSelected = currentPicks.includes(team);
+                       return (
+                         <button
+                           key={team}
+                           disabled={quinielaLocked}
+                           onClick={() => {
+                             if (quinielaLocked) return;
+                             const newPicks = isSelected 
+                               ? currentPicks.filter(t => t !== team)
+                               : currentPicks.length < 2 ? [...currentPicks, team] : currentPicks;
+                             setQuinielaSelections({...quinielaSelections, [group.name]: newPicks});
+                           }}
+                           className={`p-4 rounded-2xl flex items-center gap-3 transition-all border-2 relative overflow-hidden
+                             ${isSelected 
+                               ? 'bg-[#22c55e] border-[#22c55e] text-black shadow-[0_0_15px_rgba(34,197,94,0.4)]'
+                               : 'bg-[#162136] border-white/5 text-white hover:bg-[#1c2a45]'
+                             } ${quinielaLocked ? 'opacity-80 cursor-default' : 'cursor-pointer active:scale-95'}`}
+                         >
+                           <span className="text-2xl">{getFlag(team)}</span>
+                           <span className="font-black italic text-[10px] uppercase">{team}</span>
+                           {isSelected && <Check size={18} className="absolute top-2 right-2 text-black stroke-[4]"/>}
+                         </button>
+                       );
+                     })}
+                   </div>
+                 </div>
+               );
+             })}
+          </div>
+
+          <div className="mt-8 mb-20 space-y-3">
+            {!quinielaLocked ? (
+              isComplete && (
+                <button 
+                  onClick={() => setQuinielaLocked(true)}
+                  className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl animate-bounce"
+                >
+                  VALIDAR SELECCIÓN
                 </button>
-            ))}
+              )
+            ) : (
+              <button 
+                onClick={() => setQuinielaLocked(false)}
+                className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
+              >
+                <Edit3 size={20}/> EDITAR QUINIELA
+              </button>
+            )}
+          </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setSortMode(sortMode === 'PRECIO_DESC' ? 'PRECIO_ASC' : 'PRECIO_DESC')} 
-                    className="bg-[#111827] border border-white/5 p-3 rounded-xl text-[10px] font-black uppercase text-white flex justify-center gap-2">
-                <ArrowUpDown size={12} className="text-[#22c55e]" /> {sortMode.includes('PRECIO') ? (sortMode === 'PRECIO_DESC' ? '€ MÁX' : '€ MÍN') : 'ORDEN €'}
-            </button>
-            <button onClick={() => setSortMode(sortMode === 'ALPHA_ASC' ? 'ALPHA_DESC' : 'ALPHA_ASC')} 
-                    className="bg-[#111827] border border-white/5 p-3 rounded-xl text-[10px] font-black uppercase text-white flex justify-center gap-2">
-                <SortAsc size={14} className="text-[#22c55e]" /> A-Z
-            </button>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
+          <div className="bg-[#0d1526]/95 border border-white/10 p-5 rounded-[2.5rem] flex justify-between items-center shadow-2xl backdrop-blur-xl">
+            <div>
+              <div className="flex items-center gap-2 text-[#22c55e]"><Timer size={22}/><Countdown /></div>
+              <p className="text-[9px] font-black italic text-[#22c55e]/70 uppercase tracking-tight">TIEMPO RESTANTE</p>
+            </div>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-black shadow-lg bg-[#facc15] cursor-pointer">
+               <Lock size={28} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VISTA: SQUAD (CREACIÓN DE EQUIPO) ---
+  return (
+    <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
+      
+      {/* HEADER FIJO (STICKY) */}
+      <div className="sticky top-0 z-50 bg-[#05080f]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
+        <div className="px-4 pt-4">
+          <div className={`p-4 rounded-2xl border-l-4 transition-all duration-500 ${isOverBudget ? 'border-red-600 bg-red-950/20' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl mb-3`}>
+            <div className="flex justify-between items-center">
+              <div className="flex-1">
+                <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${isOverBudget ? 'text-red-500' : 'text-[#22c55e]'}`}>
+                  {isOverBudget ? 'ALERTA DE PRESUPUESTO' : 'ASISTENTE VIRTUAL'}
+                </p>
+                <div className="text-xs font-semibold italic min-h-[2.5rem] leading-relaxed pr-2">
+                  <Typewriter text={isOverBudget ? "⚠️ Superas los 300M. Ajusta el presupuesto." : (isEditing ? "MODO EDICIÓN ACTIVADO. Ajusta tu equipo y pulsa GUARDAR cuando termines." : messages[step])} />
+                </div>
+              </div>
+              
+              {/* BOTÓN CONTINUAR (Ahora aparece en Paso 1 también) */}
+              {((step === 1 && teamName.trim().length >= 3) || (step >= 6 && !isEditing && !isOverBudget)) && (
+                <button 
+                  onClick={() => step === 1 ? setStep(2) : setView('quiniela')}
+                  className="bg-[#22c55e] text-black px-5 py-3 rounded-xl flex items-center gap-2 font-black italic text-[11px] uppercase transition-all animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                >
+                  {step === 1 ? 'Continuar' : 'Euroquiniela'} <ArrowRight size={16}/>
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="mb-2">
+            <div className="flex justify-between uppercase italic font-black text-[10px] mb-1">
+              <span className="text-white/40">PRESUPUESTO</span>
+              <span className={isOverBudget ? "text-red-500 animate-pulse" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span>
+            </div>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5">
+              <div className={`h-full rounded-full transition-all duration-700 ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-        {filtered.map(p => {
-          const pCountry = p.seleccion?.toUpperCase().trim();
-          return (
-            <div key={p.id} onClick={() => {
-              if ((countryCounts[pCountry] || 0) >= MAX_PER_COUNTRY) return alert(`Límite 7 de ${pCountry}`);
-              setSelectedPlayers({...selectedPlayers, [activeSlot.id]: p});
-              setActiveSlot(null);
-            }} className="p-4 bg-[#111827] rounded-2xl flex justify-between items-center border border-white/5 hover:border-[#22c55e]/50 transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{COUNTRY_FLAGS[pCountry] || "🚩"}</span>
-                <div className="flex flex-col">
-                  <span className="font-black text-xs uppercase tracking-tighter">{p.nombre}</span>
-                  <span className="text-[9px] text-white/30 font-bold uppercase">{p.seleccion}</span>
-                </div>
-              </div>
-              <span className="text-[#22c55e] font-black text-base">{p.precio}M</span>
-            </div>
-          );
-        })}
+      <div className="max-w-md mx-auto px-4">
+        {/* NOMBRE Y TÁCTICA */}
+        <div className="mt-4 space-y-3">
+          <input 
+            className={`w-full p-5 rounded-2xl bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner transition-all ${step === 1 ? 'ring-4 ring-white' : ''}`} 
+            placeholder="NOMBRE EQUIPO" 
+            value={teamName} 
+            disabled={!isEditing && step > 1}
+            onChange={(e) => setTeamName(e.target.value)} 
+          />
+          <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">
+            TÁCTICA: <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>
+              {Object.keys(selected).length === 11 ? tactic : '-- -- --'}
+            </span>
+            {!isValidTactic && Object.keys(selected).length === 11 && (
+               <span className="text-red-500 text-[10px] ml-2 font-black italic">(NO VÁLIDA)</span>
+            )}
+          </div>
+        </div>
+
+        {/* CAMPO DE JUEGO */}
+        <div className={`mt-6 relative w-full aspect-[3/4.2] bg-[#2e9d4a] rounded-[2.5rem] border-[4px] overflow-hidden shadow-2xl transition-all duration-300 ${(step === 2 || step === 3 || isEditing) ? 'border-white scale-[1.02]' : 'border-white/20'}`}>
+          {/* ... Geometría del campo igual ... */}
+          <div className="absolute inset-4 border-2 border-white/30 rounded-xl pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/30 rounded-full" />
+            <div className="absolute top-1/2 w-full h-0.5 bg-white/30 -translate-y-1/2" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/5 h-[15%] border-b-2 border-x-2 border-white/30" /> 
+            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-20 h-6 border-b-2 border-white/30 rounded-b-full border-t-0" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/5 h-[15%] border-t-2 border-x-2 border-white/30" />
+            <div className="absolute bottom-[15%] left-1/2 -translate-x-1/2 w-20 h-6 border-t-2 border-white/30 rounded-t-full border-b-0" />
+          </div>
+
+          <div className="absolute inset-0 pointer-events-none z-40 font-black text-[9px] italic">
+             <div className="absolute top-[20%] left-0 -translate-y-1/2 bg-[#ef4444] py-1.5 px-3 rounded-r-lg shadow-lg text-white">DEL</div>
+             <div className="absolute top-[45%] left-0 -translate-y-1/2 bg-[#10b981] py-1.5 px-3 rounded-r-lg shadow-lg text-white">MED</div>
+             <div className="absolute top-[70%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1.5 px-3 rounded-r-lg shadow-lg text-white">DEF</div>
+             <div className="absolute top-[90%] left-0 -translate-y-1/2 bg-[#facc15] py-1.5 px-3 rounded-r-lg shadow-lg text-black">POR</div>
+          </div>
+
+          <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">
+             {[1,2,3].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />)}
+          </div>
+          <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
+             {[1,2,3,4,5].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />)}
+          </div>
+          <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
+             {[1,2,3,4,5].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />)}
+          </div>
+          <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30">
+             <Slot active={(step===2 || isEditing) && !selected["POR-1"]} p={selected["POR-1"]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} />
+          </div>
+        </div>
+
+        <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 border-2 transition-all duration-300 ${(step === 4 || isEditing) ? 'border-white' : 'border-white/5'}`}>
+          <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
+          <div className="grid grid-cols-3 gap-3">
+             {["S1", "S2", "S3", "S4", "S5", "S6"].map(id => (
+               <div key={id} onClick={() => (step === 4 || isEditing) && setActiveSlot({id, type:'bench', pos: 'TODOS'})} 
+                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all cursor-pointer
+                 ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}`}>
+                 {bench[id] ? (
+                   <>
+                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-[10px] italic leading-tight">{bench[id].nombre.split(' ').pop()}</div>
+                    <div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[bench[id].posicion]}`}>{bench[id].posicion}</div>
+                   </>
+                 ) : <span className="text-white/10 font-black text-xs">{id}</span>}
+               </div>
+             ))}
+          </div>
+        </div>
+
+        <div className={`mt-6 p-4 rounded-[2.5rem] border-2 bg-[#2a3b5a]/30 transition-all duration-300 ${(step === 5 || isEditing) ? 'border-white' : 'border-white/5'}`}>
+          <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+             {["NC1", "NC2", "NC3"].map(id => (
+               <div key={id} onClick={() => (step === 5 || isEditing) && setActiveSlot({id, type:'extras', pos: 'TODOS'})} 
+                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all cursor-pointer
+                 ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}`}>
+                 {extras[id] ? (
+                   <>
+                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-[10px] italic">{extras[id].nombre.split(' ').pop()}</div>
+                    <div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div>
+                   </>
+                 ) : <span className="text-white/10 font-black text-xs">NC</span>}
+               </div>
+             ))}
+          </div>
+          {(step === 5 && !isEditing) && (
+            <button onClick={() => setStep(6)} className="w-full bg-red-600/20 text-red-500 p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-[10px] uppercase border border-red-500/30">
+              <Ban size={14}/> NO QUIERO NO CONVOCADOS
+            </button>
+          )}
+        </div>
       </div>
+
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-30 space-y-3">
+        {(step >= 6 && !isEditing && !isOverBudget) && (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
+            >
+              <Edit3 size={24}/> EDITAR PLANTILLA
+            </button>
+        )}
+        
+        {isEditing && (
+          <button 
+            onClick={handleValidateAndSave}
+            className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
+          >
+            <Save size={24}/> GUARDAR CAMBIOS
+          </button>
+        )}
+      </div>
+
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
+        <div className="bg-[#0d1526]/95 border border-white/10 p-5 rounded-[2.5rem] flex justify-between items-center shadow-2xl backdrop-blur-xl">
+          <div>
+            <div className="flex items-center gap-2 text-[#22c55e]"><Timer size={22}/><Countdown /></div>
+            <p className="text-[9px] font-black italic text-[#22c55e]/70 uppercase tracking-tight">TIEMPO RESTANTE PARA EDITAR MI EQUIPO</p>
+          </div>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center text-black shadow-lg bg-[#facc15] cursor-pointer">
+             <Lock size={28} />
+          </div>
+        </div>
+      </div>
+
+      {activeSlot && (
+        <SelectionModal 
+          activeSlot={activeSlot} 
+          onClose={() => setActiveSlot(null)}
+          sortValue={sortValue} setSortValue={setSortValue}
+          sortAlpha={sortAlpha} setSortAlpha={setSortAlpha}
+          activeSortType={activeSortType} setActiveSortType={setActiveSortType}
+          onSelect={(p: any) => {
+            const isTitular = activeSlot.type === 'titular';
+            const currentTitulares = Object.keys(selected).length;
+            const isEmptySlot = !selected[activeSlot.id];
+            
+            if (isTitular && isEmptySlot && currentTitulares >= 11) {
+              alert("¡Ya tienes 11 titulares! No puedes añadir más. Elimina uno primero o reemplaza.");
+              return;
+            }
+
+            if (isTitular) setSelected({...selected, [activeSlot.id]: p});
+            else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p});
+            else if (activeSlot.type === 'extras') setExtras({...extras, [activeSlot.id]: p});
+            setActiveSlot(null);
+          }}
+          onRemove={() => {
+            if (activeSlot.type === 'titular') { const n = {...selected}; delete n[activeSlot.id]; setSelected(n); }
+            else if (activeSlot.type === 'bench') { const n = {...bench}; delete n[activeSlot.id]; setBench(n); }
+            else { const n = {...extras}; delete n[activeSlot.id]; setExtras(n); }
+            setActiveSlot(null);
+          }}
+          currentSelection={activeSlot.type === 'titular' ? selected[activeSlot.id] : (activeSlot.type === 'bench' ? bench[activeSlot.id] : extras[activeSlot.id])}
+          selectedIds={allPlayers.map((p: any) => p.id)}
+          allPlayersSelected={allPlayers}
+        />
+      )}
     </div>
   );
 }
 
-function PlayerCircle({ id, pos, sel, set, count, capId, setCap, isActive, isActionRequired }: any) {
-    const p = sel[id];
-    return (
-      <div className="flex flex-col items-center">
-        <div onClick={() => set({id, role: pos.r})}
-          className={`w-11 h-11 rounded-full border-[3px] flex items-center justify-center transition-all cursor-pointer
-            ${isActive ? 'border-white scale-110 shadow-[0_0_15px_#fff] bg-slate-700' : 
-              p ? 'bg-white border-emerald-500 shadow-lg' : 
-              isActionRequired ? 'bg-black/60 border-white animate-pulse shadow-[0_0_10px_#fff]' : 
-              'bg-black/40 border-white/20'}`}>
-          {p ? <span className="text-[8px] font-black text-emerald-900 text-center uppercase leading-tight px-1">{p.nombre.split(' ').pop()}</span> : <Plus size={16} className={isActionRequired ? 'text-white' : 'text-white/20'} />}
-        </div>
-        {p && count === 11 && (
-          <button onClick={(e) => { e.stopPropagation(); setCap(id); }} 
-            className={`mt-1 w-5 h-5 rounded-full border-2 text-[8px] font-black flex items-center justify-center ${capId === id ? 'bg-yellow-500 text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'bg-slate-800 border-white/30 text-white/50'}`}>C</button>
-        )}
+// ... SUBCOMPONENTES Slot y SelectionModal se mantienen igual ...
+function Slot({ p, on, cap, setCap, showCap, active }: any) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div 
+        onClick={on} 
+        className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all cursor-pointer relative z-30 
+        ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'}
+        ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : ''}`}
+      >
+        {p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <Plus size={18} className="text-white/20"/>}
       </div>
-    );
-  }
+      {p && showCap && (
+        <button onClick={(e) => { e.stopPropagation(); setCap(); }} className={`w-6 h-6 rounded-full border-2 font-black text-[10px] flex items-center justify-center transition-all z-50 ${cap ? 'bg-[#facc15] text-black border-white scale-110' : 'bg-black/60 text-white/30 border-white/10'}`}>
+          {cap ? <Check size={10} strokeWidth={4}/> : 'C'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, sortValue, setSortValue, sortAlpha, setSortAlpha, activeSortType, setActiveSortType, currentSelection, allPlayersSelected }: any) {
+  const isTitular = activeSlot.type === 'titular';
+  const forcedPos = isTitular ? activeSlot.pos : "TODOS";
   
-  function BenchSlot({ id, label, sel, set, active, isActive, isActionRequired }: any) {
-    const p = sel[id];
-    return (
-      <div onClick={() => active && set({ id, role: 'CUALQUIERA' })} 
-        className={`h-16 rounded-xl border-2 flex items-center justify-center transition-all cursor-pointer
-          ${isActive ? 'border-white bg-[#1f2937]' : p ? 'bg-white border-[#22c55e]' : isActionRequired ? 'bg-[#1f2937] border-white' : 'bg-[#1f2937] border-white/5 opacity-50'}`}>
-        <span className={`font-black uppercase text-xs tracking-tighter ${p ? 'text-slate-900' : isActionRequired ? 'text-white' : 'text-white/20'}`}>
-          {p ? p.nombre.split(' ').pop() : label}
-        </span>
+  const [filterCountry, setFilterCountry] = useState("TODOS");
+  const [filterPos, setFilterPos] = useState(forcedPos);
+
+  const filteredPlayers = useMemo(() => {
+    let result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id));
+    if (filterCountry !== "TODOS") result = result.filter(p => p.seleccion === filterCountry);
+    if (filterPos !== "TODOS") result = result.filter(p => p.posicion === filterPos);
+    
+    result.sort((a, b) => {
+      if (activeSortType === 'value') return sortValue === 'desc' ? b.precio - a.precio : a.precio - b.precio;
+      return sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre);
+    });
+    return result;
+  }, [selectedIds, filterCountry, filterPos, sortValue, sortAlpha, activeSortType]);
+
+  const countryCounts = allPlayersSelected.reduce((acc: any, p: any) => {
+    acc[p.seleccion] = (acc[p.seleccion] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-black italic uppercase tracking-tighter">ELEGIR JUGADOR</h2>
+        <button onClick={onClose} className="p-3 bg-white/5 rounded-full"><X/></button>
       </div>
-    );
-  }
+      
+      {currentSelection && (
+        <button onClick={onRemove} className="mb-6 w-full bg-red-600 p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-xs uppercase">
+          <Trash2 size={16}/> ELIMINAR JUGADOR
+        </button>
+      )}
+
+      {/* FILTROS */}
+      <div className="flex gap-2 mb-4">
+        {["POR", "DEF", "MED", "DEL"].map(pos => (
+          <button key={pos} disabled={isTitular} onClick={() => setFilterPos(pos)} 
+            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] border-2 transition-all 
+            ${filterPos === pos ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10'}
+            ${isTitular && filterPos !== pos ? 'opacity-20' : ''}`}>
+            {pos}
+          </button>
+        ))}
+      </div>
+      
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+        <button onClick={() => setFilterCountry("TODOS")} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] italic whitespace-nowrap ${filterCountry === "TODOS" ? 'bg-[#22c55e] text-black' : 'bg-[#162136] text-white/40'}`}>
+          TODOS
+        </button>
+        {["ESPAÑA", "ALEMANIA", "FRANCIA", "ESCOCIA", "TURQUÍA"].map(s => (
+          <button key={s} onClick={() => setFilterCountry(s)} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] italic whitespace-nowrap ${filterCountry === s ? 'bg-[#22c55e] text-black' : 'bg-[#162136] text-white/40'}`}>
+             <span>{getFlag(s)}</span> {s} ({countryCounts[s] || 0}/7)
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <button onClick={() => { setSortValue(prev => prev === 'desc' ? 'asc' : 'desc'); setActiveSortType('value'); }} className={`border border-white/10 p-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-[10px] italic uppercase ${activeSortType === 'value' ? 'bg-[#162136] text-[#22c55e] border-[#22c55e]/50' : 'text-white/30'}`}>
+          <ArrowUpDown size={14}/> {sortValue === 'desc' ? '€ MAX' : '€ MIN'}
+        </button>
+        <button onClick={() => { setSortAlpha(prev => prev === 'asc' ? 'desc' : 'asc'); setActiveSortType('alpha'); }} className={`border border-white/10 p-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-[10px] italic uppercase ${activeSortType === 'alpha' ? 'bg-[#162136] text-[#22c55e] border-[#22c55e]/50' : 'text-white/30'}`}>
+          <ArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A-Z' : 'Z-A'}
+        </button>
+      </div>
+
+      <div className="space-y-3 overflow-y-auto">
+        {filteredPlayers.map(p => (
+          <div key={p.id} onClick={() => onSelect(p)} className="p-4 rounded-2xl flex justify-between items-center border bg-[#162136] border-white/5 active:scale-95 cursor-pointer">
+            <div className="flex items-center gap-3 font-black italic uppercase tracking-tighter">
+              <span className="text-2xl">{getFlag(p.seleccion)}</span>
+              <div className="flex flex-col text-left">
+                <span className="text-sm">{p.nombre}</span>
+                <span className="text-[8px] text-white/40 tracking-widest">{p.posicion}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[#22c55e] font-black text-lg block">{p.precio}M</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

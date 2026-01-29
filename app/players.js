@@ -1,75 +1,295 @@
 export const PLAYERS_DB = [
-    // --- ESPAÑA (es) ---
-    { id: 101, nombre: 'Unai Simón', equipo: 'España', posicion: 'POR', precio: 19, iso: 'es' },
-    { id: 102, nombre: 'Remiro', equipo: 'España', posicion: 'POR', precio: 12, iso: 'es' },
-    { id: 103, nombre: 'David Raya', equipo: 'España', posicion: 'POR', precio: 14, iso: 'es' },
-    { id: 104, nombre: 'Grimaldo', equipo: 'España', posicion: 'DEF', precio: 28, iso: 'es' },
-    { id: 105, nombre: 'Laporte', equipo: 'España', posicion: 'DEF', precio: 22, iso: 'es' },
-    { id: 106, nombre: 'Cucurella', equipo: 'España', posicion: 'DEF', precio: 16, iso: 'es' },
-    { id: 107, nombre: 'Carvajal', equipo: 'España', posicion: 'DEF', precio: 10, iso: 'es' },
-    { id: 108, nombre: 'Rodri', equipo: 'España', posicion: 'MED', precio: 61, iso: 'es' },
-    { id: 109, nombre: 'Pedri', equipo: 'España', posicion: 'MED', precio: 61, iso: 'es' },
-    { id: 110, nombre: 'Dani Olmo', equipo: 'España', posicion: 'DEL', precio: 44, iso: 'es' },
-    { id: 111, nombre: 'L. Yamal', equipo: 'España', posicion: 'DEL', precio: 51, iso: 'es' },
-    { id: 112, nombre: 'Nico Williams', equipo: 'España', posicion: 'DEL', precio: 27, iso: 'es' },
-  
-    // --- ALEMANIA (de) ---
-    { id: 201, nombre: 'Neuer', equipo: 'Alemania', posicion: 'POR', precio: 18, iso: 'de' },
-    { id: 202, nombre: 'Ter Stegen', equipo: 'Alemania', posicion: 'POR', precio: 20, iso: 'de' },
-    { id: 203, nombre: 'Kimmich', equipo: 'Alemania', posicion: 'DEF', precio: 51, iso: 'de' },
-    { id: 204, nombre: 'Rüdiger', equipo: 'Alemania', posicion: 'DEF', precio: 15, iso: 'de' },
-    { id: 205, nombre: 'Gündogan', equipo: 'Alemania', posicion: 'MED', precio: 18, iso: 'de' },
-    { id: 206, nombre: 'Musiala', equipo: 'Alemania', posicion: 'MED', precio: 61, iso: 'de' },
-    { id: 207, nombre: 'Wirtz', equipo: 'Alemania', posicion: 'MED', precio: 62, iso: 'de' },
-    { id: 208, nombre: 'Kroos', equipo: 'Alemania', posicion: 'MED', precio: 8, iso: 'de' },
-    { id: 209, nombre: 'Havertz', equipo: 'Alemania', posicion: 'DEL', precio: 42, iso: 'de' },
-  
-    // --- FRANCIA (fr) ---
-    { id: 301, nombre: 'Maignan', equipo: 'Francia', posicion: 'POR', precio: 21, iso: 'fr' },
-    { id: 302, nombre: 'Saliba', equipo: 'Francia', posicion: 'DEF', precio: 28, iso: 'fr' },
-    { id: 303, nombre: 'Theo Hernández', equipo: 'Francia', posicion: 'DEF', precio: 30, iso: 'fr' },
-    { id: 304, nombre: 'Griezmann', equipo: 'Francia', posicion: 'MED', precio: 61, iso: 'fr' },
-    { id: 305, nombre: 'Mbappé', equipo: 'Francia', posicion: 'DEL', precio: 75, iso: 'fr' },
-  
-    // --- INGLATERRA (gb-eng) ---
-    { id: 401, nombre: 'Pickford', equipo: 'Inglaterra', posicion: 'POR', precio: 17, iso: 'gb-eng' },
-    { id: 402, nombre: 'Stones', equipo: 'Inglaterra', posicion: 'DEF', precio: 27, iso: 'gb-eng' },
-    { id: 403, nombre: 'Bellingham', equipo: 'Inglaterra', posicion: 'MED', precio: 64, iso: 'gb-eng' },
-    { id: 404, nombre: 'Phil Foden', equipo: 'Inglaterra', posicion: 'DEL', precio: 59, iso: 'gb-eng' },
-    { id: 405, nombre: 'Harry Kane', equipo: 'Inglaterra', posicion: 'DEL', precio: 61, iso: 'gb-eng' },
-  
-    // --- PORTUGAL (pt) ---
-    { id: 501, nombre: 'Diogo Costa', equipo: 'Portugal', posicion: 'POR', precio: 21, iso: 'pt' },
-    { id: 502, nombre: 'Rúben Dias', equipo: 'Portugal', posicion: 'DEF', precio: 39, iso: 'pt' },
-    { id: 503, nombre: 'B. Fernandes', equipo: 'Portugal', posicion: 'MED', precio: 61, iso: 'pt' },
-    { id: 504, nombre: 'C. Ronaldo', equipo: 'Portugal', posicion: 'DEL', precio: 33, iso: 'pt' },
-  
-    // --- ITALIA (it) ---
-    { id: 601, nombre: 'Donnarumma', equipo: 'Italia', posicion: 'POR', precio: 21, iso: 'it' },
-    { id: 602, nombre: 'Bastoni', equipo: 'Italia', posicion: 'DEF', precio: 28, iso: 'it' },
-    { id: 603, nombre: 'Barella', equipo: 'Italia', posicion: 'MED', precio: 61, iso: 'it' },
-  
-    // --- BÉLGICA (be) ---
-    { id: 701, nombre: 'De Bruyne', equipo: 'Bélgica', posicion: 'MED', precio: 63, iso: 'be' },
-    { id: 702, nombre: 'Lukaku', equipo: 'Bélgica', posicion: 'DEL', precio: 31, iso: 'be' },
-  
-    // --- PAÍSES BAJOS (nl) ---
-    { id: 801, nombre: 'Van Dijk', equipo: 'Países Bajos', posicion: 'DEF', precio: 28, iso: 'nl' },
-    { id: 802, nombre: 'Xavi Simons', equipo: 'Países Bajos', posicion: 'MED', precio: 60, iso: 'nl' },
-  
-    // --- CROACIA (hr) ---
-    { id: 901, nombre: 'Modric', equipo: 'Croacia', posicion: 'MED', precio: 13, iso: 'hr' },
-    { id: 902, nombre: 'Gvardiol', equipo: 'Croacia', posicion: 'DEF', precio: 28, iso: 'hr' },
-  
-    // --- ESCOCIA (gb-sct) ---
-    { id: 1001, nombre: 'Robertson', equipo: 'Escocia', posicion: 'DEF', precio: 28, iso: 'gb-sct' },
-    { id: 1002, nombre: 'McTominay', equipo: 'Escocia', posicion: 'MED', precio: 13, iso: 'gb-sct' },
-  
-    // --- GEORGIA (ge) ---
-    { id: 1101, nombre: 'Mamardashvili', equipo: 'Georgia', posicion: 'POR', precio: 21, iso: 'ge' },
-    { id: 1102, nombre: 'Kvaratskhelia', equipo: 'Georgia', posicion: 'DEL', precio: 61, iso: 'ge' },
-  
-    // --- TURQUÍA (tr) ---
-    { id: 1201, nombre: 'Arda Güler', equipo: 'Turquía', posicion: 'MED', precio: 14, iso: 'tr' },
-    { id: 1202, nombre: 'Çalhanoğlu', equipo: 'Turquía', posicion: 'MED', precio: 59, iso: 'tr' }
-  ];
+  // --- GRUPO A ---
+  // ALEMANIA
+  { id: "GER-01", nombre: "Neuer", posicion: "POR", precio: 42, seleccion: "ALEMANIA" },
+  { id: "GER-02", nombre: "Ter Stegen", posicion: "POR", precio: 35, seleccion: "ALEMANIA" },
+  { id: "GER-03", nombre: "Rüdiger", posicion: "DEF", precio: 48, seleccion: "ALEMANIA" },
+  { id: "GER-04", nombre: "Kimmich", posicion: "DEF", precio: 55, seleccion: "ALEMANIA" },
+  { id: "GER-05", nombre: "Tah", posicion: "DEF", precio: 40, seleccion: "ALEMANIA" },
+  { id: "GER-06", nombre: "Raum", posicion: "DEF", precio: 30, seleccion: "ALEMANIA" },
+  { id: "GER-07", nombre: "Mittelstädt", posicion: "DEF", precio: 28, seleccion: "ALEMANIA" },
+  { id: "GER-08", nombre: "Kroos", posicion: "MED", precio: 55, seleccion: "ALEMANIA" },
+  { id: "GER-09", nombre: "Gündogan", posicion: "MED", precio: 50, seleccion: "ALEMANIA" },
+  { id: "GER-10", nombre: "Musiala", posicion: "MED", precio: 61, seleccion: "ALEMANIA" },
+  { id: "GER-11", nombre: "Wirtz", posicion: "MED", precio: 62, seleccion: "ALEMANIA" },
+  { id: "GER-12", nombre: "Andrich", posicion: "MED", precio: 25, seleccion: "ALEMANIA" },
+  { id: "GER-13", nombre: "Havertz", posicion: "DEL", precio: 52, seleccion: "ALEMANIA" },
+  { id: "GER-14", nombre: "Füllkrug", posicion: "DEL", precio: 38, seleccion: "ALEMANIA" },
+  { id: "GER-15", nombre: "Sané", posicion: "DEL", precio: 48, seleccion: "ALEMANIA" },
+  { id: "GER-16", nombre: "Müller", posicion: "DEL", precio: 35, seleccion: "ALEMANIA" },
+
+  // ESCOCIA
+  { id: "SCO-01", nombre: "Gunn", posicion: "POR", precio: 15, seleccion: "ESCOCIA" },
+  { id: "SCO-02", nombre: "Robertson", posicion: "DEF", precio: 45, seleccion: "ESCOCIA" },
+  { id: "SCO-03", nombre: "Tierney", posicion: "DEF", precio: 35, seleccion: "ESCOCIA" },
+  { id: "SCO-04", nombre: "Hickey", posicion: "DEF", precio: 25, seleccion: "ESCOCIA" },
+  { id: "SCO-05", nombre: "McTominay", posicion: "MED", precio: 35, seleccion: "ESCOCIA" },
+  { id: "SCO-06", nombre: "McGinn", posicion: "MED", precio: 30, seleccion: "ESCOCIA" },
+  { id: "SCO-07", nombre: "Gilmour", posicion: "MED", precio: 20, seleccion: "ESCOCIA" },
+  { id: "SCO-08", nombre: "Adams", posicion: "DEL", precio: 25, seleccion: "ESCOCIA" },
+  { id: "SCO-09", nombre: "Dykes", posicion: "DEL", precio: 20, seleccion: "ESCOCIA" },
+
+  // HUNGRÍA
+  { id: "HUN-01", nombre: "Gulácsi", posicion: "POR", precio: 20, seleccion: "HUNGRÍA" },
+  { id: "HUN-02", nombre: "Orban", posicion: "DEF", precio: 30, seleccion: "HUNGRÍA" },
+  { id: "HUN-03", nombre: "Szalai", posicion: "DEF", precio: 25, seleccion: "HUNGRÍA" },
+  { id: "HUN-04", nombre: "Szoboszlai", posicion: "MED", precio: 55, seleccion: "HUNGRÍA" },
+  { id: "HUN-05", nombre: "Sallai", posicion: "DEL", precio: 25, seleccion: "HUNGRÍA" },
+  { id: "HUN-06", nombre: "Varga", posicion: "DEL", precio: 20, seleccion: "HUNGRÍA" },
+
+  // SUIZA
+  { id: "SUI-01", nombre: "Sommer", posicion: "POR", precio: 35, seleccion: "SUIZA" },
+  { id: "SUI-02", nombre: "Kobel", posicion: "POR", precio: 25, seleccion: "SUIZA" },
+  { id: "SUI-03", nombre: "Akanji", posicion: "DEF", precio: 40, seleccion: "SUIZA" },
+  { id: "SUI-04", nombre: "Schär", posicion: "DEF", precio: 30, seleccion: "SUIZA" },
+  { id: "SUI-05", nombre: "Rodríguez", posicion: "DEF", precio: 25, seleccion: "SUIZA" },
+  { id: "SUI-06", nombre: "Xhaka", posicion: "MED", precio: 40, seleccion: "SUIZA" },
+  { id: "SUI-07", nombre: "Freuler", posicion: "MED", precio: 25, seleccion: "SUIZA" },
+  { id: "SUI-08", nombre: "Zakaria", posicion: "MED", precio: 30, seleccion: "SUIZA" },
+  { id: "SUI-09", nombre: "Shaqiri", posicion: "MED", precio: 28, seleccion: "SUIZA" },
+  { id: "SUI-10", nombre: "Embolo", posicion: "DEL", precio: 30, seleccion: "SUIZA" },
+  { id: "SUI-11", nombre: "Okafor", posicion: "DEL", precio: 25, seleccion: "SUIZA" },
+  { id: "SUI-12", nombre: "Vargas", posicion: "DEL", precio: 20, seleccion: "SUIZA" },
+
+  // --- GRUPO B ---
+  // ESPAÑA
+  { id: "ESP-01", nombre: "Unai Simón", posicion: "POR", precio: 40, seleccion: "ESPAÑA" },
+  { id: "ESP-02", nombre: "David Raya", posicion: "POR", precio: 25, seleccion: "ESPAÑA" },
+  { id: "ESP-03", nombre: "Remiro", posicion: "POR", precio: 15, seleccion: "ESPAÑA" },
+  { id: "ESP-04", nombre: "Carvajal", posicion: "DEF", precio: 45, seleccion: "ESPAÑA" },
+  { id: "ESP-05", nombre: "Jesús Navas", posicion: "DEF", precio: 18, seleccion: "ESPAÑA" },
+  { id: "ESP-06", nombre: "Laporte", posicion: "DEF", precio: 42, seleccion: "ESPAÑA" },
+  { id: "ESP-07", nombre: "Le Normand", posicion: "DEF", precio: 38, seleccion: "ESPAÑA" },
+  { id: "ESP-08", nombre: "Nacho", posicion: "DEF", precio: 25, seleccion: "ESPAÑA" },
+  { id: "ESP-09", nombre: "Vivian", posicion: "DEF", precio: 15, seleccion: "ESPAÑA" },
+  { id: "ESP-10", nombre: "Grimaldo", posicion: "DEF", precio: 48, seleccion: "ESPAÑA" },
+  { id: "ESP-11", nombre: "Cucurella", posicion: "DEF", precio: 30, seleccion: "ESPAÑA" },
+  { id: "ESP-12", nombre: "Rodri", posicion: "MED", precio: 61, seleccion: "ESPAÑA" },
+  { id: "ESP-13", nombre: "Zubimendi", posicion: "MED", precio: 28, seleccion: "ESPAÑA" },
+  { id: "ESP-14", nombre: "Mikel Merino", posicion: "MED", precio: 32, seleccion: "ESPAÑA" },
+  { id: "ESP-15", nombre: "Fabián", posicion: "MED", precio: 35, seleccion: "ESPAÑA" },
+  { id: "ESP-16", nombre: "Pedri", posicion: "MED", precio: 61, seleccion: "ESPAÑA" },
+  { id: "ESP-17", nombre: "Fermín", posicion: "MED", precio: 22, seleccion: "ESPAÑA" },
+  { id: "ESP-18", nombre: "Alex Baena", posicion: "MED", precio: 20, seleccion: "ESPAÑA" },
+  { id: "ESP-19", nombre: "Dani Olmo", posicion: "MED", precio: 45, seleccion: "ESPAÑA" },
+  { id: "ESP-20", nombre: "Nico Williams", posicion: "DEL", precio: 55, seleccion: "ESPAÑA" },
+  { id: "ESP-21", nombre: "Lamine Yamal", posicion: "DEL", precio: 58, seleccion: "ESPAÑA" },
+  { id: "ESP-22", nombre: "Ferran Torres", posicion: "DEL", precio: 38, seleccion: "ESPAÑA" },
+  { id: "ESP-23", nombre: "Morata", posicion: "DEL", precio: 48, seleccion: "ESPAÑA" },
+  { id: "ESP-24", nombre: "Joselu", posicion: "DEL", precio: 25, seleccion: "ESPAÑA" },
+  { id: "ESP-25", nombre: "Oyarzabal", posicion: "DEL", precio: 35, seleccion: "ESPAÑA" },
+  { id: "ESP-26", nombre: "Ayoze", posicion: "DEL", precio: 20, seleccion: "ESPAÑA" },
+
+  // CROACIA
+  { id: "CRO-01", nombre: "Livakovic", posicion: "POR", precio: 35, seleccion: "CROACIA" },
+  { id: "CRO-02", nombre: "Gvardiol", posicion: "DEF", precio: 50, seleccion: "CROACIA" },
+  { id: "CRO-03", nombre: "Stanisic", posicion: "DEF", precio: 35, seleccion: "CROACIA" },
+  { id: "CRO-04", nombre: "Sutalo", posicion: "DEF", precio: 30, seleccion: "CROACIA" },
+  { id: "CRO-05", nombre: "Modric", posicion: "MED", precio: 50, seleccion: "CROACIA" },
+  { id: "CRO-06", nombre: "Kovacic", posicion: "MED", precio: 45, seleccion: "CROACIA" },
+  { id: "CRO-07", nombre: "Brozovic", posicion: "MED", precio: 40, seleccion: "CROACIA" },
+  { id: "CRO-08", nombre: "Majer", posicion: "MED", precio: 35, seleccion: "CROACIA" },
+  { id: "CRO-09", nombre: "Kramaric", posicion: "DEL", precio: 38, seleccion: "CROACIA" },
+  { id: "CRO-10", nombre: "Budimir", posicion: "DEL", precio: 30, seleccion: "CROACIA" },
+  { id: "CRO-11", nombre: "Petkovic", posicion: "DEL", precio: 28, seleccion: "CROACIA" },
+  { id: "CRO-12", nombre: "Perisic", posicion: "DEL", precio: 35, seleccion: "CROACIA" },
+
+  // ITALIA
+  { id: "ITA-01", nombre: "Donnarumma", posicion: "POR", precio: 50, seleccion: "ITALIA" },
+  { id: "ITA-02", nombre: "Vicario", posicion: "POR", precio: 25, seleccion: "ITALIA" },
+  { id: "ITA-03", nombre: "Di Lorenzo", posicion: "DEF", precio: 40, seleccion: "ITALIA" },
+  { id: "ITA-04", nombre: "Bastoni", posicion: "DEF", precio: 48, seleccion: "ITALIA" },
+  { id: "ITA-05", nombre: "Dimarco", posicion: "DEF", precio: 45, seleccion: "ITALIA" },
+  { id: "ITA-06", nombre: "Mancini", posicion: "DEF", precio: 30, seleccion: "ITALIA" },
+  { id: "ITA-07", nombre: "Barella", posicion: "MED", precio: 61, seleccion: "ITALIA" },
+  { id: "ITA-08", nombre: "Jorginho", posicion: "MED", precio: 35, seleccion: "ITALIA" },
+  { id: "ITA-09", nombre: "Pellegrini", posicion: "MED", precio: 42, seleccion: "ITALIA" },
+  { id: "ITA-10", nombre: "Frattesi", posicion: "MED", precio: 38, seleccion: "ITALIA" },
+  { id: "ITA-11", nombre: "Chiesa", posicion: "DEL", precio: 52, seleccion: "ITALIA" },
+  { id: "ITA-12", nombre: "Scamacca", posicion: "DEL", precio: 40, seleccion: "ITALIA" },
+  { id: "ITA-13", nombre: "Retegui", posicion: "DEL", precio: 30, seleccion: "ITALIA" },
+  { id: "ITA-14", nombre: "Raspadori", posicion: "DEL", precio: 35, seleccion: "ITALIA" },
+
+  // ALBANIA
+  { id: "ALB-01", nombre: "Strakosha", posicion: "POR", precio: 7, seleccion: "ALBANIA" },
+  { id: "ALB-02", nombre: "Berisha", posicion: "POR", precio: 7, seleccion: "ALBANIA" },
+  { id: "ALB-03", nombre: "Djimsiti", posicion: "DEF", precio: 7, seleccion: "ALBANIA" },
+  { id: "ALB-04", nombre: "Hysaj", posicion: "DEF", precio: 7, seleccion: "ALBANIA" },
+  { id: "ALB-05", nombre: "Asllani", posicion: "MED", precio: 8, seleccion: "ALBANIA" },
+  { id: "ALB-06", nombre: "Bajrami", posicion: "MED", precio: 8, seleccion: "ALBANIA" },
+  { id: "ALB-07", nombre: "Broja", posicion: "DEL", precio: 9, seleccion: "ALBANIA" },
+
+  // --- GRUPO C ---
+  // INGLATERRA
+  { id: "ENG-01", nombre: "Pickford", posicion: "POR", precio: 40, seleccion: "INGLATERRA" },
+  { id: "ENG-02", nombre: "Ramsdale", posicion: "POR", precio: 20, seleccion: "INGLATERRA" },
+  { id: "ENG-03", nombre: "Walker", posicion: "DEF", precio: 48, seleccion: "INGLATERRA" },
+  { id: "ENG-04", nombre: "Stones", posicion: "DEF", precio: 50, seleccion: "INGLATERRA" },
+  { id: "ENG-05", nombre: "Trippier", posicion: "DEF", precio: 42, seleccion: "INGLATERRA" },
+  { id: "ENG-06", nombre: "Maguire", posicion: "DEF", precio: 35, seleccion: "INGLATERRA" },
+  { id: "ENG-07", nombre: "Guehi", posicion: "DEF", precio: 30, seleccion: "INGLATERRA" },
+  { id: "ENG-08", nombre: "Alexander-Arnold", posicion: "DEF", precio: 55, seleccion: "INGLATERRA" },
+  { id: "ENG-09", nombre: "Rice", posicion: "MED", precio: 61, seleccion: "INGLATERRA" },
+  { id: "ENG-10", nombre: "Bellingham", posicion: "MED", precio: 64, seleccion: "INGLATERRA" },
+  { id: "ENG-11", nombre: "Foden", posicion: "MED", precio: 60, seleccion: "INGLATERRA" },
+  { id: "ENG-12", nombre: "Gallagher", posicion: "MED", precio: 30, seleccion: "INGLATERRA" },
+  { id: "ENG-13", nombre: "Palmer", posicion: "MED", precio: 45, seleccion: "INGLATERRA" },
+  { id: "ENG-14", nombre: "Saka", posicion: "DEL", precio: 58, seleccion: "INGLATERRA" },
+  { id: "ENG-15", nombre: "Kane", posicion: "DEL", precio: 61, seleccion: "INGLATERRA" },
+  { id: "ENG-16", nombre: "Watkins", posicion: "DEL", precio: 40, seleccion: "INGLATERRA" },
+  { id: "ENG-17", nombre: "Toney", posicion: "DEL", precio: 35, seleccion: "INGLATERRA" },
+  { id: "ENG-18", nombre: "Gordon", posicion: "DEL", precio: 30, seleccion: "INGLATERRA" },
+
+  // DINAMARCA
+  { id: "DEN-01", nombre: "Schmeichel", posicion: "POR", precio: 30, seleccion: "DINAMARCA" },
+  { id: "DEN-02", nombre: "Christensen", posicion: "DEF", precio: 40, seleccion: "DINAMARCA" },
+  { id: "DEN-03", nombre: "Andersen", posicion: "DEF", precio: 35, seleccion: "DINAMARCA" },
+  { id: "DEN-04", nombre: "Maehle", posicion: "DEF", precio: 38, seleccion: "DINAMARCA" },
+  { id: "DEN-05", nombre: "Eriksen", posicion: "MED", precio: 35, seleccion: "DINAMARCA" },
+  { id: "DEN-06", nombre: "Hojbjerg", posicion: "MED", precio: 30, seleccion: "DINAMARCA" },
+  { id: "DEN-07", nombre: "Hojlund", posicion: "DEL", precio: 45, seleccion: "DINAMARCA" },
+  { id: "DEN-08", nombre: "Wind", posicion: "DEL", precio: 25, seleccion: "DINAMARCA" },
+
+  // SERBIA
+  { id: "SRB-01", nombre: "V. Milinkovic-Savic", posicion: "POR", precio: 15, seleccion: "SERBIA" },
+  { id: "SRB-02", nombre: "Milenkovic", posicion: "DEF", precio: 20, seleccion: "SERBIA" },
+  { id: "SRB-03", nombre: "S. Milinkovic-Savic", posicion: "MED", precio: 35, seleccion: "SERBIA" },
+  { id: "SRB-04", nombre: "Tadic", posicion: "MED", precio: 30, seleccion: "SERBIA" },
+  { id: "SRB-05", nombre: "Vlahovic", posicion: "DEL", precio: 45, seleccion: "SERBIA" },
+  { id: "SRB-06", nombre: "Mitrovic", posicion: "DEL", precio: 40, seleccion: "SERBIA" },
+
+  // ESLOVENIA
+  { id: "SVN-01", nombre: "Oblak", posicion: "POR", precio: 35, seleccion: "ESLOVENIA" },
+  { id: "SVN-02", nombre: "Sesko", posicion: "DEL", precio: 30, seleccion: "ESLOVENIA" },
+
+  // --- GRUPO D ---
+  // FRANCIA
+  { id: "FRA-01", nombre: "Maignan", posicion: "POR", precio: 45, seleccion: "FRANCIA" },
+  { id: "FRA-02", nombre: "Samba", posicion: "POR", precio: 15, seleccion: "FRANCIA" },
+  { id: "FRA-03", nombre: "Areola", posicion: "POR", precio: 15, seleccion: "FRANCIA" },
+  { id: "FRA-04", nombre: "Koundé", posicion: "DEF", precio: 48, seleccion: "FRANCIA" },
+  { id: "FRA-05", nombre: "Clauss", posicion: "DEF", precio: 35, seleccion: "FRANCIA" },
+  { id: "FRA-06", nombre: "Upamecano", posicion: "DEF", precio: 45, seleccion: "FRANCIA" },
+  { id: "FRA-07", nombre: "Konaté", posicion: "DEF", precio: 42, seleccion: "FRANCIA" },
+  { id: "FRA-08", nombre: "Saliba", posicion: "DEF", precio: 50, seleccion: "FRANCIA" },
+  { id: "FRA-09", nombre: "Theo Hernández", posicion: "DEF", precio: 55, seleccion: "FRANCIA" },
+  { id: "FRA-10", nombre: "Mendy", posicion: "DEF", precio: 35, seleccion: "FRANCIA" },
+  { id: "FRA-11", nombre: "Pavard", posicion: "DEF", precio: 38, seleccion: "FRANCIA" },
+  { id: "FRA-12", nombre: "Camavinga", posicion: "MED", precio: 52, seleccion: "FRANCIA" },
+  { id: "FRA-13", nombre: "Tchouaméni", posicion: "MED", precio: 61, seleccion: "FRANCIA" },
+  { id: "FRA-14", nombre: "Rabiot", posicion: "MED", precio: 40, seleccion: "FRANCIA" },
+  { id: "FRA-15", nombre: "Zaire-Emery", posicion: "MED", precio: 25, seleccion: "FRANCIA" },
+  { id: "FRA-16", nombre: "Griezmann", posicion: "MED", precio: 61, seleccion: "FRANCIA" },
+  { id: "FRA-17", nombre: "Kanté", posicion: "MED", precio: 35, seleccion: "FRANCIA" },
+  { id: "FRA-18", nombre: "Dembélé", posicion: "DEL", precio: 55, seleccion: "FRANCIA" },
+  { id: "FRA-19", nombre: "Mbappé", posicion: "DEL", precio: 75, seleccion: "FRANCIA" },
+  { id: "FRA-20", nombre: "Coman", posicion: "DEL", precio: 45, seleccion: "FRANCIA" },
+  { id: "FRA-21", nombre: "Thuram", posicion: "DEL", precio: 42, seleccion: "FRANCIA" },
+  { id: "FRA-22", nombre: "Giroud", posicion: "DEL", precio: 35, seleccion: "FRANCIA" },
+  { id: "FRA-23", nombre: "Kolo Muani", posicion: "DEL", precio: 40, seleccion: "FRANCIA" },
+  { id: "FRA-24", nombre: "Barcola", posicion: "DEL", precio: 28, seleccion: "FRANCIA" },
+
+  // PAÍSES BAJOS
+  { id: "NED-01", nombre: "Verbruggen", posicion: "POR", precio: 25, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-02", nombre: "Dumfries", posicion: "DEF", precio: 48, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-03", nombre: "Van Dijk", posicion: "DEF", precio: 55, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-04", nombre: "Aké", posicion: "DEF", precio: 45, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-05", nombre: "Frimpong", posicion: "DEF", precio: 50, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-06", nombre: "De Ligt", posicion: "DEF", precio: 40, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-07", nombre: "Frenkie De Jong", posicion: "MED", precio: 61, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-08", nombre: "Simons", posicion: "MED", precio: 55, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-09", nombre: "Reijnders", posicion: "MED", precio: 35, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-10", nombre: "Gakpo", posicion: "DEL", precio: 50, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-11", nombre: "Depay", posicion: "DEL", precio: 45, seleccion: "PAÍSES BAJOS" },
+  { id: "NED-12", nombre: "Malen", posicion: "DEL", precio: 30, seleccion: "PAÍSES BAJOS" },
+
+  // AUSTRIA
+  { id: "AUT-01", nombre: "Pentz", posicion: "POR", precio: 10, seleccion: "AUSTRIA" },
+  { id: "AUT-02", nombre: "Sabitzer", posicion: "MED", precio: 40, seleccion: "AUSTRIA" },
+  { id: "AUT-03", nombre: "Laimer", posicion: "MED", precio: 35, seleccion: "AUSTRIA" },
+  { id: "AUT-04", nombre: "Baumgartner", posicion: "MED", precio: 30, seleccion: "AUSTRIA" },
+  { id: "AUT-05", nombre: "Arnautovic", posicion: "DEL", precio: 25, seleccion: "AUSTRIA" },
+
+  // POLONIA
+  { id: "POL-01", nombre: "Szczesny", posicion: "POR", precio: 30, seleccion: "POLONIA" },
+  { id: "POL-02", nombre: "Kiwior", posicion: "DEF", precio: 25, seleccion: "POLONIA" },
+  { id: "POL-03", nombre: "Zielinski", posicion: "MED", precio: 35, seleccion: "POLONIA" },
+  { id: "POL-04", nombre: "Lewandowski", posicion: "DEL", precio: 55, seleccion: "POLONIA" },
+
+  // --- GRUPO E ---
+  // BÉLGICA
+  { id: "BEL-01", nombre: "Casteels", posicion: "POR", precio: 30, seleccion: "BÉLGICA" },
+  { id: "BEL-02", nombre: "Castagne", posicion: "DEF", precio: 35, seleccion: "BÉLGICA" },
+  { id: "BEL-03", nombre: "Faes", posicion: "DEF", precio: 25, seleccion: "BÉLGICA" },
+  { id: "BEL-04", nombre: "Vertonghen", posicion: "DEF", precio: 20, seleccion: "BÉLGICA" },
+  { id: "BEL-05", nombre: "De Bruyne", posicion: "MED", precio: 63, seleccion: "BÉLGICA" },
+  { id: "BEL-06", nombre: "Onana", posicion: "MED", precio: 35, seleccion: "BÉLGICA" },
+  { id: "BEL-07", nombre: "Tielemans", posicion: "MED", precio: 38, seleccion: "BÉLGICA" },
+  { id: "BEL-08", nombre: "Doku", posicion: "DEL", precio: 52, seleccion: "BÉLGICA" },
+  { id: "BEL-09", nombre: "Lukaku", posicion: "DEL", precio: 58, seleccion: "BÉLGICA" },
+  { id: "BEL-10", nombre: "Trossard", posicion: "DEL", precio: 45, seleccion: "BÉLGICA" },
+  { id: "BEL-11", nombre: "Openda", posicion: "DEL", precio: 30, seleccion: "BÉLGICA" },
+
+  // UCRANIA
+  { id: "UKR-01", nombre: "Lunin", posicion: "POR", precio: 35, seleccion: "UCRANIA" },
+  { id: "UKR-02", nombre: "Trubin", posicion: "POR", precio: 17, seleccion: "UCRANIA" },
+  { id: "UKR-03", nombre: "Zinchenko", posicion: "DEF", precio: 40, seleccion: "UCRANIA" },
+  { id: "UKR-04", nombre: "Mykolenko", posicion: "DEF", precio: 25, seleccion: "UCRANIA" },
+  { id: "UKR-05", nombre: "Mudryk", posicion: "MED", precio: 45, seleccion: "UCRANIA" },
+  { id: "UKR-06", nombre: "Sudakov", posicion: "MED", precio: 30, seleccion: "UCRANIA" },
+  { id: "UKR-07", nombre: "Tsygankov", posicion: "MED", precio: 35, seleccion: "UCRANIA" },
+  { id: "UKR-08", nombre: "Dovbyk", posicion: "DEL", precio: 45, seleccion: "UCRANIA" },
+  { id: "UKR-09", nombre: "Yaremchuk", posicion: "DEL", precio: 20, seleccion: "UCRANIA" },
+
+  // RUMANÍA
+  { id: "ROU-01", nombre: "Moldovan", posicion: "POR", precio: 10, seleccion: "RUMANÍA" },
+  { id: "ROU-02", nombre: "Dragusin", posicion: "DEF", precio: 25, seleccion: "RUMANÍA" },
+  { id: "ROU-03", nombre: "Stanciu", posicion: "MED", precio: 15, seleccion: "RUMANÍA" },
+
+  // ESLOVAQUIA
+  { id: "SVK-01", nombre: "Dubravka", posicion: "POR", precio: 15, seleccion: "ESLOVAQUIA" },
+  { id: "SVK-02", nombre: "Skriniar", posicion: "DEF", precio: 35, seleccion: "ESLOVAQUIA" },
+  { id: "SVK-03", nombre: "Hancko", posicion: "DEF", precio: 30, seleccion: "ESLOVAQUIA" },
+  { id: "SVK-04", nombre: "Lobotka", posicion: "MED", precio: 25, seleccion: "ESLOVAQUIA" },
+
+  // --- GRUPO F ---
+  // PORTUGAL
+  { id: "POR-01", nombre: "Diogo Costa", posicion: "POR", precio: 38, seleccion: "PORTUGAL" },
+  { id: "POR-02", nombre: "Rui Patrício", posicion: "POR", precio: 15, seleccion: "PORTUGAL" },
+  { id: "POR-03", nombre: "Cancelo", posicion: "DEF", precio: 52, seleccion: "PORTUGAL" },
+  { id: "POR-04", nombre: "Dalot", posicion: "DEF", precio: 40, seleccion: "PORTUGAL" },
+  { id: "POR-05", nombre: "Ruben Dias", posicion: "DEF", precio: 50, seleccion: "PORTUGAL" },
+  { id: "POR-06", nombre: "Pepe", posicion: "DEF", precio: 20, seleccion: "PORTUGAL" },
+  { id: "POR-07", nombre: "Inacio", posicion: "DEF", precio: 35, seleccion: "PORTUGAL" },
+  { id: "POR-08", nombre: "Nuno Mendes", posicion: "DEF", precio: 45, seleccion: "PORTUGAL" },
+  { id: "POR-09", nombre: "Palhinha", posicion: "MED", precio: 40, seleccion: "PORTUGAL" },
+  { id: "POR-10", nombre: "Vitinha", posicion: "MED", precio: 38, seleccion: "PORTUGAL" },
+  { id: "POR-11", nombre: "Bruno Fernandes", posicion: "MED", precio: 61, seleccion: "PORTUGAL" },
+  { id: "POR-12", nombre: "Otavio", posicion: "MED", precio: 30, seleccion: "PORTUGAL" },
+  { id: "POR-13", nombre: "Bernardo Silva", posicion: "DEL", precio: 58, seleccion: "PORTUGAL" },
+  { id: "POR-14", nombre: "Cristiano Ronaldo", posicion: "DEL", precio: 55, seleccion: "PORTUGAL" },
+  { id: "POR-15", nombre: "Leao", posicion: "DEL", precio: 52, seleccion: "PORTUGAL" },
+  { id: "POR-16", nombre: "Joao Félix", posicion: "DEL", precio: 45, seleccion: "PORTUGAL" },
+  { id: "POR-17", nombre: "Diogo Jota", posicion: "DEL", precio: 42, seleccion: "PORTUGAL" },
+  { id: "POR-18", nombre: "Gonçalo Ramos", posicion: "DEL", precio: 35, seleccion: "PORTUGAL" },
+
+  // TURQUÍA
+  { id: "TUR-01", nombre: "Cakir", posicion: "POR", precio: 15, seleccion: "TURQUÍA" },
+  { id: "TUR-02", nombre: "Kadioglu", posicion: "DEF", precio: 25, seleccion: "TURQUÍA" },
+  { id: "TUR-03", nombre: "Demiral", posicion: "DEF", precio: 20, seleccion: "TURQUÍA" },
+  { id: "TUR-04", nombre: "Çalhanoglu", posicion: "MED", precio: 45, seleccion: "TURQUÍA" },
+  { id: "TUR-05", nombre: "Kokcu", posicion: "MED", precio: 30, seleccion: "TURQUÍA" },
+  { id: "TUR-06", nombre: "Arda Güler", posicion: "MED", precio: 35, seleccion: "TURQUÍA" },
+  { id: "TUR-07", nombre: "Yildiz", posicion: "DEL", precio: 30, seleccion: "TURQUÍA" },
+
+  // REPÚBLICA CHECA
+  { id: "CZE-01", nombre: "Stanek", posicion: "POR", precio: 10, seleccion: "REP. CHECA" },
+  { id: "CZE-02", nombre: "Coufal", posicion: "DEF", precio: 20, seleccion: "REP. CHECA" },
+  { id: "CZE-03", nombre: "Soucek", posicion: "MED", precio: 35, seleccion: "REP. CHECA" },
+  { id: "CZE-04", nombre: "Schick", posicion: "DEL", precio: 35, seleccion: "REP. CHECA" },
+
+  // GEORGIA
+  { id: "GEO-01", nombre: "Mamardashvili", posicion: "POR", precio: 40, seleccion: "GEORGIA" },
+  { id: "GEO-02", nombre: "Kvaratskhelia", posicion: "DEL", precio: 61, seleccion: "GEORGIA" },
+  { id: "GEO-03", nombre: "Mikautadze", posicion: "DEL", precio: 20, seleccion: "GEORGIA" }
+];
