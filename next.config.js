@@ -1,13 +1,15 @@
+const withPWA = require("@ducanh2912/next-pwa").default({
+    dest: "public",
+      cacheOnFrontEndNav: true,
+        aggressiveFrontEndNavCaching: true,
+          reloadOnOnline: true,
+            swMinify: true,
+              disable: process.env.NODE_ENV === "development",
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    eslint: {
-      // Esto le dice a Vercel: "Ignora las advertencias de las fotos y publica"
-      ignoreDuringBuilds: true,
-    },
-    typescript: {
-      // Esto ignora errores de escritura técnica para que no se detenga
-      ignoreBuildErrors: true,
-    },
-  }
-  
-  module.exports = nextConfig
+    reactStrictMode: true,
+};
+
+module.exports = withPWA(nextConfig);
