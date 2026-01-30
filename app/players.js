@@ -628,7 +628,7 @@ export const PLAYERS_DB = [
   { id: "CZE-16", nombre: "Sadilek", posicion: "MED", precio: 12, seleccion: "República Checa" },
   { id: "CZE-17", nombre: "Sulc", posicion: "MED", precio: 10, seleccion: "República Checa" },
   { id: "CZE-18", nombre: "Lingr", posicion: "MED", precio: 10, seleccion: "República Checa" },
-  { id: "CZE-19", nombre: "Cerv", posicion: "MED", precio: 8, seleccion: "República Checa" },
+  { id: "CZE-19", nombre: "Cerv", posicion: "MED", precio: 9, seleccion: "República Checa" },
   { id: "CZE-20", nombre: "Matej Jurasek", posicion: "MED", precio: 8, seleccion: "República Checa" },
   { id: "CZE-21", nombre: "Schick", posicion: "DEL", precio: 34, seleccion: "República Checa" },
   { id: "CZE-22", nombre: "Hlozek", posicion: "DEL", precio: 20, seleccion: "República Checa" },
