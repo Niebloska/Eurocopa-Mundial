@@ -9,8 +9,6 @@ const MASTER_EMAIL = "admin@euro2024.com";
 
 // Generador de equipos FIJOS para evitar errores de hidratación
 const getMockSquad = (offset: number) => {
-  // Simplemente cogemos jugadores en orden basándonos en un offset para que no sean aleatorios
-  // Esto evita el fallo de "Hydration Error" en Next.js
   const safePlayers = PLAYERS_DB.length > 0 ? PLAYERS_DB : [];
   if (safePlayers.length === 0) return { titulares: [], banquillo: [], extras: [] };
 
@@ -185,7 +183,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   );
 };
 
-// --- TEAM CARD (EXPANDIBLE) ---
+// --- TEAM CARD ---
 const TeamCard = ({ team, rank, isMyTeam }: any) => {
   const [expanded, setExpanded] = useState(false);
   
@@ -331,7 +329,8 @@ export default function EuroApp() {
   }, [teamName, selected, captain, bench, step, isEditing]);
 
   const allPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
-  const budgetSpent = allPlayers.reduce((acc, p: any) => acc + p.precio, 0);
+  // --- CORRECCIÓN DE TIPO AQUÍ ---
+  const budgetSpent: number = allPlayers.reduce((acc: number, p: any) => acc + p.precio, 0);
   const isOverBudget = budgetSpent > 300;
   
   const tactic = useMemo(() => {
