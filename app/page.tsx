@@ -183,7 +183,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   );
 };
 
-// --- TEAM CARD ---
+// --- TEAM CARD (EXPANDIBLE) ---
 const TeamCard = ({ team, rank, isMyTeam }: any) => {
   const [expanded, setExpanded] = useState(false);
   
@@ -329,7 +329,6 @@ export default function EuroApp() {
   }, [teamName, selected, captain, bench, step, isEditing]);
 
   const allPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
-  // --- CORRECCIÓN DE TIPO AQUÍ ---
   const budgetSpent: number = allPlayers.reduce((acc: number, p: any) => acc + p.precio, 0);
   const isOverBudget = budgetSpent > 300;
   
@@ -362,7 +361,8 @@ export default function EuroApp() {
   const canInteractExtras = (step === 5) || isEditing;
 
   const combinedTeamsList = useMemo(() => {
-    let list = [...MOCK_TEAMS_DB];
+    // --- AQUÍ ESTÁ EL CAMBIO CRUCIAL: 'any[]' para permitir mezcla de tipos ---
+    let list: any[] = [...MOCK_TEAMS_DB]; 
     if (isSaved && user) {
         const mySquad = {
             titulares: Object.values(selected),
