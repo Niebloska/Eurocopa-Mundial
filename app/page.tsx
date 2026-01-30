@@ -361,7 +361,6 @@ export default function EuroApp() {
   const canInteractExtras = (step === 5) || isEditing;
 
   const combinedTeamsList = useMemo(() => {
-    // --- AQUÍ ESTÁ EL CAMBIO CRUCIAL: 'any[]' para permitir mezcla de tipos ---
     let list: any[] = [...MOCK_TEAMS_DB]; 
     if (isSaved && user) {
         const mySquad = {
@@ -595,7 +594,8 @@ export default function EuroApp() {
         <SelectionModal activeSlot={activeSlot} onClose={() => setActiveSlot(null)} sortValue={sortValue} setSortValue={setSortValue} sortAlpha={sortAlpha} setSortAlpha={setSortAlpha} activeSortType={activeSortType} setActiveSortType={setActiveSortType}
           onSelect={(p: any) => {
             const isTitular = activeSlot.type === 'titular';
-            const currentCount = allPlayers.filter(pl => pl.seleccion === p.seleccion && pl.id !== (selected[activeSlot.id] || bench[activeSlot.id] || extras[activeSlot.id])?.id).length;
+            // AQUI ESTA LA CORRECCION DEL FILTRO (pl: any)
+            const currentCount = allPlayers.filter((pl: any) => pl.seleccion === p.seleccion && pl.id !== (selected[activeSlot.id] || bench[activeSlot.id] || extras[activeSlot.id])?.id).length;
             if (currentCount >= 7) { alert(`⚠️ LÍMITE ALCANZADO: No puedes tener más de 7 jugadores de ${p.seleccion}.`); return; }
             const currentTitulares = Object.keys(selected).length;
             if (isTitular && !selected[activeSlot.id] && currentTitulares >= 11) { alert("¡Ya tienes 11 titulares! No puedes añadir más."); return; }
