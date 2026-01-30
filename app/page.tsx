@@ -1,27 +1,27 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Timer, Globe, Check, LockOpen, X, Lock, ArrowUpDown, ArrowDownUp, Trash2, Ban, ArrowRight, Trophy, Edit3, ArrowLeft, Save } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Plus, Timer, Check, X, Lock, ArrowUpDown, ArrowDownUp, Trash2, Ban, ArrowRight, Trophy, Edit3, ArrowLeft, Save, Volume2, VolumeX } from 'lucide-react';
 import { PLAYERS_DB } from './players';
 
 // --- DATOS DE GRUPOS EURO 2024 ---
 const EURO_GROUPS = [
-  { name: "GRUPO A", teams: ["ALEMANIA", "ESCOCIA", "HUNGRÍA", "SUIZA"] },
-  { name: "GRUPO B", teams: ["ESPAÑA", "CROACIA", "ITALIA", "ALBANIA"] },
-  { name: "GRUPO C", teams: ["ESLOVENIA", "DINAMARCA", "SERBIA", "INGLATERRA"] },
-  { name: "GRUPO D", teams: ["POLONIA", "P. BAJOS", "AUSTRIA", "FRANCIA"] },
-  { name: "GRUPO E", teams: ["BÉLGICA", "ESLOVAQUIA", "RUMANÍA", "UCRANIA"] },
-  { name: "GRUPO F", teams: ["TURQUÍA", "GEORGIA", "PORTUGAL", "REP. CHECA"] },
+  { name: "GRUPO A", teams: ["Alemania", "Escocia", "Hungría", "Suiza"] },
+  { name: "GRUPO B", teams: ["España", "Croacia", "Italia", "Albania"] },
+  { name: "GRUPO C", teams: ["Eslovenia", "Dinamarca", "Serbia", "Inglaterra"] },
+  { name: "GRUPO D", teams: ["Polonia", "Países Bajos", "Austria", "Francia"] },
+  { name: "GRUPO E", teams: ["Bélgica", "Eslovaquia", "Rumanía", "Ucrania"] },
+  { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
 ];
 
 // --- FUNCIONES AUXILIARES ---
 const getFlag = (country: string) => {
   const flags: Record<string, string> = {
-    "ESPAÑA": "🇪🇸", "ALEMANIA": "🇩🇪", "FRANCIA": "🇫🇷", "INGLATERRA": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 
-    "ESCOCIA": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "TURQUÍA": "🇹🇷", "GEORGIA": "🇬🇪", "PORTUGAL": "🇵🇹", "P. BAJOS": "🇳🇱",
-    "ITALIA": "🇮🇹", "ALBANIA": "🇦🇱", "HUNGRÍA": "🇭🇺", "SUIZA": "🇨🇭", "CROACIA": "🇭🇷",
-    "ESLOVENIA": "🇸🇮", "DINAMARCA": "🇩🇰", "SERBIA": "🇷🇸", "POLONIA": "🇵🇱", "AUSTRIA": "🇦🇹",
-    "BÉLGICA": "🇧🇪", "ESLOVAQUIA": "🇸🇰", "RUMANÍA": "🇷🇴", "UCRANIA": "🇺🇦", "REP. CHECA": "🇨🇿"
+    "España": "🇪🇸", "Alemania": "🇩🇪", "Francia": "🇫🇷", "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 
+    "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Turquía": "🇹🇷", "Georgia": "🇬🇪", "Portugal": "🇵🇹", "Países Bajos": "🇳🇱",
+    "Italia": "🇮🇹", "Albania": "🇦🇱", "Hungría": "🇭🇺", "Suiza": "🇨🇭", "Croacia": "🇭🇷",
+    "Eslovenia": "🇸🇮", "Dinamarca": "🇩🇰", "Serbia": "🇷🇸", "Polonia": "🇵🇱", "Austria": "🇦🇹",
+    "Bélgica": "🇧🇪", "Eslovaquia": "🇸🇰", "Rumanía": "🇷🇴", "Ucrania": "🇺🇦", "República Checa": "🇨🇿"
   };
   return flags[country] || "🏳️";
 };
@@ -33,31 +33,45 @@ const posColors: Record<string, string> = {
   "DEL": "bg-[#ef4444] text-white"
 };
 
-// Formaciones válidas (Defensas-Medios-Delanteros)
 const VALID_FORMATIONS = [
   "3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", "5-4-1"
 ];
 
-const Typewriter = ({ text }: { text: string }) => {
+const Typewriter = ({ text, delay = 0 }: { text: string, delay?: number }) => {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
-    let i = 0; setDisplayedText(""); 
-    const intervalId = setInterval(() => {
-      setDisplayedText((prev) => text.substring(0, i + 1));
-      i++;
-      if (i === text.length) clearInterval(intervalId);
-    }, 20);
-    return () => clearInterval(intervalId);
-  }, [text]);
+    let i = 0; 
+    setDisplayedText(""); 
+    
+    const startTyping = () => {
+      const intervalId = setInterval(() => {
+        setDisplayedText((prev) => text.substring(0, i + 1));
+        i++;
+        if (i === text.length) clearInterval(intervalId);
+      }, 15);
+      return intervalId;
+    };
+
+    const timeoutId = setTimeout(() => {
+        const interval = startTyping();
+        return () => clearInterval(interval);
+    }, delay);
+
+    return () => clearTimeout(timeoutId);
+  }, [text, delay]);
+  
   return <span>{displayedText}</span>;
 };
 
 const Countdown = () => {
-  const [timeLeft, setTimeLeft] = useState(12 * 24 * 60 * 60 + 13 * 3600 + 58 * 60 + 16);
+  // Simulación: Estamos a 30 Enero 2024. Eurocopa empieza 14 Junio 2024.
+  const [timeLeft, setTimeLeft] = useState(136 * 24 * 60 * 60 + 13 * 3600 + 45 * 60); 
+
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
     return () => clearInterval(timer);
   }, []);
+  
   const formatTime = (s: number) => {
     const d = Math.floor(s / 86400);
     const h = Math.floor((s % 86400) / 3600);
@@ -66,6 +80,34 @@ const Countdown = () => {
     return `${d}D ${h}H ${m}M ${sec}S`;
   };
   return <span className="text-xl font-black italic uppercase tracking-tighter w-44 inline-block text-[#facc15]">{formatTime(timeLeft)}</span>;
+};
+
+// --- COMPONENTE DE MÚSICA ---
+const MusicPlayer = () => {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/Banda sonora EF 2024.mp3"); 
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.5;
+  }, []);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(e => console.log("Audio play blocked", e));
+    }
+    setPlaying(!playing);
+  };
+
+  return (
+    <button onClick={togglePlay} className="p-3 bg-[#1c2a45] rounded-full border border-white/10 hover:bg-white/10 transition-all text-[#22c55e]">
+      {playing ? <Volume2 size={20} className="animate-pulse"/> : <VolumeX size={20} className="text-white/50"/>}
+    </button>
+  );
 };
 
 // --- COMPONENTE PRINCIPAL ---
@@ -91,7 +133,6 @@ export default function EuroApp() {
 
   useEffect(() => {
     if (isEditing) return;
-    // NOTA: Eliminado el salto automático del paso 1 al 2.
     if (step === 2 && Object.keys(selected).length === 11) setStep(3);
     if (step === 3 && captain) setStep(4);
     if (step === 4 && Object.keys(bench).length === 6) setStep(5);
@@ -126,14 +167,24 @@ export default function EuroApp() {
     setIsEditing(false); 
   };
 
-  // --- TEXTOS ASISTENTE CORREGIDOS ---
+  // Logica de interacción: Bloqueado si paso >= 6 y no editando.
+  // Pero permitido si estamos en pasos de configuración (2-5) para "hot swap".
+  const canInteractField = (step >= 2 && step <= 5) || isEditing;
+  const canInteractBench = (step >= 4 && step <= 5) || isEditing;
+  const canInteractExtras = (step === 5) || isEditing;
+
+  // --- MENSAJES ASISTENTE ---
   const messages: any = {
-    1: "PASO 1 DE 7. Comienza dándole un nombre a tu equipo.",
-    2: "PASO 2 DE 7. Ahora escoge tu once inicial en el terreno de juego.",
-    3: "PASO 3 DE 7. Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación.",
-    4: "PASO 4 DE 7. Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares.",
-    5: "PASO 5 DE 7. Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores.",
-    6: "PASO 6 DE 7. Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela."
+    1: { 
+      pre: "Bienvenido a la Eurocopa Fantástica 2024. Te voy a guiar paso a paso.",
+      title: "PASO 1 DE 7.", 
+      text: " Comienza dándole un nombre a tu equipo." 
+    },
+    2: { title: "PASO 2 DE 7.", text: " Ahora escoge tu once inicial en el terreno de juego." },
+    3: { title: "PASO 3 DE 7.", text: " Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación." },
+    4: { title: "PASO 4 DE 7.", text: " Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares si no juegan." },
+    5: { title: "PASO 5 DE 7.", text: " Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores." },
+    6: { title: "PASO 6 DE 7.", text: " Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela, pulsa en el botón verde que acaba de aparecer." }
   };
 
   // --- VISTA: EUROQUINIELA ---
@@ -144,29 +195,61 @@ export default function EuroApp() {
 
     return (
       <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-32">
-        <div className="sticky top-0 z-50 p-4 bg-[#05080f]/95 backdrop-blur-md">
-           <div className={`p-4 rounded-2xl border-l-4 transition-colors ${quinielaLocked ? 'border-[#facc15] bg-[#1c2a45]' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl`}>
+        <div className="sticky top-0 z-50 p-4 bg-[#05080f]/95 backdrop-blur-md shadow-2xl">
+           <div className={`p-4 rounded-2xl border-l-4 transition-colors ${quinielaLocked ? 'border-[#facc15] bg-[#1c2a45]' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-lg`}>
              <div className="flex justify-between items-start">
                <div className="flex-1">
                  <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${quinielaLocked ? 'text-[#facc15]' : 'text-[#22c55e]'}`}>
                    {quinielaLocked ? '¡COMPLETADO!' : 'ASISTENTE VIRTUAL'}
                  </p>
-                 <p className="text-xs font-semibold italic min-h-[1.5rem] leading-relaxed">
-                    <Typewriter text={quinielaLocked ? finalText : "PASO 7 DE 7. Te explico como funciona: debes elegir a las 2 selecciones de cada grupo que pasarán a la siguiente fase."} />
+                 <p className="text-xs font-semibold italic min-h-[1.5rem] leading-relaxed whitespace-pre-line">
+                    {quinielaLocked ? (
+                        <Typewriter text={finalText} />
+                    ) : (
+                      <>
+                        <span className="text-[#22c55e] mr-1">PASO 7 DE 7.</span>
+                        <Typewriter text="Te explico como funciona: debes elegir a las 2 selecciones de cada grupo que pasarán a la siguiente fase." />
+                      </>
+                    )}
                  </p>
                </div>
-               <button 
-                  onClick={() => setView('squad')}
-                  className="ml-2 bg-[#162136] text-white/70 hover:text-white px-3 py-2 rounded-xl flex items-center gap-2 font-black italic text-[9px] uppercase border border-white/10 transition-all active:scale-95"
-               >
-                 <ArrowLeft size={12}/> VOLVER A MI PLANTILLA
-               </button>
+               
+               <div className="flex flex-col gap-2 items-end">
+                 <MusicPlayer />
+                 <button 
+                    onClick={() => setView('squad')}
+                    className="bg-[#162136] text-white/70 hover:text-white px-3 py-2 rounded-xl flex items-center gap-2 font-black italic text-[9px] uppercase border border-white/10 transition-all active:scale-95"
+                 >
+                   <ArrowLeft size={12}/> VOLVER A MI PLANTILLA
+                 </button>
+               </div>
              </div>
            </div>
+
+           {/* BOTONES DE ACCIÓN - JUSTO DEBAJO DEL ASISTENTE */}
+           <div className="mt-2">
+            {!quinielaLocked ? (
+              isComplete && (
+                <button 
+                  onClick={() => setQuinielaLocked(true)}
+                  className="w-full bg-[#22c55e] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl animate-bounce"
+                >
+                  VALIDAR SELECCIÓN
+                </button>
+              )
+            ) : (
+              <button 
+                onClick={() => setQuinielaLocked(false)}
+                className="w-full bg-[#facc15] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
+              >
+                <Edit3 size={20}/> EDITAR QUINIELA
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="max-w-md mx-auto px-4 animate-in slide-in-from-right duration-500">
-          <div className="flex justify-between items-center mb-6 mt-4">
+          <div className="flex justify-between items-center mb-6 mt-8"> {/* AUMENTADO MARGEN SUPERIOR A mt-8 */}
              <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter">EUROQUINIELA</h1>
              <Trophy size={32} className="text-[#facc15]" />
           </div>
@@ -208,26 +291,6 @@ export default function EuroApp() {
                );
              })}
           </div>
-
-          <div className="mt-8 mb-20 space-y-3">
-            {!quinielaLocked ? (
-              isComplete && (
-                <button 
-                  onClick={() => setQuinielaLocked(true)}
-                  className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl animate-bounce"
-                >
-                  VALIDAR SELECCIÓN
-                </button>
-              )
-            ) : (
-              <button 
-                onClick={() => setQuinielaLocked(false)}
-                className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
-              >
-                <Edit3 size={20}/> EDITAR QUINIELA
-              </button>
-            )}
-          </div>
         </div>
         
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
@@ -245,34 +308,75 @@ export default function EuroApp() {
     );
   }
 
-  // --- VISTA: SQUAD (CREACIÓN DE EQUIPO) ---
+  // --- VISTA: SQUAD ---
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
       
-      {/* HEADER FIJO (STICKY) */}
+      {/* HEADER STICKY */}
       <div className="sticky top-0 z-50 bg-[#05080f]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
         <div className="px-4 pt-4">
           <div className={`p-4 rounded-2xl border-l-4 transition-all duration-500 ${isOverBudget ? 'border-red-600 bg-red-950/20' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl mb-3`}>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-start">
               <div className="flex-1">
                 <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${isOverBudget ? 'text-red-500' : 'text-[#22c55e]'}`}>
                   {isOverBudget ? 'ALERTA DE PRESUPUESTO' : 'ASISTENTE VIRTUAL'}
                 </p>
-                <div className="text-xs font-semibold italic min-h-[2.5rem] leading-relaxed pr-2">
-                  <Typewriter text={isOverBudget ? "⚠️ Superas los 300M. Ajusta el presupuesto." : (isEditing ? "MODO EDICIÓN ACTIVADO. Ajusta tu equipo y pulsa GUARDAR cuando termines." : messages[step])} />
+                <div className="text-xs font-semibold italic min-h-[3rem] leading-relaxed pr-2 whitespace-pre-line">
+                  {isOverBudget ? (
+                     <span className="text-white"><Typewriter text="⚠️ Superas los 300M. Ajusta el presupuesto."/></span>
+                  ) : isEditing ? (
+                     <span className="text-white"><Typewriter text="MODO EDICIÓN ACTIVADO. Ajusta tu equipo y pulsa GUARDAR cuando termines."/></span>
+                  ) : step === 1 ? (
+                    <div className="flex flex-col">
+                      <span className="text-white font-semibold italic mb-1.5"><Typewriter text={messages[1].pre} /></span>
+                      <div className="flex items-start">
+                        <span className="text-[#22c55e] mr-1 min-w-fit">{messages[1].title}</span>
+                        <span className="text-white"><Typewriter text={messages[1].text} delay={2000} /></span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[#22c55e] mr-1">{messages[step]?.title}</span>
+                      <Typewriter text={messages[step]?.text || ""} />
+                    </>
+                  )}
                 </div>
               </div>
               
-              {/* BOTÓN CONTINUAR (Ahora aparece en Paso 1 también) */}
-              {((step === 1 && teamName.trim().length >= 3) || (step >= 6 && !isEditing && !isOverBudget)) && (
-                <button 
-                  onClick={() => step === 1 ? setStep(2) : setView('quiniela')}
-                  className="bg-[#22c55e] text-black px-5 py-3 rounded-xl flex items-center gap-2 font-black italic text-[11px] uppercase transition-all animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.4)]"
-                >
-                  {step === 1 ? 'Continuar' : 'Euroquiniela'} <ArrowRight size={16}/>
-                </button>
-              )}
+              <div className="flex flex-col gap-2 items-end">
+                 <MusicPlayer />
+                 {/* BOTÓN EUROQUINIELA (SÓLO PASO 6+) */}
+                 {(step >= 6 && !isEditing && !isOverBudget) && (
+                    <button 
+                      onClick={() => setView('quiniela')}
+                      className="bg-[#22c55e] text-black px-5 py-3 rounded-xl flex items-center gap-2 font-black italic text-[11px] uppercase transition-all animate-pulse shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                    >
+                      Euroquiniela <ArrowRight size={16}/>
+                    </button>
+                 )}
+              </div>
             </div>
+          </div>
+
+          {/* BOTONES DE EDICIÓN / GUARDADO - JUSTO DEBAJO DEL ASISTENTE */}
+          <div className="mb-3 space-y-2">
+            {(step >= 6 && !isEditing) && (
+                <button 
+                onClick={() => setIsEditing(true)}
+                className="w-full bg-[#facc15] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300"
+                >
+                <Edit3 size={20}/> EDITAR PLANTILLA
+                </button>
+            )}
+            
+            {isEditing && (
+            <button 
+                onClick={handleValidateAndSave}
+                className="w-full bg-[#22c55e] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300"
+            >
+                <Save size={20}/> GUARDAR CAMBIOS
+            </button>
+            )}
           </div>
           
           <div className="mb-2">
@@ -290,13 +394,25 @@ export default function EuroApp() {
       <div className="max-w-md mx-auto px-4">
         {/* NOMBRE Y TÁCTICA */}
         <div className="mt-4 space-y-3">
-          <input 
-            className={`w-full p-5 rounded-2xl bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner transition-all ${step === 1 ? 'ring-4 ring-white' : ''}`} 
-            placeholder="NOMBRE EQUIPO" 
-            value={teamName} 
-            disabled={!isEditing && step > 1}
-            onChange={(e) => setTeamName(e.target.value)} 
-          />
+          <div className="relative">
+            <input 
+              className={`w-full p-5 pr-32 rounded-2xl bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner transition-all ${step === 1 ? 'ring-4 ring-white' : ''}`} 
+              placeholder="NOMBRE EQUIPO" 
+              value={teamName} 
+              disabled={!isEditing && step > 1}
+              onChange={(e) => setTeamName(e.target.value)} 
+            />
+            {/* BOTÓN CONTINUAR PASO 1 INTEGRADO */}
+            {step === 1 && teamName.trim().length >= 3 && (
+               <button 
+                 onClick={() => setStep(2)}
+                 className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#22c55e] text-black px-4 py-2.5 rounded-xl flex items-center gap-2 font-black italic text-[10px] uppercase transition-all animate-in zoom-in duration-300 hover:scale-105"
+               >
+                 CONTINUAR
+               </button>
+            )}
+          </div>
+
           <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">
             TÁCTICA: <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>
               {Object.keys(selected).length === 11 ? tactic : '-- -- --'}
@@ -308,15 +424,21 @@ export default function EuroApp() {
         </div>
 
         {/* CAMPO DE JUEGO */}
-        <div className={`mt-6 relative w-full aspect-[3/4.2] bg-[#2e9d4a] rounded-[2.5rem] border-[4px] overflow-hidden shadow-2xl transition-all duration-300 ${(step === 2 || step === 3 || isEditing) ? 'border-white scale-[1.02]' : 'border-white/20'}`}>
-          {/* ... Geometría del campo igual ... */}
+        <div className={`mt-6 relative w-full aspect-[3/4.2] bg-[#2e9d4a] rounded-[2.5rem] border-[4px] overflow-hidden shadow-2xl transition-all duration-300 ${(canInteractField && step < 6) ? 'border-white scale-[1.02]' : 'border-white/20'}`}>
           <div className="absolute inset-4 border-2 border-white/30 rounded-xl pointer-events-none">
+            {/* Círculo Central */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/30 rounded-full" />
             <div className="absolute top-1/2 w-full h-0.5 bg-white/30 -translate-y-1/2" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/5 h-[15%] border-b-2 border-x-2 border-white/30" /> 
-            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-20 h-6 border-b-2 border-white/30 rounded-b-full border-t-0" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/5 h-[15%] border-t-2 border-x-2 border-white/30" />
-            <div className="absolute bottom-[15%] left-1/2 -translate-x-1/2 w-20 h-6 border-t-2 border-white/30 rounded-t-full border-b-0" />
+            
+            {/* --- PORTERÍA SUPERIOR --- */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/5 h-[16%] border-b-2 border-x-2 border-white/30" /> 
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[30%] h-[6%] border-b-2 border-x-2 border-white/30" />
+            <div className="absolute top-[16%] left-1/2 -translate-x-1/2 w-[20%] h-[4%] border-b-2 border-white/30 rounded-b-full" />
+
+            {/* --- PORTERÍA INFERIOR --- */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/5 h-[16%] border-t-2 border-x-2 border-white/30" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[30%] h-[6%] border-t-2 border-x-2 border-white/30" />
+            <div className="absolute bottom-[16%] left-1/2 -translate-x-1/2 w-[20%] h-[4%] border-t-2 border-white/30 rounded-t-full" />
           </div>
 
           <div className="absolute inset-0 pointer-events-none z-40 font-black text-[9px] italic">
@@ -327,79 +449,69 @@ export default function EuroApp() {
           </div>
 
           <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">
-             {[1,2,3].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />)}
+             {[1,2,3].map(i => <Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />)}
           </div>
           <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
-             {[1,2,3,4,5].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />)}
+             {[1,2,3,4,5].map(i => <Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />)}
           </div>
           <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
-             {[1,2,3,4,5].map(i => <Slot key={i} active={(step===2 || isEditing) && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />)}
+             {[1,2,3,4,5].map(i => <Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />)}
           </div>
           <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30">
-             <Slot active={(step===2 || isEditing) && !selected["POR-1"]} p={selected["POR-1"]} on={() => (step === 2 || step === 3 || isEditing) && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} />
+             <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} />
           </div>
         </div>
 
-        <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 border-2 transition-all duration-300 ${(step === 4 || isEditing) ? 'border-white' : 'border-white/5'}`}>
+        <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 border-2 transition-all duration-300 ${(canInteractBench && step < 6) ? 'border-white' : 'border-white/5'}`}>
           <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
           <div className="grid grid-cols-3 gap-3">
              {["S1", "S2", "S3", "S4", "S5", "S6"].map(id => (
-               <div key={id} onClick={() => (step === 4 || isEditing) && setActiveSlot({id, type:'bench', pos: 'TODOS'})} 
-                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all cursor-pointer
-                 ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}`}>
+               <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} 
+                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all 
+                 ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}
+                 ${canInteractBench ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}>
                  {bench[id] ? (
                    <>
-                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-[10px] italic leading-tight">{bench[id].nombre.split(' ').pop()}</div>
+                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs leading-tight">{bench[id].nombre.split(' ').pop()}</div>
                     <div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[bench[id].posicion]}`}>{bench[id].posicion}</div>
                    </>
-                 ) : <span className="text-white/10 font-black text-xs">{id}</span>}
+                 ) : <span className="text-white/50 font-black text-sm italic">{id}</span>}
                </div>
              ))}
           </div>
         </div>
 
-        <div className={`mt-6 p-4 rounded-[2.5rem] border-2 bg-[#2a3b5a]/30 transition-all duration-300 ${(step === 5 || isEditing) ? 'border-white' : 'border-white/5'}`}>
+        <div className={`mt-6 p-4 rounded-[2.5rem] border-2 bg-[#2a3b5a]/30 transition-all duration-300 ${(canInteractExtras && step < 6) ? 'border-white' : 'border-white/5'}`}>
           <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
           <div className="grid grid-cols-3 gap-3 mb-4">
              {["NC1", "NC2", "NC3"].map(id => (
-               <div key={id} onClick={() => (step === 5 || isEditing) && setActiveSlot({id, type:'extras', pos: 'TODOS'})} 
-                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all cursor-pointer
-                 ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}`}>
+               <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} 
+                 className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all
+                 ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'}
+                 ${canInteractExtras ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}>
                  {extras[id] ? (
                    <>
-                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-[10px] italic">{extras[id].nombre.split(' ').pop()}</div>
+                    <div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{extras[id].nombre.split(' ').pop()}</div>
                     <div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div>
                    </>
-                 ) : <span className="text-white/10 font-black text-xs">NC</span>}
+                 ) : <span className="text-white/50 font-black text-sm italic">NC</span>}
                </div>
              ))}
           </div>
           {(step === 5 && !isEditing) && (
-            <button onClick={() => setStep(6)} className="w-full bg-red-600/20 text-red-500 p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-[10px] uppercase border border-red-500/30">
-              <Ban size={14}/> NO QUIERO NO CONVOCADOS
+            <button 
+              onClick={() => setStep(6)} 
+              className={`w-full p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-[10px] uppercase border transition-all duration-300
+              ${Object.keys(extras).length > 0 ? 'bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30 hover:bg-[#22c55e] hover:text-black animate-pulse' : 'bg-red-600/20 text-red-500 border-red-500/30'}`}
+            >
+              {Object.keys(extras).length > 0 ? (
+                <><Check size={14}/> CONFIRMAR Y FINALIZAR PLANTILLA</>
+              ) : (
+                <><Ban size={14}/> NO QUIERO NO CONVOCADOS</>
+              )}
             </button>
           )}
         </div>
-      </div>
-
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-30 space-y-3">
-        {(step >= 6 && !isEditing && !isOverBudget) && (
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
-            >
-              <Edit3 size={24}/> EDITAR PLANTILLA
-            </button>
-        )}
-        
-        {isEditing && (
-          <button 
-            onClick={handleValidateAndSave}
-            className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2"
-          >
-            <Save size={24}/> GUARDAR CAMBIOS
-          </button>
-        )}
       </div>
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
@@ -423,6 +535,15 @@ export default function EuroApp() {
           activeSortType={activeSortType} setActiveSortType={setActiveSortType}
           onSelect={(p: any) => {
             const isTitular = activeSlot.type === 'titular';
+            
+            // LOGICA LIMITE 7 JUGADORES
+            const currentCount = allPlayers.filter(pl => pl.seleccion === p.seleccion && pl.id !== (selected[activeSlot.id] || bench[activeSlot.id] || extras[activeSlot.id])?.id).length;
+            
+            if (currentCount >= 7) {
+              alert(`⚠️ LÍMITE ALCANZADO: No puedes tener más de 7 jugadores de ${p.seleccion}.`);
+              return;
+            }
+
             const currentTitulares = Object.keys(selected).length;
             const isEmptySlot = !selected[activeSlot.id];
             
@@ -451,15 +572,14 @@ export default function EuroApp() {
   );
 }
 
-// ... SUBCOMPONENTES Slot y SelectionModal se mantienen igual ...
 function Slot({ p, on, cap, setCap, showCap, active }: any) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div 
         onClick={on} 
-        className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all cursor-pointer relative z-30 
+        className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 
         ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'}
-        ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : ''}`}
+        ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : (p && on) ? 'cursor-pointer' : 'cursor-default'}`}
       >
         {p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <Plus size={18} className="text-white/20"/>}
       </div>
@@ -479,6 +599,21 @@ function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
   const [filterCountry, setFilterCountry] = useState("TODOS");
   const [filterPos, setFilterPos] = useState(forcedPos);
 
+  const uniqueCountries = useMemo(() => {
+    const countries = new Set(PLAYERS_DB.map(p => p.seleccion));
+    return ["TODOS", ...Array.from(countries).sort()];
+  }, []);
+
+  const countryCounts = useMemo(() => {
+    return allPlayersSelected.reduce((acc: any, p: any) => {
+      // Importante: No contar el jugador que estamos reemplazando
+      if (p.id !== currentSelection?.id) {
+          acc[p.seleccion] = (acc[p.seleccion] || 0) + 1;
+      }
+      return acc;
+    }, {});
+  }, [allPlayersSelected, currentSelection]);
+
   const filteredPlayers = useMemo(() => {
     let result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id));
     if (filterCountry !== "TODOS") result = result.filter(p => p.seleccion === filterCountry);
@@ -490,11 +625,6 @@ function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
     });
     return result;
   }, [selectedIds, filterCountry, filterPos, sortValue, sortAlpha, activeSortType]);
-
-  const countryCounts = allPlayersSelected.reduce((acc: any, p: any) => {
-    acc[p.seleccion] = (acc[p.seleccion] || 0) + 1;
-    return acc;
-  }, {});
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
@@ -509,7 +639,7 @@ function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
         </button>
       )}
 
-      {/* FILTROS */}
+      {/* FILTROS DE POSICIÓN */}
       <div className="flex gap-2 mb-4">
         {["POR", "DEF", "MED", "DEL"].map(pos => (
           <button key={pos} disabled={isTitular} onClick={() => setFilterPos(pos)} 
@@ -521,15 +651,20 @@ function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
         ))}
       </div>
       
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-        <button onClick={() => setFilterCountry("TODOS")} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] italic whitespace-nowrap ${filterCountry === "TODOS" ? 'bg-[#22c55e] text-black' : 'bg-[#162136] text-white/40'}`}>
-          TODOS
-        </button>
-        {["ESPAÑA", "ALEMANIA", "FRANCIA", "ESCOCIA", "TURQUÍA"].map(s => (
-          <button key={s} onClick={() => setFilterCountry(s)} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] italic whitespace-nowrap ${filterCountry === s ? 'bg-[#22c55e] text-black' : 'bg-[#162136] text-white/40'}`}>
-             <span>{getFlag(s)}</span> {s} ({countryCounts[s] || 0}/7)
-          </button>
-        ))}
+      {/* FILTROS DE PAÍS CON CONTADOR DE LÍMITE */}
+      <div className="flex flex-wrap gap-2 mb-6 max-h-44 overflow-y-auto pr-2 custom-scrollbar content-start">
+        {uniqueCountries.map(s => {
+          const count = countryCounts[s] || 0;
+          const isFull = count >= 7;
+          return (
+            <button key={s} onClick={() => setFilterCountry(s)} className={`flex items-center gap-2 px-3 py-2 rounded-xl font-black text-[9px] italic whitespace-nowrap transition-all active:scale-95 mb-1 
+                ${filterCountry === s ? 'bg-[#22c55e] text-black shadow-lg shadow-green-500/20' : (isFull ? 'bg-red-900/40 text-red-500 border border-red-500/30' : 'bg-[#162136] text-white/40 hover:bg-[#1c2a45]')}`}>
+               {s !== "TODOS" && <span>{getFlag(s)}</span>} 
+               {s} 
+               {s !== "TODOS" && <span className={`${isFull ? 'text-red-400' : 'opacity-50'}`}>({count}/7)</span>}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -541,7 +676,7 @@ function SelectionModal({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
         </button>
       </div>
 
-      <div className="space-y-3 overflow-y-auto">
+      <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1">
         {filteredPlayers.map(p => (
           <div key={p.id} onClick={() => onSelect(p)} className="p-4 rounded-2xl flex justify-between items-center border bg-[#162136] border-white/5 active:scale-95 cursor-pointer">
             <div className="flex items-center gap-3 font-black italic uppercase tracking-tighter">
