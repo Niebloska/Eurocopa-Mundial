@@ -137,10 +137,60 @@ const MiniPlayer = ({ p, small }: any) => {
   );
 }
 
+// --- SLOT TITULAR (SIN ÓVALO EN BANDERA, TAMAÑO XL) ---
+const Slot = ({ p, on, cap, setCap, showCap, active, editable }: any) => (
+  <div className="relative flex flex-col items-center group" onClick={on}>
+    {/* CÍRCULO CON NOMBRE */}
+    <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'} ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : (p && on) ? 'cursor-pointer' : 'cursor-default'}`}>
+        {p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <Plus size={18} className="text-white/20"/>}
+        
+        {/* BOTÓN CAPITÁN (Esquina Superior Derecha del círculo) */}
+        {p && showCap && (
+            <button 
+                onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (editable) setCap(); 
+                }} 
+                className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 
+                ${cap ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} 
+                ${editable ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}
+            >
+                {cap ? <Check size={8} strokeWidth={4}/> : 'C'}
+            </button>
+        )}
+    </div>
+
+    {/* BANDERA (Fuera, debajo, SIN FONDO, TAMAÑO XL) */}
+    {p && (
+        <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>
+    )}
+  </div>
+);
+
+// --- CROMO BANQUILLO/NO CONV ---
+const BenchCard = ({ player, id, posColor }: any) => {
+    return (
+        <div className={`w-full h-full flex flex-col items-center justify-between p-1.5 ${player ? 'bg-white' : 'bg-transparent'}`}>
+            {player ? (
+                <>
+                    <span className="text-[10px] font-black text-black text-center uppercase leading-none truncate w-full">{player.nombre.split(' ').pop()}</span>
+                    <div className="flex-1 flex items-center justify-center">
+                        <span className="text-4xl leading-none drop-shadow-md filter">{getFlag(player.seleccion)}</span>
+                    </div>
+                    <div className={`w-full text-center text-[10px] font-black uppercase py-0.5 rounded-sm ${posColors[player.posicion]}`}>{player.posicion}</div>
+                </>
+            ) : (
+                <span className="text-white/50 font-black text-sm italic self-center my-auto">{id}</span>
+            )}
+        </div>
+    );
+};
+
 const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain }: any) => {
   return (
-    <div className="mt-6 relative w-full aspect-[3/4.2] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
+    <div className="mt-6 relative w-full aspect-[4/5] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')]"></div>
+        {/* LÍNEAS DE CAMPO */}
         <div className="absolute inset-0 border-2 border-white/40 m-4 rounded-lg pointer-events-none"></div>
         <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none"></div>
         <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
@@ -151,22 +201,28 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
         <div className="absolute bottom-4 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
         <div className="absolute bottom-28 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-full pointer-events-none"></div>
 
-        <div className="absolute top-[20%] left-0 -translate-y-1/2 bg-[#ef4444] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEL</div>
-        <div className="absolute top-[45%] left-0 -translate-y-1/2 bg-[#10b981] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">MED</div>
-        <div className="absolute top-[70%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEF</div>
-        <div className="absolute top-[90%] left-0 -translate-y-1/2 bg-[#facc15] py-1 px-2 rounded-r shadow-lg text-black text-[8px] font-black italic z-20">POR</div>
+        {/* LÍNEAS DISCONTINUAS */}
+        <div className="absolute top-[29%] left-4 right-4 border-t border-dashed border-white/20 pointer-events-none"></div>
+        <div className="absolute top-[54%] left-4 right-4 border-t border-dashed border-white/20 pointer-events-none"></div>
+
+        {/* ETIQUETAS */}
+        <div className="absolute top-[8%] left-0 -translate-y-1/2 bg-[#ef4444] py-1.5 px-3 rounded-r-lg shadow-xl text-white text-[10px] font-black italic z-20 border-r border-y border-white/20">DEL</div>
+        <div className="absolute top-[33%] left-0 -translate-y-1/2 bg-[#10b981] py-1.5 px-3 rounded-r-lg shadow-xl text-white text-[10px] font-black italic z-20 border-r border-y border-white/20">MED</div>
+        <div className="absolute top-[58%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1.5 px-3 rounded-r-lg shadow-xl text-white text-[10px] font-black italic z-20 border-r border-y border-white/20">DEF</div>
+        <div className="absolute top-[88%] left-0 -translate-y-1/2 bg-[#facc15] py-1.5 px-3 rounded-r-lg shadow-xl text-black text-[10px] font-black italic z-20 border-r border-y border-white/20">POR</div>
         
-        <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">
-            {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />))}
+        {/* JUGADORES */}
+        <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-4 px-6 z-30">
+            {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
         </div>
-        <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
-            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />))}
+        <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between gap-1 px-6 z-30">
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
         </div>
-        <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
-            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />))}
+        <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between gap-1 px-6 z-30">
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
         </div>
         <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30">
-            <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} />
+            <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} editable={canInteractField} />
         </div>
     </div>
   );
@@ -220,13 +276,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     </div>
   );
 };
-
-const Slot = ({ p, on, cap, setCap, showCap, active }: any) => (
-  <div className="flex flex-col items-center gap-1.5">
-    <div onClick={on} className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'} ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : (p && on) ? 'cursor-pointer' : 'cursor-default'}`}>{p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <Plus size={18} className="text-white/20"/>}</div>
-    {p && showCap && <button onClick={(e) => { e.stopPropagation(); setCap(); }} className={`w-6 h-6 rounded-full border-2 font-black text-[10px] flex items-center justify-center transition-all z-50 ${cap ? 'bg-[#facc15] text-black border-white scale-110' : 'bg-black/60 text-white/30 border-white/10'}`}>{cap ? <Check size={10} strokeWidth={4}/> : 'C'}</button>}
-  </div>
-);
 
 const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, currentSelection, allPlayersSelected, 
   sortPrice, setSortPrice, sortAlpha, setSortAlpha, activeSort, setActiveSort 
@@ -286,11 +335,25 @@ const CalendarView = () => (
              <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.n}</h3></div>
              <div className="divide-y divide-white/5">
                  {g.m.map((m, i) => (
-                   <div key={i} className="p-3 flex justify-between items-center relative">
-                      {i % 2 === 0 && <div className="absolute top-0 left-0 w-full bg-black/20 text-center text-[8px] font-bold text-white/30 uppercase tracking-widest py-0.5">JORNADA {Math.floor(i/2) + 1}</div>}
-                      <div className="w-1/3 text-center pt-2"><span className="text-xl">{getFlag(m.t1)}</span><p className="text-[8px] font-bold mt-1">{m.t1}</p></div>
-                      <div className="text-center pt-2"><span className="text-[10px] text-[#facc15] font-mono font-bold block">{m.d}</span><span className="text-white/20 font-black text-xl">- : -</span></div>
-                      <div className="w-1/3 text-center pt-2"><span className="text-xl">{getFlag(m.t2)}</span><p className="text-[8px] font-bold mt-1">{m.t2}</p></div>
+                   <div key={i} className="flex flex-col relative">
+                      {i % 2 === 0 && <div className="bg-blue-600 w-full text-center text-[10px] font-black text-white uppercase tracking-widest py-1">JORNADA {Math.floor(i/2) + 1}</div>}
+                      <div className="p-4 pt-6 flex items-center justify-between">
+                          <div className="w-[40%] flex items-center justify-end gap-2 text-right">
+                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t1}</span>
+                              <span className="text-3xl">{getFlag(m.t1)}</span>
+                          </div>
+
+                          <div className="w-[20%] text-center">
+                              <span className="text-[9px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span>
+                              <span className="text-[9px] text-white/40 block mb-1">{m.d.split(' ')[2]}</span>
+                              <span className="text-white/20 font-black text-xl tracking-widest">-:-</span>
+                          </div>
+
+                          <div className="w-[40%] flex items-center justify-start gap-2 text-left">
+                              <span className="text-3xl">{getFlag(m.t2)}</span>
+                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t2}</span>
+                          </div>
+                      </div>
                    </div>
                  ))}
              </div>
@@ -300,10 +363,13 @@ const CalendarView = () => (
   </div>
 );
 
+// COMPONENTE TARJETA DE EQUIPO (Clasificación - Once Inicial Centrado)
 const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
   const [expanded, setExpanded] = useState(false);
   const canView = isMyTeam || isAdmin;
   const squadData = team.squad || getMockSquad(team.id);
+
+  const filterByPos = (pos: string) => squadData.titulares?.filter((p:any) => p.posicion === pos) || [];
 
   return (
     <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
@@ -317,23 +383,72 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
          <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
             <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
               <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'DEL').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'MED').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'DEF').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center pt-1">{squadData.titulares?.filter((p:any) => p.posicion === 'POR').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
+              
+              {/* LÍNEA DELANTEROS */}
+              <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div>
+                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
+                      {filterByPos('DEL').map((p:any) => (
+                          <div key={p.id} className="flex flex-col items-center">
+                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
+                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+              {/* LÍNEA MEDIOS */}
+              <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div>
+                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
+                      {filterByPos('MED').map((p:any) => (
+                          <div key={p.id} className="flex flex-col items-center">
+                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
+                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+              {/* LÍNEA DEFENSAS */}
+              <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div>
+                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
+                      {filterByPos('DEF').map((p:any) => (
+                          <div key={p.id} className="flex flex-col items-center">
+                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
+                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+
+              {/* LÍNEA PORTERO */}
+              <div className="flex items-center gap-2">
+                  <div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div>
+                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
+                      {filterByPos('POR').map((p:any) => (
+                          <div key={p.id} className="flex flex-col items-center">
+                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
+                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
+                          </div>
+                      ))}
+                  </div>
               </div>
             </div>
             
+            {/* BANQUILLO Y NO CONV (2 COLUMNAS) */}
             <div className="grid grid-cols-2 gap-3">
                <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3">
                    <p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p>
-                   <div className="grid grid-cols-3 gap-1">{squadData.banquillo?.map((p:any) => <MiniPlayer key={p.id} p={p} small />)}</div>
+                   <div className="grid grid-cols-2 gap-2">
+                       {squadData.banquillo?.map((p:any) => <BenchCard key={p.id} player={p} id="S" />)}
+                   </div>
                </div>
                <div className="border border-white/10 rounded-2xl bg-white/5 p-3">
                    <p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p>
-                   <div className="grid grid-cols-3 gap-1">
-                       {squadData.extras?.length > 0 ? squadData.extras.map((p:any) => <MiniPlayer key={p.id} p={p} small />) : <span className="text-[8px] text-white/20 italic col-span-3 text-center">Vacío</span>}
+                   <div className="grid grid-cols-2 gap-2">
+                       {squadData.extras?.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}
                    </div>
                </div>
             </div>
@@ -436,7 +551,6 @@ export default function EuroApp() {
       setSquadValidated(true); setHasValidatedOnce(true); setStep(6); 
   };
   
-  // Función para ir a la quiniela Y validar
   const handleGoToQuiniela = () => {
       setSquadValidated(true);
       setHasValidatedOnce(true);
@@ -445,7 +559,6 @@ export default function EuroApp() {
 
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(5); };
   
-  // Función para reiniciar equipo completo
   const handleResetTeam = () => {
       if (confirm("¿Estás seguro? Se borrará TODO tu equipo y empezarás de cero.")) {
           setSelected({}); setBench({}); setExtras({}); setCaptain(null); setTeamName("");
@@ -457,7 +570,6 @@ export default function EuroApp() {
   const getAssistantState = () => {
       if (isEditing) return { title: "", text: "MODO EDICIÓN ACTIVADO. Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
       
-      // ERROR TÁCTICA INVÁLIDA (NUEVO)
       if (Object.keys(selected).length === 11 && !isValidTactic) {
           return { title: "ALERTA", text: "Tu táctica no es válida, corríjela.", isError: true };
       }
@@ -503,7 +615,6 @@ export default function EuroApp() {
   const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
   const inactiveClass = "border border-white/5 opacity-80";
 
-  // Verificación de si la plantilla está completa para activar el botón VALIDAR
   const isTeamComplete = Object.keys(selected).length === 11 && Object.keys(bench).length === 6;
 
   if (!user) return <AuthScreen onLogin={handleLogin} />;
@@ -637,14 +748,14 @@ export default function EuroApp() {
 
             <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 4 ? activeClass : inactiveClass}`}>
                 <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
-                <div className="grid grid-cols-3 gap-3">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractBench ? 'cursor-pointer' : 'opacity-80'}`}>{bench[id] ? <div className="w-full h-full flex flex-col items-center justify-center"><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{bench[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[bench[id].posicion]}`}>{bench[id].posicion}</div></div> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
+                <div className="grid grid-cols-3 gap-3">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} className={`aspect-[1.1/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-2'} ${canInteractBench ? 'cursor-pointer' : 'opacity-80'}`}><BenchCard player={bench[id]} id={id} posColor={bench[id] ? posColors[bench[id].posicion] : ''} /></div>)}</div>
             </div>
 
             <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 5 ? activeClass : inactiveClass}`}>
                 <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
-                <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractExtras ? 'cursor-pointer' : 'opacity-80'}`}>{extras[id] ? <div className="w-full h-full flex flex-col items-center justify-center"><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{extras[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div></div> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
+                <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.1/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-2'} ${canInteractExtras ? 'cursor-pointer' : 'opacity-80'}`}><BenchCard player={extras[id]} id={id} posColor={extras[id] ? posColors[extras[id].posicion] : ''} /></div>)}</div>
                 
-                {/* BOTÓN SOLO APARECE SI NO HAY NADIE FICHADO AQUÍ */}
+                {/* BOTÓN SOLO APARECE SI NO HAY NADIE FICHADO AQUÍ Y NO ESTÁ VALIDADO */}
                 {step === 5 && !isEditing && !squadValidated && Object.keys(extras).length === 0 && (
                     <button onClick={handleValidateSquad} className="w-full bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-2xl font-black italic text-[10px] uppercase flex items-center justify-center gap-2 mb-6 hover:bg-red-600/30 transition-all"><Ban size={14}/> NO QUIERO NO CONVOCADOS</button>
                 )}
