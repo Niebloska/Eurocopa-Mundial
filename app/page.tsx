@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-// IMPORTACIONES SEGURAS (Solo iconos de sistema básicos para la UI)
-import { 
-  Plus, Check, X, Trophy, Edit3, Volume2, VolumeX, 
-  LogOut, FileText, Shield, Ban,
-  ArrowUpDown, ArrowDownUp, Trash2, RefreshCcw, ChevronUp, ChevronDown
-} from 'lucide-react';
+// IMPORTACIÓN DE SUPABASE
+import { supabase } from '../lib/supabase'; 
 import { PLAYERS_DB } from './players';
 
 // ==========================================
@@ -43,13 +39,6 @@ const EURO_GROUPS_DATA = [
   { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
 ];
 
-const MOCK_TEAMS_DB = [
-  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 0, value: 295 },
-  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 0, value: 299 },
-  { id: 103, name: "Catenaccio FC", user: "Luigi_99", points: 0, value: 280 },
-  { id: 104, name: "Oranje Power", user: "VanBasten_Fan", points: 0, value: 290 },
-];
-
 const getMockSquad = (offset: number) => {
   const start = (offset * 11) % Math.max(1, PLAYERS_DB.length - 20);
   const safePlayers = PLAYERS_DB.length > 0 ? PLAYERS_DB : [];
@@ -61,17 +50,15 @@ const getMockSquad = (offset: number) => {
 };
 
 // ==========================================
-// 2. SISTEMA DE ICONOS (SVG PURO - DEFINICIÓN ÚNICA Y FLEXIBLE)
+// 2. SISTEMA DE ICONOS (SVG PURO)
 // ==========================================
 
-// Helper base para SVGs
 const SvgBase = ({ children, className, size = 24, fill="none", stroke="currentColor", strokeWidth="2" }: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
     {children}
   </svg>
 );
 
-// --- Iconos de Interfaz (Ahora aceptan className) ---
 const IconPlus = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M5 12h14"/><path d="M12 5v14"/></SvgBase>;
 const IconCheck = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><polyline points="20 6 9 17 4 12"/></SvgBase>;
 const IconX = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgBase>;
@@ -94,7 +81,6 @@ const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgBase size={size}
 const IconTrash2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgBase>;
 const IconRefresh = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgBase>;
 
-// --- Iconos Personalizados (Reglas) ---
 const IconStar = ({ className, fill = "currentColor" }: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 );
@@ -110,9 +96,9 @@ const IconBoot = ({ className="" }: any) => (
 const IconSub = ({ className="" }: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M12 5v14" stroke="none" /> 
-    <path d="M16 9l-4-4-4 4" stroke="#22c55e" /> {/* Flecha arriba verde */}
+    <path d="M16 9l-4-4-4 4" stroke="#22c55e" />
     <path d="M12 5v7" stroke="#22c55e" />
-    <path d="M12 19l4-4" stroke="#ef4444" /> {/* Flecha abajo roja */}
+    <path d="M12 19l4-4" stroke="#ef4444" />
     <path d="M8 15l4 4" stroke="#ef4444" />
     <path d="M12 12v7" stroke="#ef4444" />
   </svg>
@@ -283,16 +269,16 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
         <div className="absolute top-[88%] left-0 -translate-y-1/2 bg-[#facc15] py-1.5 px-3 rounded-r-lg shadow-xl text-black text-[10px] font-black italic z-20 border-r border-y border-white/20">POR</div>
         
         <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-4 px-6 z-30">
-            {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
+            {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 2} editable={canInteractField} />))}
         </div>
         <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between gap-1 px-6 z-30">
-            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 2} editable={canInteractField} />))}
         </div>
         <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between gap-1 px-6 z-30">
-            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} editable={canInteractField} />))}
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 2} editable={canInteractField} />))}
         </div>
         <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30">
-            <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} editable={canInteractField} />
+            <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 2} editable={canInteractField} />
         </div>
     </div>
   );
@@ -317,12 +303,52 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   const [teamName, setTeamName] = useState(""); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !username) return alert("Rellena todos los campos");
-    if (isRegister && !teamName) return alert("Debes poner un nombre a tu equipo");
-    onLogin(email, username, isRegister ? teamName : undefined);
+    setErrorMsg("");
+    setLoading(true);
+
+    try {
+        if (isRegister) {
+            // REGISTRO
+            if (!email || !password || !username || !teamName) throw new Error("Rellena todos los campos");
+            
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { username, team_name: teamName } // Guardamos metadatos extra en el usuario
+                }
+            });
+
+            if (authError) throw authError;
+            if (authData.user) {
+                 onLogin(authData.user.email!, username, teamName);
+            }
+        } else {
+            // LOGIN
+             if (!email || !password) throw new Error("Rellena email y contraseña");
+             
+             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                 email,
+                 password
+             });
+
+             if (authError) throw authError;
+             if (authData.user) {
+                 const u = authData.user.user_metadata.username || "Mister";
+                 const t = authData.user.user_metadata.team_name || "";
+                 onLogin(authData.user.email!, u, t);
+             }
+        }
+    } catch (err: any) {
+        setErrorMsg(err.message || "Ha ocurrido un error");
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
@@ -334,14 +360,28 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
            <h1 className="text-3xl font-black italic uppercase tracking-tighter text-[#22c55e] mb-2">EUROCOPA<br/><span className="text-white">FANTÁSTICA 2024</span></h1>
            <p className="text-white/50 text-xs uppercase tracking-widest font-bold">{isRegister ? "CREA TU EQUIPO Y GANA" : "ACCEDE A TU VESTUARIO"}</p>
         </div>
+        
+        {errorMsg && (
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-xl text-red-200 text-xs font-bold text-center">
+                {errorMsg}
+            </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">USUARIO</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Tu nombre de manager" /></div>
-          {isRegister && <div className="space-y-1 animate-in fade-in"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">NOMBRE EQUIPO</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Ej: Los Invencibles" /></div>}
+          {isRegister && (
+             <>
+                <div className="space-y-1 animate-in fade-in"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">USUARIO</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Tu nombre de manager" /></div>
+                <div className="space-y-1 animate-in fade-in"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">NOMBRE EQUIPO</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Ej: Los Invencibles" /></div>
+             </>
+          )}
           <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">EMAIL</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="correo@ejemplo.com" /></div>
           <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">CONTRASEÑA</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="••••••••" /></div>
-          <button type="submit" className="w-full py-4 mt-6 bg-[#22c55e] hover:bg-[#22c55e]/90 text-black font-black italic uppercase rounded-xl shadow-lg">{isRegister ? "CREAR CUENTA" : "ENTRAR"}</button>
+          
+          <button disabled={loading} type="submit" className="w-full py-4 mt-6 bg-[#22c55e] hover:bg-[#22c55e]/90 text-black font-black italic uppercase rounded-xl shadow-lg flex justify-center items-center gap-2">
+             {loading ? "CARGANDO..." : (isRegister ? "CREAR CUENTA" : "ENTRAR")}
+          </button>
         </form>
-        <div className="mt-6 text-center border-t border-white/5 pt-4"><button type="button" onClick={() => setIsRegister(!isRegister)} className="text-xs text-white/50 hover:text-white font-bold underline uppercase">{isRegister ? "¿Ya tienes cuenta? Inicia Sesión" : "¿Nuevo aquí? Regístrate gratis"}</button></div>
+        <div className="mt-6 text-center border-t border-white/5 pt-4"><button type="button" onClick={() => {setIsRegister(!isRegister); setErrorMsg("");}} className="text-xs text-white/50 hover:text-white font-bold underline uppercase">{isRegister ? "¿Ya tienes cuenta? Inicia Sesión" : "¿Nuevo aquí? Regístrate gratis"}</button></div>
       </div>
     </div>
   );
@@ -795,7 +835,7 @@ const RulesView = () => {
 
 // --- APP PRINCIPAL ---
 export default function EuroApp() {
-  const [user, setUser] = useState<{email: string, username: string, teamName?: string} | null>(null);
+  const [user, setUser] = useState<{email: string, username: string, teamName?: string, id?: string} | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [view, setView] = useState<'rules' | 'squad' | 'classification' | 'calendar' | 'quiniela'>('squad'); 
   const [teamName, setTeamName] = useState("");
@@ -816,43 +856,134 @@ export default function EuroApp() {
   const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
   
   const [hasValidatedOnce, setHasValidatedOnce] = useState(false);
+  const [allTeams, setAllTeams] = useState<any[]>([]); 
 
-  // --- PERSISTENCIA DE DATOS ---
+  // 1. CARGA INICIAL
   useEffect(() => {
-    const savedUser = localStorage.getItem('euro_user');
-    if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed);
-        setIsAdmin(parsed.email === MASTER_EMAIL);
-        if (parsed.teamName) { setTeamName(parsed.teamName); setNameLocked(true); }
-        
-        const savedGame = localStorage.getItem(`euro_game_${parsed.email}`);
-        if (savedGame) {
-            const gameData = JSON.parse(savedGame);
-            setSelected(gameData.selected || {}); setBench(gameData.bench || {}); setExtras(gameData.extras || {});
-            setCaptain(gameData.captain || null); setStep(gameData.step || 1); setTeamName(gameData.teamName || parsed.teamName);
-            setQuinielaSelections(gameData.quinielaSelections || {}); setSquadValidated(gameData.squadValidated || false);
-            setQuinielaLocked(gameData.quinielaLocked || false); if (gameData.teamName) setNameLocked(true);
-            setHasValidatedOnce(gameData.hasValidatedOnce || false);
-        }
-    }
+     const checkSession = async () => {
+         const { data: { session } } = await supabase.auth.getSession();
+         if (session) {
+             loadUserData(session.user);
+         }
+     };
+     checkSession();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-        const gameState = { selected, bench, extras, captain, step, teamName, quinielaSelections, squadValidated, quinielaLocked, hasValidatedOnce };
-        localStorage.setItem(`euro_game_${user.email}`, JSON.stringify(gameState));
-    }
-  }, [selected, bench, extras, captain, step, teamName, quinielaSelections, squadValidated, quinielaLocked, user, hasValidatedOnce]);
+  const loadUserData = async (authUser: any) => {
+      try {
+          const { data, error } = await supabase
+            .from('teams')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
 
-  const handleLogin = (email: string, username: string, tName?: string) => {
-    const newUser = { email, username, teamName: tName };
-    setUser(newUser); setIsAdmin(email === MASTER_EMAIL);
-    if (tName) { setTeamName(tName); setNameLocked(true); }
-    localStorage.setItem('euro_user', JSON.stringify(newUser));
+          if (error && error.code !== 'PGRST116') { console.error("Error loading team:", error); return; }
+
+          if (data) {
+              setUser({ email: authUser.email, username: data.username, teamName: data.team_name, id: authUser.id });
+              setIsAdmin(authUser.email === MASTER_EMAIL);
+              setTeamName(data.team_name || "");
+              if (data.team_name) setNameLocked(true);
+              
+              const squad = data.squad || {};
+              setSelected(squad.selected || {});
+              setBench(squad.bench || {});
+              setExtras(squad.extras || {});
+              setCaptain(squad.captain || null);
+              setStep(squad.step || 1);
+              setSquadValidated(data.is_validated || false);
+              setHasValidatedOnce(squad.hasValidatedOnce || false);
+              
+              const quiniela = data.quiniela || {};
+              setQuinielaSelections(quiniela.selections || {});
+              setQuinielaLocked(quiniela.locked || false);
+
+          } else {
+              // NUEVO USUARIO: Paso 1 Directo
+              const uName = authUser.user_metadata.username || "Mister";
+              const tName = authUser.user_metadata.team_name || "";
+              
+              setUser({ email: authUser.email, username: uName, teamName: tName, id: authUser.id });
+              setTeamName(tName);
+              if (tName) setNameLocked(true);
+              setStep(1); 
+              
+              await supabase.from('teams').insert([{
+                  id: authUser.id,
+                  email: authUser.email,
+                  username: uName,
+                  team_name: tName,
+                  squad: { step: 1 }
+              }]);
+          }
+      } catch (e) {
+          console.error("Load Exception:", e);
+      }
   };
 
-  const handleLogout = () => { setUser(null); setIsAdmin(false); localStorage.removeItem('euro_user'); setView('squad'); };
+  // 2. AUTO-GUARDADO
+  const saveTimeoutRef = useRef<any>(null);
+  useEffect(() => {
+      if (!user || !user.id) return;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+      saveTimeoutRef.current = setTimeout(async () => {
+          const squadData = { selected, bench, extras, captain, step, hasValidatedOnce };
+          const quinielaData = { selections: quinielaSelections, locked: quinielaLocked };
+          const allP = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
+          const totalValue = allP.reduce((acc: number, p: any) => acc + p.precio, 0);
+
+          await supabase.from('teams').upsert({
+              id: user.id,
+              email: user.email,
+              username: user.username,
+              team_name: teamName,
+              squad: squadData,
+              quiniela: quinielaData,
+              is_validated: squadValidated,
+              budget: 300 - totalValue
+          });
+      }, 2000);
+      return () => clearTimeout(saveTimeoutRef.current);
+  }, [selected, bench, extras, captain, step, teamName, squadValidated, quinielaSelections, quinielaLocked, hasValidatedOnce, user]);
+
+  // Cargar clasificación REAL (Sin bots)
+  useEffect(() => {
+      if (view === 'classification') {
+          const fetchRanking = async () => {
+              const { data } = await supabase.from('teams').select('*').order('points', { ascending: false });
+              if (data) {
+                   const formatted = data.map((d: any) => ({
+                       id: d.id,
+                       name: d.team_name,
+                       user: d.username,
+                       points: d.points,
+                       value: 300 - (d.budget || 0),
+                       squad: {
+                           titulares: Object.values(d.squad?.selected || {}),
+                           banquillo: Object.values(d.squad?.bench || {}),
+                           extras: Object.values(d.squad?.extras || {})
+                       }
+                   }));
+                   setAllTeams(formatted);
+              }
+          };
+          fetchRanking();
+      }
+  }, [view]);
+
+  const handleLogin = async (email: string, username: string, tName?: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) loadUserData(session.user);
+  };
+
+  const handleLogout = async () => { 
+      await supabase.auth.signOut();
+      setUser(null); setIsAdmin(false); setView('squad'); 
+      setSelected({}); setBench({}); setExtras({}); setCaptain(null); setTeamName("");
+      setNameLocked(false); setStep(1); setSquadValidated(false); setQuinielaSelections({});
+      setQuinielaLocked(false);
+  };
 
   const tactic = useMemo(() => {
     const def = Object.keys(selected).filter(k => k.startsWith("DEF")).length;
@@ -866,39 +997,56 @@ export default function EuroApp() {
   const budgetSpent = allPlayers.reduce((acc: number, p: any) => acc + p.precio, 0);
   const isOverBudget = budgetSpent > 300;
 
-  const canInteractField = (step >= 2 && step <= 5) || isEditing;
-  const canInteractBench = (step >= 4 && step <= 5) || isEditing;
-  const canInteractExtras = (step === 5) || isEditing;
+  const canInteractField = (step >= 1 && step <= 4) || isEditing;
+  const canInteractBench = (step >= 3 && step <= 4) || isEditing;
+  const canInteractExtras = (step === 4) || isEditing;
 
+  // Lógica de pasos AUTOMÁTICA
   useEffect(() => {
     if (isEditing) return;
-    if (step === 2 && Object.keys(selected).length === 11) {
-        if (isValidTactic) setStep(3);
+    if (step === 1 && Object.keys(selected).length === 11) {
+        if (isValidTactic) setStep(2);
     }
-    if (step === 3 && captain) setStep(4);
-    if (step === 4 && Object.keys(bench).length === 6) setStep(5);
+    if (step === 2 && captain) setStep(3);
+    if (step === 3 && Object.keys(bench).length === 6) setStep(4);
   }, [selected, captain, bench, step, isEditing, isValidTactic]);
 
   const handleValidateSquad = () => { 
       if (!isValidTactic) return alert("⚠️ Táctica inválida. Revisa tu alineación.");
       if (Object.keys(selected).length !== 11) return alert("⚠️ Debes tener 11 titulares.");
       if (isOverBudget) return alert("⚠️ Presupuesto excedido.");
-      setStep(6); 
+      
+      setStep(5); 
   };
   
   const handleGoToQuiniela = () => {
       setSquadValidated(true);
       setHasValidatedOnce(true);
       setView('quiniela');
+      setStep(6); 
   }
 
-  const handleUnlockSquad = () => { setSquadValidated(false); setStep(5); };
+  const handleUnlockSquad = () => { 
+      setSquadValidated(false); 
+      setStep(4); 
+      setIsEditing(true); 
+  };
   
-  const handleResetTeam = () => {
+  const handleResetTeam = async () => {
       if (confirm("¿Estás seguro? Se borrará TODO tu equipo y empezarás de cero.")) {
-          setSelected({}); setBench({}); setExtras({}); setCaptain(null); setTeamName("");
-          setNameLocked(false); setStep(1); setSquadValidated(false); setQuinielaSelections({});
-          setQuinielaLocked(false); setHasValidatedOnce(false); localStorage.removeItem(`euro_game_${user?.email}`);
+          setSelected({}); setBench({}); setExtras({}); setCaptain(null);
+          // Mantenemos nombre
+          setStep(1); setSquadValidated(false); setQuinielaSelections({});
+          setQuinielaLocked(false); setHasValidatedOnce(false); setIsEditing(false);
+          
+          if(user && user.id) {
+             await supabase.from('teams').update({
+                 squad: { step: 1 },
+                 quiniela: {},
+                 is_validated: false,
+                 points: 0
+             }).eq('id', user.id);
+          }
       }
   };
 
@@ -913,55 +1061,49 @@ export default function EuroApp() {
       
       if (view === 'quiniela') {
           if (quinielaLocked) return { title: "¡HECHO!", text: "¡Enhorabuena, ya tienes tu equipo de elegidos para la gloria y tu apuesta en la Euroquiniela! Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
-          return { title: "PASO 7 DE 7", text: "Te explico como funciona: debes elegir a las 2 selecciones que crees que se clasificarán para la siguiente fase. Cuando hayas rellenado todos los grupos pulsa en el botón VALIDAR." };
+          return { title: "PASO 6 DE 6", text: "Te explico como funciona: debes elegir a las 2 selecciones que crees que se clasificarán para la siguiente fase. Cuando hayas rellenado todos los grupos pulsa en el botón VALIDAR." };
       }
       
-      if (!squadValidated && hasValidatedOnce && step === 5) return { title: "MODO EDICIÓN", text: "Edita tu equipo y no olvides pulsar VALIDAR EQUIPO para guardar los cambios." };
+      if (step === 5 && !squadValidated) return { title: "PASO 5 DE 6", text: "Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela, pulsa en el botón verde que acaba de aparecer." };
+
       if (squadValidated) return { title: "¡LISTO!", text: "Recuerda que puedes editar tu plantilla las veces que quieras hasta que acabe la cuenta atrás." };
       
       switch(step) {
-          case 1: return { title: "PASO 1 DE 7", text: "Comienza dándole un nombre a tu equipo." };
-          case 2: return { title: "PASO 2 DE 7", text: "Ahora escoge tu once inicial." };
-          case 3: return { title: "PASO 3 DE 7", text: "Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación." };
-          case 4: return { title: "PASO 4 DE 7", text: "Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares si estos no juegan, pero entrarán estrictamente según el orden de los suplentes." };
-          case 5: return { title: "PASO 5 DE 7", text: "Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores." };
-          case 6: return { title: "PASO 6 DE 7", text: "Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela, pulsa en el botón verde que acaba de aparecer." };
+          case 1: return { title: "PASO 1 DE 6", text: `Bienvenido a la Eurocopa Fantástica 2024, ${user?.username || 'Mister'}. Comencemos eligiendo tu once inicial.` };
+          case 2: return { title: "PASO 2 DE 6", text: "Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación." };
+          case 3: return { title: "PASO 3 DE 6", text: "Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares si estos no juegan, pero entrarán estrictamente según el orden de los suplentes." };
+          case 4: return { title: "PASO 4 DE 6", text: "Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores." };
           default: return { title: "", text: "" };
       }
   };
 
   const assistant = getAssistantState();
 
+  // --- FALTABA ESTA FUNCIÓN ---
   const toggleQuiniela = (group: string, team: string) => {
       if (quinielaLocked) return;
       const current = quinielaSelections[group] || [];
       if (current.includes(team)) setQuinielaSelections({...quinielaSelections, [group]: current.filter(t => t !== team)});
       else if (current.length < 2) setQuinielaSelections({...quinielaSelections, [group]: [...current, team]});
   };
+  // ----------------------------
 
   const isQuinielaComplete = EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2);
 
-  const combinedTeams = useMemo(() => {
-      const mySquad = { titulares: Object.values(selected), banquillo: Object.values(bench), extras: Object.values(extras) };
-      const myTeam = { id: 999, name: teamName || "Mi Equipo", user: user?.username || "Yo", points: 0, value: budgetSpent, squad: mySquad };
-      return [myTeam, ...MOCK_TEAMS_DB].sort((a,b) => b.points - a.points);
-  }, [teamName, user, budgetSpent, selected, bench, extras]);
+  // Clasificación REAL o Vacía si no hay nadie
+  const displayTeams = allTeams; 
 
   const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
   const inactiveClass = "border border-white/5 opacity-80";
-
   const isTeamComplete = Object.keys(selected).length === 11 && Object.keys(bench).length === 6;
 
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
-      {/* MÚSICA - BOTÓN FLOTANTE SIEMPRE VISIBLE */}
       <MusicPlayer />
-
       <NavBar view={view} setView={setView} onLogout={handleLogout} squadCompleted={squadValidated} />
 
-      {/* HEADER FIJO CON ASISTENTE Y BARRA DE ACCIÓN */}
       {(view === 'squad' || view === 'quiniela') && (
         <div className="sticky top-[60px] z-[100] bg-[#0d1526]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
             <div className="px-4 pt-4">
@@ -970,7 +1112,6 @@ export default function EuroApp() {
                   <div className="flex-1">
                     <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${isOverBudget || assistant.isError ? 'text-red-500' : 'text-[#22c55e]'}`}>ASISTENTE VIRTUAL</p>
                     <div className="text-xs font-semibold italic min-h-[3rem] leading-relaxed pr-2 whitespace-pre-line">
-                      {step === 1 && !isEditing && <div className="mb-2 text-white/70">Bienvenido a la Eurocopa Fantástica 2024. Te voy a guiar paso a paso para que hagas tu equipo y participes en este emocionante juego.</div>}
                       <Typewriter text={assistant.text} stepTitle={assistant.title} isError={assistant.isError} />
                     </div>
                     <CountdownBlock />
@@ -982,17 +1123,15 @@ export default function EuroApp() {
                   <>
                     <div className="mb-2"><div className="flex justify-between uppercase italic font-black text-[10px] mb-1"><span className="text-white/40">PRESUPUESTO</span><span className={isOverBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span></div><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5"><div className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} /></div></div>
                     
-                    {/* BARRA DE ACCIÓN FIJA SQUAD */}
                     <div className="flex gap-2 mt-3">
                         <button onClick={handleResetTeam} className="bg-red-600/90 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-1 border border-red-500/50"><IconRefresh size={14}/> RESETEAR PLANTILLA</button>
                         
                         {squadValidated ? (
                             <button onClick={handleUnlockSquad} className="bg-[#facc15] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-[2]"><IconEdit size={14}/> EDITAR EQUIPO</button>
-                        ) : (step === 6 ? (
+                        ) : (step === 5 ? (
                             <button onClick={handleGoToQuiniela} className="bg-[#22c55e] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-[2] animate-pulse"><IconTrophy size={14}/> IR A EUROQUINIELA</button>
                         ) : (
-                             // LÓGICA CORREGIDA: Ocultar botón validar en paso 5 si no hay extras
-                             !(step === 5 && Object.keys(extras).length === 0) && (
+                             (step !== 4 || Object.keys(extras).length > 0) && (
                                 <button 
                                     onClick={handleValidateSquad} 
                                     disabled={!isTeamComplete}
@@ -1006,7 +1145,6 @@ export default function EuroApp() {
                   </>
               )}
 
-              {/* BARRA DE ACCIÓN FIJA QUINIELA */}
               {view === 'quiniela' && (
                   <div className="mt-3">
                       {quinielaLocked ? (
@@ -1030,15 +1168,17 @@ export default function EuroApp() {
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
             <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconUsers /> CLASIFICACIÓN</h1>
             <div className="space-y-4">
-                {combinedTeams.map((team, idx) => (
-                    <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === 999} isAdmin={isAdmin} />
-                ))}
+                {displayTeams.length > 0 ? displayTeams.map((team, idx) => (
+                    <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === user.id} isAdmin={isAdmin} />
+                )) : (
+                    <div className="text-center text-white/40 italic mt-10">No hay equipos registrados aún.</div>
+                )}
             </div>
         </div>
       )}
 
       {view === 'quiniela' && (
-        <div className="max-w-md mx-auto px-4 mt-6 pb-32 animate-in fade-in">
+        <div className="max-w-md mx-auto px-4 mt-48 pb-32 animate-in fade-in relative z-0">
             <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconTrophy /> EURO QUINIELA</h1>
             <div className="grid grid-cols-1 gap-6">
                 {EURO_GROUPS_DATA.map(g => (
@@ -1048,7 +1188,12 @@ export default function EuroApp() {
                             {g.teams.map(t => {
                                 const isSelected = (quinielaSelections[g.name] || []).includes(t);
                                 return (
-                                    <button key={t} onClick={() => toggleQuiniela(g.name, t)} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${isSelected ? 'bg-green-600/20 border-[#22c55e]' : 'bg-[#0d1526] border-white/10 hover:bg-white/5'}`}>
+                                    <button 
+                                      key={t} 
+                                      disabled={quinielaLocked}
+                                      onClick={() => toggleQuiniela(g.name, t)} 
+                                      className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative ${isSelected ? 'bg-green-600/20 border-[#22c55e]' : 'bg-[#0d1526] border-white/10 hover:bg-white/5'} ${quinielaLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                                    >
                                         <span className="text-2xl">{getFlag(t)}</span>
                                         <span className={`text-[10px] font-black uppercase ${isSelected ? 'text-[#22c55e]' : 'text-white'}`}>{t}</span>
                                         {isSelected && <div className="absolute top-2 right-2 bg-[#22c55e] rounded-full p-0.5"><IconCheck size={10} className="text-black"/></div>}
@@ -1064,18 +1209,27 @@ export default function EuroApp() {
 
       {view === 'calendar' && <CalendarView />}
       
-      {/* VISTA DE REGLAS */}
       {view === 'rules' && <RulesView />}
 
       {view === 'squad' && (
         <>
           <div className="max-w-md mx-auto px-4 mt-40"> 
             
-            <div className={`relative mb-3 transition-all duration-300 ${step === 1 ? 'scale-105 z-20' : ''}`}>
-                <div className={`relative rounded-2xl overflow-hidden ${step === 1 ? activeClass : 'border border-white/10'}`}>
-                    <input className={`w-full p-5 pr-32 bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner ${nameLocked ? 'opacity-80' : ''}`} placeholder="NOMBRE EQUIPO" value={teamName} disabled={nameLocked} onChange={(e) => setTeamName(e.target.value)} />
-                    {!nameLocked && teamName.trim().length >= 3 && (<button onClick={() => { setNameLocked(true); if(step===1) setStep(2); }} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#22c55e] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform">OK</button>)}
-                    {nameLocked && (<button onClick={() => setNameLocked(false)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#facc15] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform flex items-center gap-1"><IconEdit size={12}/> EDITAR</button>)}
+            <div className="relative mb-3 transition-all duration-300 z-20">
+                <div className="relative rounded-2xl overflow-hidden border border-white/10">
+                    <input 
+                        className={`w-full p-5 pr-32 bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner ${nameLocked ? 'opacity-80' : ''}`} 
+                        placeholder="NOMBRE EQUIPO" 
+                        value={teamName} 
+                        disabled={nameLocked} 
+                        onChange={(e) => setTeamName(e.target.value)} 
+                    />
+                    {!nameLocked && teamName.trim().length >= 3 && (
+                        <button onClick={() => setNameLocked(true)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#22c55e] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform">GUARDAR</button>
+                    )}
+                    {nameLocked && (
+                        <button onClick={() => setNameLocked(false)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#facc15] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform flex items-center gap-1"><IconEdit size={12}/> EDITAR</button>
+                    )}
                 </div>
             </div>
             
@@ -1088,17 +1242,17 @@ export default function EuroApp() {
 
             <Field selected={selected} step={step} canInteractField={canInteractField} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
 
-            <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 4 ? activeClass : inactiveClass}`}>
+            <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 3 ? activeClass : inactiveClass}`}>
                 <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
                 <div className="grid grid-cols-3 gap-3">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} className={`aspect-[1.1/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-2'} ${canInteractBench ? 'cursor-pointer' : 'opacity-80'}`}><BenchCard player={bench[id]} id={id} posColor={bench[id] ? posColors[bench[id].posicion] : ''} /></div>)}</div>
             </div>
 
-            <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 5 ? activeClass : inactiveClass}`}>
+            <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 4 ? activeClass : inactiveClass}`}>
                 <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
                 <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.1/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-2'} ${canInteractExtras ? 'cursor-pointer' : 'opacity-80'}`}><BenchCard player={extras[id]} id={id} posColor={extras[id] ? posColors[extras[id].posicion] : ''} /></div>)}</div>
                 
-                {/* BOTÓN SOLO APARECE SI NO HAY NADIE FICHADO AQUÍ Y NO ESTÁ VALIDADO */}
-                {step === 5 && !isEditing && !squadValidated && Object.keys(extras).length === 0 && (
+                {/* BOTÓN "NO QUIERO" SÓLO SI ESTAMOS EN PASO 4 (EXTRAS), NO EDITANDO, Y SIN JUGADORES */}
+                {step === 4 && !isEditing && Object.keys(extras).length === 0 && (
                     <button onClick={handleValidateSquad} className="w-full bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-2xl font-black italic text-[10px] uppercase flex items-center justify-center gap-2 mb-6 hover:bg-red-600/30 transition-all"><IconBan size={14}/> NO QUIERO NO CONVOCADOS</button>
                 )}
             </div>
