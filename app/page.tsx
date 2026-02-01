@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Plus, Timer, Check, X, Lock, ArrowRight, Trophy, Edit3, Save, Volume2, VolumeX, 
   Users, LogOut, FileText, CalendarDays, Shield, ChevronUp, ChevronDown, User, Ban,
-  ArrowUpDown, ArrowDownUp, Trash2
+  ArrowUpDown, ArrowDownUp, Trash2, RefreshCcw
 } from 'lucide-react';
 import { PLAYERS_DB } from './players';
 
@@ -49,7 +49,6 @@ const MOCK_TEAMS_DB = [
   { id: 104, name: "Oranje Power", user: "VanBasten_Fan", points: 0, value: 290 },
 ];
 
-// Generador de plantillas falsas para los bots
 const getMockSquad = (offset: number) => {
   const start = (offset * 11) % Math.max(1, PLAYERS_DB.length - 20);
   const safePlayers = PLAYERS_DB.length > 0 ? PLAYERS_DB : [];
@@ -64,7 +63,7 @@ const getMockSquad = (offset: number) => {
 // 2. COMPONENTES VISUALES
 // ==========================================
 
-const Typewriter = ({ text, stepTitle }: { text: string, stepTitle?: string }) => {
+const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: string, isError?: boolean }) => {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
     let i = 0; setDisplayedText(""); 
@@ -78,8 +77,8 @@ const Typewriter = ({ text, stepTitle }: { text: string, stepTitle?: string }) =
 
   return (
     <span>
-      {stepTitle && <span className="text-[#22c55e] font-black mr-2">{stepTitle}</span>}
-      {displayedText}
+      {stepTitle && <span className={`${isError ? 'text-red-500' : 'text-[#22c55e]'} font-black mr-2`}>{stepTitle}</span>}
+      <span className={isError ? "text-red-400 font-bold" : ""}>{displayedText}</span>
     </span>
   );
 };
@@ -126,7 +125,6 @@ const MusicPlayer = () => {
   );
 };
 
-// --- COMPONENTE MINI JUGADOR (RECUPERADO) ---
 const MiniPlayer = ({ p, small }: any) => {
   if (!p) return null;
   return (
@@ -139,12 +137,10 @@ const MiniPlayer = ({ p, small }: any) => {
   );
 }
 
-// --- COMPONENTE CAMPO ---
 const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain }: any) => {
   return (
     <div className="mt-6 relative w-full aspect-[3/4.2] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')]"></div>
-        {/* LÍNEAS */}
         <div className="absolute inset-0 border-2 border-white/40 m-4 rounded-lg pointer-events-none"></div>
         <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none"></div>
         <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
@@ -155,13 +151,11 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
         <div className="absolute bottom-4 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
         <div className="absolute bottom-28 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-full pointer-events-none"></div>
 
-        {/* ETIQUETAS */}
         <div className="absolute top-[20%] left-0 -translate-y-1/2 bg-[#ef4444] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEL</div>
         <div className="absolute top-[45%] left-0 -translate-y-1/2 bg-[#10b981] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">MED</div>
         <div className="absolute top-[70%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEF</div>
         <div className="absolute top-[90%] left-0 -translate-y-1/2 bg-[#facc15] py-1 px-2 rounded-r shadow-lg text-black text-[8px] font-black italic z-20">POR</div>
         
-        {/* JUGADORES */}
         <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">
             {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />))}
         </div>
@@ -306,7 +300,6 @@ const CalendarView = () => (
   </div>
 );
 
-// COMPONENTE TARJETA DE EQUIPO (DISEÑO REPARADO)
 const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
   const [expanded, setExpanded] = useState(false);
   const canView = isMyTeam || isAdmin;
@@ -320,7 +313,6 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
        </div>
        {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
        
-       {/* RENDERIZADO DE PLANTILLA PRO */}
        {expanded && canView && (
          <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
             <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
@@ -443,16 +435,40 @@ export default function EuroApp() {
       if (isOverBudget) return alert("⚠️ Presupuesto excedido.");
       setSquadValidated(true); setHasValidatedOnce(true); setStep(6); 
   };
+  
+  // Función para ir a la quiniela Y validar
+  const handleGoToQuiniela = () => {
+      setSquadValidated(true);
+      setHasValidatedOnce(true);
+      setView('quiniela');
+  }
+
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(5); };
-  const goToQuiniela = () => { setView('quiniela'); };
+  
+  // Función para reiniciar equipo completo
+  const handleResetTeam = () => {
+      if (confirm("¿Estás seguro? Se borrará TODO tu equipo y empezarás de cero.")) {
+          setSelected({}); setBench({}); setExtras({}); setCaptain(null); setTeamName("");
+          setNameLocked(false); setStep(1); setSquadValidated(false); setQuinielaSelections({});
+          setQuinielaLocked(false); setHasValidatedOnce(false); localStorage.removeItem(`euro_game_${user?.email}`);
+      }
+  };
 
   const getAssistantState = () => {
       if (isEditing) return { title: "", text: "MODO EDICIÓN ACTIVADO. Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
+      
+      // ERROR TÁCTICA INVÁLIDA (NUEVO)
+      if (Object.keys(selected).length === 11 && !isValidTactic) {
+          return { title: "ALERTA", text: "Tu táctica no es válida, corríjela.", isError: true };
+      }
+
       if (isOverBudget) return { title: "ALERTA", text: "⚠️ Presupuesto excedido." };
+      
       if (view === 'quiniela') {
           if (quinielaLocked) return { title: "¡HECHO!", text: "¡Enhorabuena, ya tienes tu equipo de elegidos para la gloria y tu apuesta en la Euroquiniela! Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
           return { title: "PASO 7 DE 7", text: "Te explico como funciona: debes elegir a las 2 selecciones que crees que se clasificarán para la siguiente fase. Cuando hayas rellenado todos los grupos pulsa en el botón VALIDAR." };
       }
+      
       if (!squadValidated && hasValidatedOnce && step === 5) return { title: "MODO EDICIÓN", text: "Edita tu equipo y no olvides pulsar VALIDAR EQUIPO para guardar los cambios." };
       if (squadValidated) return { title: "¡LISTO!", text: "Recuerda que puedes editar tu plantilla las veces que quieras hasta que acabe la cuenta atrás." };
       
@@ -476,6 +492,8 @@ export default function EuroApp() {
       else if (current.length < 2) setQuinielaSelections({...quinielaSelections, [group]: [...current, team]});
   };
 
+  const isQuinielaComplete = EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2);
+
   const combinedTeams = useMemo(() => {
       const mySquad = { titulares: Object.values(selected), banquillo: Object.values(bench), extras: Object.values(extras) };
       const myTeam = { id: 999, name: teamName || "Mi Equipo", user: user?.username || "Yo", points: 0, value: budgetSpent, squad: mySquad };
@@ -485,36 +503,74 @@ export default function EuroApp() {
   const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
   const inactiveClass = "border border-white/5 opacity-80";
 
+  // Verificación de si la plantilla está completa para activar el botón VALIDAR
+  const isTeamComplete = Object.keys(selected).length === 11 && Object.keys(bench).length === 6;
+
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
       <NavBar view={view} setView={setView} onLogout={handleLogout} squadCompleted={squadValidated} />
 
+      {/* HEADER FIJO CON ASISTENTE Y BARRA DE ACCIÓN */}
       {(view === 'squad' || view === 'quiniela') && (
         <div className="sticky top-[60px] z-[100] bg-[#0d1526]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
             <div className="px-4 pt-4">
-              <div className={`p-4 rounded-2xl border-l-4 transition-all duration-500 ${isOverBudget ? 'border-red-600 bg-red-950/20' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl mb-3`}>
+              <div className={`p-4 rounded-2xl border-l-4 transition-all duration-500 ${isOverBudget || assistant.isError ? 'border-red-600 bg-red-950/20' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl mb-3`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className="text-[10px] font-black italic uppercase mb-1 tracking-widest text-[#22c55e]">ASISTENTE VIRTUAL</p>
+                    <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${isOverBudget || assistant.isError ? 'text-red-500' : 'text-[#22c55e]'}`}>ASISTENTE VIRTUAL</p>
                     <div className="text-xs font-semibold italic min-h-[3rem] leading-relaxed pr-2 whitespace-pre-line">
                       {step === 1 && !isEditing && <div className="mb-2 text-white/70">Bienvenido a la Eurocopa Fantástica 2024. Te voy a guiar paso a paso para que hagas tu equipo y participes en este emocionante juego.</div>}
-                      <Typewriter text={assistant.text} stepTitle={assistant.title} />
+                      <Typewriter text={assistant.text} stepTitle={assistant.title} isError={assistant.isError} />
                     </div>
-                    {view === 'squad' && (
-                        squadValidated ? (
-                            <button onClick={handleUnlockSquad} className="mt-3 w-full bg-[#facc15] text-black p-3 rounded-xl font-black italic text-xs uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Edit3 size={14}/> EDITAR EQUIPO</button>
-                        ) : (step === 6 && (
-                            <button onClick={goToQuiniela} className="mt-3 w-full bg-[#22c55e] text-black p-3 rounded-xl font-black italic text-xs uppercase shadow-lg flex items-center justify-center gap-2 animate-pulse hover:scale-105 transition-transform"><Trophy size={14}/> EUROQUINIELA</button>
-                        ))
-                    )}
                     <CountdownBlock />
                   </div>
                   <div className="flex flex-col gap-2 items-end"><MusicPlayer /></div>
                 </div>
               </div>
-              {view === 'squad' && <div className="mb-2"><div className="flex justify-between uppercase italic font-black text-[10px] mb-1"><span className="text-white/40">PRESUPUESTO</span><span className={isOverBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span></div><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5"><div className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} /></div></div>}
+              
+              {view === 'squad' && (
+                  <>
+                    <div className="mb-2"><div className="flex justify-between uppercase italic font-black text-[10px] mb-1"><span className="text-white/40">PRESUPUESTO</span><span className={isOverBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span></div><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5"><div className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} /></div></div>
+                    
+                    {/* BARRA DE ACCIÓN FIJA SQUAD */}
+                    <div className="flex gap-2 mt-3">
+                        <button onClick={handleResetTeam} className="bg-red-600/90 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-1 border border-red-500/50"><RefreshCcw size={14}/> RESETEAR PLANTILLA</button>
+                        
+                        {squadValidated ? (
+                            <button onClick={handleUnlockSquad} className="bg-[#facc15] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-[2]"><Edit3 size={14}/> EDITAR EQUIPO</button>
+                        ) : (step === 6 ? (
+                            <button onClick={handleGoToQuiniela} className="bg-[#22c55e] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-[2] animate-pulse"><Trophy size={14}/> IR A EUROQUINIELA</button>
+                        ) : (
+                            <button 
+                                onClick={handleValidateSquad} 
+                                disabled={!isTeamComplete}
+                                className={`flex-[2] px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 transition-transform ${isTeamComplete ? 'bg-[#22c55e] text-black hover:scale-105 animate-pulse' : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-white/5'}`}
+                            >
+                                <Check size={14}/> VALIDAR EQUIPO
+                            </button>
+                        ))}
+                    </div>
+                  </>
+              )}
+
+              {/* BARRA DE ACCIÓN FIJA QUINIELA */}
+              {view === 'quiniela' && (
+                  <div className="mt-3">
+                      {quinielaLocked ? (
+                          <button onClick={() => setQuinielaLocked(false)} className="w-full bg-[#facc15] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Edit3 size={14}/> EDITAR QUINIELA</button>
+                      ) : (
+                          <button 
+                              onClick={() => { setQuinielaLocked(true); setStep(7); alert("¡Quiniela validada!"); }} 
+                              disabled={!isQuinielaComplete}
+                              className={`w-full px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 transition-transform ${isQuinielaComplete ? 'bg-[#22c55e] text-black hover:scale-105 animate-pulse' : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-white/5'}`}
+                          >
+                              <Check size={14}/> {isQuinielaComplete ? "VALIDAR QUINIELA" : "COMPLETA LA QUINIELA"}
+                          </button>
+                      )}
+                  </div>
+              )}
             </div>
         </div>
       )}
@@ -552,14 +608,6 @@ export default function EuroApp() {
                     </div>
                 ))}
             </div>
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50">
-                {!quinielaLocked ? (
-                    EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2) && 
-                    <button onClick={() => { setQuinielaLocked(true); setStep(7); alert("¡Quiniela validada!"); }} className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Check size={24}/> VALIDAR QUINIELA</button>
-                ) : (
-                    <button onClick={() => setQuinielaLocked(false)} className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Edit3 size={24}/> EDITAR QUINIELA</button>
-                )}
-            </div>
         </div>
       )}
 
@@ -568,7 +616,7 @@ export default function EuroApp() {
 
       {view === 'squad' && (
         <>
-          <div className="max-w-md mx-auto px-4 mt-32"> 
+          <div className="max-w-md mx-auto px-4 mt-40"> 
             
             <div className={`relative mb-3 transition-all duration-300 ${step === 1 ? 'scale-105 z-20' : ''}`}>
                 <div className={`relative rounded-2xl overflow-hidden ${step === 1 ? activeClass : 'border border-white/10'}`}>
@@ -578,7 +626,12 @@ export default function EuroApp() {
                 </div>
             </div>
             
-            <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">TÁCTICA: <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>{Object.keys(selected).length === 11 ? tactic : '-- -- --'}</span></div>
+            <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">
+                TÁCTICA: 
+                <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>
+                    {Object.keys(selected).length === 11 ? tactic : '-- -- --'}
+                </span>
+            </div>
 
             <Field selected={selected} step={step} canInteractField={canInteractField} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
 
@@ -591,16 +644,9 @@ export default function EuroApp() {
                 <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
                 <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractExtras ? 'cursor-pointer' : 'opacity-80'}`}>{extras[id] ? <div className="w-full h-full flex flex-col items-center justify-center"><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{extras[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div></div> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
                 
-                {step === 5 && !isEditing && (
-                    !squadValidated ? (
-                        Object.keys(extras).length === 0 ? (
-                            <button onClick={handleValidateSquad} className="w-full bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-2xl font-black italic text-[10px] uppercase flex items-center justify-center gap-2 mb-6 hover:bg-red-600/30 transition-all"><Ban size={14}/> NO QUIERO NO CONVOCADOS</button>
-                        ) : (
-                            <button onClick={handleValidateSquad} className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 mb-6 hover:scale-105 transition-transform"><Check size={24}/> VALIDAR EQUIPO</button>
-                        )
-                    ) : (
-                        <button onClick={handleUnlockSquad} className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 mb-6 hover:scale-105 transition-transform"><Edit3 size={24}/> EDITAR EQUIPO</button>
-                    )
+                {/* BOTÓN SOLO APARECE SI NO HAY NADIE FICHADO AQUÍ */}
+                {step === 5 && !isEditing && !squadValidated && Object.keys(extras).length === 0 && (
+                    <button onClick={handleValidateSquad} className="w-full bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-2xl font-black italic text-[10px] uppercase flex items-center justify-center gap-2 mb-6 hover:bg-red-600/30 transition-all"><Ban size={14}/> NO QUIERO NO CONVOCADOS</button>
                 )}
             </div>
           </div>
