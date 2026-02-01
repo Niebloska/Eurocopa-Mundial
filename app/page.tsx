@@ -4,113 +4,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PLAYERS_DB } from './players';
 
 // ==========================================
-// 0. SISTEMA DE ICONOS (SVG PURO - SIN LIBRERÍAS EXTERNAS)
-// ==========================================
-// Definimos TODOS los iconos a mano para evitar errores de importación "Element type invalid".
-
-const SvgIcon = ({ children, size = 24, className = "", fill = "none", stroke = "currentColor", strokeWidth = 2 }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {children}
-  </svg>
-);
-
-// --- Iconos de Interfaz ---
-const IconPlus = ({ size=18 }) => <SvgIcon size={size}><path d="M5 12h14"/><path d="M12 5v14"/></SvgIcon>;
-const IconCheck = ({ size=18 }) => <SvgIcon size={size}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
-const IconX = ({ size=18 }) => <SvgIcon size={size}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgIcon>;
-const IconLock = ({ size=18 }) => <SvgIcon size={size}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></SvgIcon>;
-const IconTrophy = ({ size=18 }) => <SvgIcon size={size}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></SvgIcon>;
-const IconEdit = ({ size=18 }) => <SvgIcon size={size}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></SvgIcon>;
-const IconVolume2 = ({ size=18 }) => <SvgIcon size={size}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></SvgIcon>;
-const IconVolumeX = ({ size=18 }) => <SvgIcon size={size}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></SvgIcon>;
-const IconUsers = ({ size=18 }) => <SvgIcon size={size}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></SvgIcon>;
-const IconLogOut = ({ size=18 }) => <SvgIcon size={size}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></SvgIcon>;
-const IconFileText = ({ size=18 }) => <SvgIcon size={size}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></SvgIcon>;
-const IconCalendar = ({ size=18 }) => <SvgIcon size={size}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></SvgIcon>;
-const IconShield = ({ size=18 }) => <SvgIcon size={size}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></SvgIcon>;
-const IconChevronUp = ({ size=18 }) => <SvgIcon size={size}><path d="m18 15-6-6-6 6"/></SvgIcon>;
-const IconChevronDown = ({ size=18 }) => <SvgIcon size={size}><path d="m6 9 6 6 6-6"/></SvgIcon>;
-const IconUser = ({ size=18 }) => <SvgIcon size={size}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgIcon>;
-const IconBan = ({ size=18 }) => <SvgIcon size={size}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></SvgIcon>;
-const IconArrowUpDown = ({ size=18 }) => <SvgIcon size={size}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgIcon>;
-const IconArrowDownUp = ({ size=18 }) => <SvgIcon size={size}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgIcon>;
-const IconTrash2 = ({ size=18 }) => <SvgIcon size={size}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgIcon>;
-const IconRefresh = ({ size=18 }) => <SvgIcon size={size}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgIcon>;
-
-// --- Iconos Personalizados (Reglas) ---
-const IconStar = ({ className, fill = "currentColor" }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-);
-
-const IconBoot = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" fill="currentColor">
-    <path d="M49.6 232.8C20.4 262.8 3.1 303 1.2 344.8 0 371.2 8.8 448 8.8 448l24.8 24.8 19.2-22.4 20.8 20.8 20-22.4 20 23.2 20-24 19.2 23.2 20.8-21.6 23.2 19.2 13.6-28.8c42.4-8 84.8-19.2 119.2-36 60-29.6 112-76 136.8-136.8 12.8-31.2 16-64 8.8-96.8-4-18.4-12-36-24-51.2-16.8-21.6-40.8-36.8-66.4-44.8-36-11.2-75.2-8-109.6 8-28.8 13.6-54.4 34.4-76.8 59.2-24 26.4-42.4 56.8-56.8 88.8l-1.6 2.4z" fill="#374151"/>
-    <path d="M137.6 244c-12 16-24.8 31.2-39.2 44.8l-20-20c13.6-12.8 25.6-27.2 36.8-42.4L137.6 244zM180.8 204.8c-12 17.6-26.4 33.6-41.6 48.8l-20.8-20.8c14.4-14.4 27.2-29.6 38.4-46.4L180.8 204.8zM221.6 163.2c-12.8 18.4-27.2 35.2-43.2 50.4l-20-20.8c15.2-14.4 28.8-30.4 40.8-48L221.6 163.2z" fill="#9ca3af"/>
-    <path d="M52 480h16v32H52zM108 472h16v32h-16zM164 464h16v32h-16zM220 448h16v32h-16z" fill="#d1d5db"/>
-  </svg>
-);
-
-const IconSub = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14" stroke="none" /> 
-    <path d="M16 9l-4-4-4 4" stroke="#22c55e" /> {/* Flecha arriba verde */}
-    <path d="M12 5v7" stroke="#22c55e" />
-    <path d="M12 19l4-4" stroke="#ef4444" /> {/* Flecha abajo roja */}
-    <path d="M8 15l4 4" stroke="#ef4444" />
-    <path d="M12 12v7" stroke="#ef4444" />
-  </svg>
-);
-
-const IconCaptain = () => (
-    <div className="w-6 h-4 bg-[#facc15] rounded-sm flex items-center justify-center shadow-sm border border-yellow-600/50">
-        <span className="text-black font-black text-[10px] leading-none">C</span>
-    </div>
-);
-
-const IconDoubleYellow = () => (
-    <div className="flex items-center relative h-5 w-6">
-       <div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div>
-       <div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div>
-    </div>
-);
-
-const IconFourStars = () => (
-    <div className="flex flex-col items-center leading-none gap-0.5">
-       <div className="flex -space-x-0.5">
-         <IconStar className="text-[#facc15]" />
-         <IconStar className="text-[#facc15] -mt-1.5" />
-         <IconStar className="text-[#facc15]" />
-       </div>
-       <IconStar className="text-[#facc15] -mt-1" />
-    </div>
-);
-
-const IconGoal = () => (
-    <SvgIcon size={14} className="text-white">
-        <path d="M3 22v-8c0-3.1 2.9-6 6-6h6c3.1 0 6 2.9 6 6v8"/><path d="M3 10h18"/><path d="M8 10v12"/><path d="M16 10v12"/>
-    </SvgIcon>
-);
-
-const IconCheckCircle = () => (
-  <SvgIcon size={14} stroke="#22c55e" strokeWidth="3">
-      <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
-  </SvgIcon>
-);
-
-const IconXCircle = () => (
-  <SvgIcon size={14} stroke="#ef4444" strokeWidth="3">
-      <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
-  </SvgIcon>
-);
-
-const IconAward = () => (
-    <SvgIcon size={24} className="text-[#ffd700]">
-        <circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-    </SvgIcon>
-);
-
-
-// ==========================================
 // 1. CONFIGURACIÓN Y DATOS
 // ==========================================
 
@@ -160,6 +53,95 @@ const getMockSquad = (offset: number) => {
     extras: safePlayers.slice(start + 17, start + 20)
   };
 };
+
+// ==========================================
+// 2. SISTEMA DE ICONOS (SVG PURO - DEFINICIÓN ÚNICA Y FLEXIBLE)
+// ==========================================
+
+// Helper base para SVGs
+const SvgIcon = ({ children, size = 24, className = "", fill = "none", stroke = "currentColor", strokeWidth = 2 }: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+
+// --- Iconos de Interfaz (Ahora aceptan className) ---
+const IconPlus = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M5 12h14"/><path d="M12 5v14"/></SvgIcon>;
+const IconCheck = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
+const IconX = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgIcon>;
+const IconLock = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></SvgIcon>;
+const IconTrophy = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></SvgIcon>;
+const IconEdit = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></SvgIcon>;
+const IconVolume2 = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></SvgIcon>;
+const IconVolumeX = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></SvgIcon>;
+const IconUsers = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></SvgIcon>;
+const IconLogOut = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></SvgIcon>;
+const IconFileText = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></SvgIcon>;
+const IconCalendar = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></SvgIcon>;
+const IconShield = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></SvgIcon>;
+const IconChevronUp = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m18 15-6-6-6 6"/></SvgIcon>;
+const IconChevronDown = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m6 9 6 6 6-6"/></SvgIcon>;
+const IconUser = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgIcon>;
+const IconBan = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></SvgIcon>;
+const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgIcon>;
+const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgIcon>;
+const IconTrash2 = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgIcon>;
+const IconRefresh = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgIcon>;
+
+// --- Iconos Personalizados (Reglas) ---
+const IconStar = ({ className, fill = "currentColor" }: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+);
+
+const IconBoot = ({ className="" }: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" fill="currentColor" className={className}>
+    <path d="M49.6 232.8C20.4 262.8 3.1 303 1.2 344.8 0 371.2 8.8 448 8.8 448l24.8 24.8 19.2-22.4 20.8 20.8 20-22.4 20 23.2 20-24 19.2 23.2 20.8-21.6 23.2 19.2 13.6-28.8c42.4-8 84.8-19.2 119.2-36 60-29.6 112-76 136.8-136.8 12.8-31.2 16-64 8.8-96.8-4-18.4-12-36-24-51.2-16.8-21.6-40.8-36.8-66.4-44.8-36-11.2-75.2-8-109.6 8-28.8 13.6-54.4 34.4-76.8 59.2-24 26.4-42.4 56.8-56.8 88.8l-1.6 2.4z" fill="#374151"/>
+    <path d="M137.6 244c-12 16-24.8 31.2-39.2 44.8l-20-20c13.6-12.8 25.6-27.2 36.8-42.4L137.6 244zM180.8 204.8c-12 17.6-26.4 33.6-41.6 48.8l-20.8-20.8c14.4-14.4 27.2-29.6 38.4-46.4L180.8 204.8zM221.6 163.2c-12.8 18.4-27.2 35.2-43.2 50.4l-20-20.8c15.2-14.4 28.8-30.4 40.8-48L221.6 163.2z" fill="#9ca3af"/>
+    <path d="M52 480h16v32H52zM108 472h16v32h-16zM164 464h16v32h-16zM220 448h16v32h-16z" fill="#d1d5db"/>
+  </svg>
+);
+
+const IconSub = ({ className="" }: any) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 5v14" stroke="none" /> 
+    <path d="M16 9l-4-4-4 4" stroke="#22c55e" /> {/* Flecha arriba verde */}
+    <path d="M12 5v7" stroke="#22c55e" />
+    <path d="M12 19l4-4" stroke="#ef4444" /> {/* Flecha abajo roja */}
+    <path d="M8 15l4 4" stroke="#ef4444" />
+    <path d="M12 12v7" stroke="#ef4444" />
+  </svg>
+);
+
+const IconCaptain = ({ className="" }: any) => (
+    <div className={`w-6 h-4 bg-[#facc15] rounded-sm flex items-center justify-center shadow-sm border border-yellow-600/50 ${className}`}>
+        <span className="text-black font-black text-[10px] leading-none">C</span>
+    </div>
+);
+
+const IconDoubleYellow = ({ className="" }: any) => (
+    <div className={`flex items-center relative h-5 w-6 ${className}`}>
+       <div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div>
+       <div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div>
+    </div>
+);
+
+const IconFourStars = ({ className="" }: any) => (
+    <div className={`flex flex-col items-center leading-none gap-0.5 ${className}`}>
+       <div className="flex -space-x-0.5">
+         <IconStar className="text-[#facc15]" />
+         <IconStar className="text-[#facc15] -mt-1.5" />
+         <IconStar className="text-[#facc15]" />
+       </div>
+       <IconStar className="text-[#facc15] -mt-1" />
+    </div>
+);
+
+const IconAward = ({ className="" }: any) => (
+    <SvgIcon size={24} className={`text-[#ffd700] ${className}`}>
+        <circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+    </SvgIcon>
+);
+
 
 // ==========================================
 // 3. COMPONENTES VISUALES APP
@@ -233,7 +215,7 @@ const MusicPlayer = () => {
             onClick={() => setPlaying(!playing)} 
             className={`flex items-center gap-2 ${playing ? 'bg-[#22c55e] text-black' : 'bg-[#ef4444] text-white'} px-4 py-2 rounded-full font-black text-[10px] uppercase shadow-lg transition-transform hover:scale-105 border-2 border-white`}
         >
-            {playing ? <IconVolume2 size={14}/> : <IconVolumeX size={14}/>}
+            {playing ? <IconVolume2 size={14} className="animate-pulse"/> : <IconVolumeX size={14}/>}
             <span>MÚSICA {playing ? 'ON' : 'OFF'}</span>
         </button>
     </div>
@@ -395,10 +377,6 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
     </div>
   );
 };
-
-// ==========================================
-// 4. VISTAS ADICIONALES (CALENDARIO Y TARJETA EQUIPO)
-// ==========================================
 
 const generateFixture = () => {
   const G = [
@@ -652,6 +630,7 @@ const RulesView = () => {
                     {/* PORTERO */}
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                         <h4 className="text-[#facc15] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Portero (POR)</h4>
+                        {/* REORDENADO: PENALTI PRIMERO, LUEGO PORTERÍA A CERO */}
                         <ScoreRow label={<div className="flex items-center gap-2">🥅 ⛔ <span>Penalti Parado</span></div>} pts="+3" color="text-[#22c55e]" />
                         <ScoreRow label={<div className="flex items-center gap-2">🥅 🧤 <span>Portería a 0 (+60&apos;)</span></div>} pts="+4" color="text-[#22c55e]" />
                         
@@ -672,7 +651,7 @@ const RulesView = () => {
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                     <h4 className="text-white/60 font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Partido y Resultado</h4>
                     <div className="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 px-2 rounded transition-colors">
-                        <span className="text-gray-200 font-medium text-xs uppercase flex items-center gap-2"><IconBoot /> ⚽ Jugar Partido</span>
+                        <span className="text-gray-200 font-medium text-xs uppercase flex items-center gap-2">👟 ⚽ Jugar Partido</span>
                         <span className="font-black text-sm text-[#22c55e]">+1</span>
                     </div>
                     <ScoreRow label="👕 Ser Titular" pts="+1" color="text-[#22c55e]" />
