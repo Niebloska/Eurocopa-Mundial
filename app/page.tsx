@@ -53,9 +53,9 @@ const IconBoot = () => (
 const IconSub = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 5v14" stroke="none" /> 
-    <path d="M16 9l-4-4-4 4" stroke="#22c55e" />
+    <path d="M16 9l-4-4-4 4" stroke="#22c55e" /> {/* Flecha arriba verde */}
     <path d="M12 5v7" stroke="#22c55e" />
-    <path d="M12 19l4-4" stroke="#ef4444" />
+    <path d="M12 19l4-4" stroke="#ef4444" /> {/* Flecha abajo roja */}
     <path d="M8 15l4 4" stroke="#ef4444" />
     <path d="M12 12v7" stroke="#ef4444" />
   </svg>
@@ -70,7 +70,7 @@ const IconCaptain = () => (
 const IconDoubleYellow = () => (
     <div className="flex items-center relative h-5 w-6">
        <div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div>
-       <div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 z-20 shadow-sm"></div>
+       <div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div>
     </div>
 );
 
@@ -396,6 +396,10 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
   );
 };
 
+// ==========================================
+// 4. VISTAS ADICIONALES (CALENDARIO Y TARJETA EQUIPO)
+// ==========================================
+
 const generateFixture = () => {
   const G = [
     { n: "GRUPO A", m: [{t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00"},{t1:"Hungría",t2:"Suiza",d:"15 Jun 15:00"},{t1:"Alemania",t2:"Hungría",d:"19 Jun 18:00"},{t1:"Escocia",t2:"Suiza",d:"19 Jun 21:00"},{t1:"Suiza",t2:"Alemania",d:"23 Jun 21:00"},{t1:"Escocia",t2:"Hungría",d:"23 Jun 21:00"}]},
@@ -531,6 +535,10 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
   );
 };
 
+// ==========================================
+// 5. COMPONENTES DE REGLAS 
+// ==========================================
+
 const RuleCard = ({ color, title, icon, children }: any) => {
   return (
     <div className="bg-[#1c2a45] rounded-2xl border border-white/5 overflow-hidden mb-6 shadow-xl">
@@ -543,7 +551,7 @@ const RuleCard = ({ color, title, icon, children }: any) => {
           <h3 className="font-black italic uppercase text-lg tracking-wide text-white">{title}</h3>
         </div>
       </div>
-      <div className="p-5 border-t border-white/5 bg-[#0d1526]/50 text-sm text-gray-100 leading-relaxed">
+      <div className="p-5 border-t border-white/5 bg-[#0d1526]/50 text-sm text-gray-100 leading-relaxed text-left">
         {children}
       </div>
     </div>
@@ -565,11 +573,10 @@ const RulesView = () => {
       <div className="relative h-72 w-full mb-8 overflow-hidden">
         <div className="absolute inset-0 bg-[#05080f]/50 z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#05080f] via-[#05080f]/20 to-transparent z-10"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1624280433509-b4dca387790d?q=80&w=2070&auto=format&fit=crop" 
-          className="w-full h-full object-cover"
-          alt="Stadium Action"
-        />
+        {/* Imagen de fondo (div) para evitar warning de <img> */}
+        <div className="absolute inset-0 z-0">
+           <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1624280433509-b4dca387790d?q=80&w=2070&auto=format&fit=crop')" }}></div>
+        </div>
         <div className="absolute bottom-0 left-0 w-full p-8 z-20">
             <h1 className="text-4xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-2 flex items-center gap-3 drop-shadow-lg">
               <IconFileText size={36} /> REGLAMENTO
@@ -645,9 +652,8 @@ const RulesView = () => {
                     {/* PORTERO */}
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                         <h4 className="text-[#facc15] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Portero (POR)</h4>
-                        {/* REORDENADO: PENALTI PRIMERO, LUEGO PORTERÍA A CERO */}
                         <ScoreRow label={<div className="flex items-center gap-2">🥅 ⛔ <span>Penalti Parado</span></div>} pts="+3" color="text-[#22c55e]" />
-                        <ScoreRow label={<div className="flex items-center gap-2">🥅 🧤 <span>Portería a 0 (+60')</span></div>} pts="+4" color="text-[#22c55e]" />
+                        <ScoreRow label={<div className="flex items-center gap-2">🥅 🧤 <span>Portería a 0 (+60&apos;)</span></div>} pts="+4" color="text-[#22c55e]" />
                         
                         <div className="pt-2 border-t border-white/5 mt-2">
                              <ScoreRow label={<div className="flex items-center gap-1">🥅 ⚽ <span>1 Gol Encajado</span></div>} pts="0" color="text-gray-400" />
@@ -658,7 +664,7 @@ const RulesView = () => {
                     {/* DEFENSA */}
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                         <h4 className="text-[#3b82f6] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Defensa (DEF)</h4>
-                        <ScoreRow label="🛡️ Portería a 0 (+45')" pts="+2" color="text-[#22c55e]" />
+                        <ScoreRow label="🛡️ Portería a 0 (+45&apos;)" pts="+2" color="text-[#22c55e]" />
                     </div>
                 </div>
 
@@ -666,7 +672,7 @@ const RulesView = () => {
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                     <h4 className="text-white/60 font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Partido y Resultado</h4>
                     <div className="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 px-2 rounded transition-colors">
-                        <span className="text-gray-200 font-medium text-xs uppercase flex items-center gap-2">👟 ⚽ Jugar Partido</span>
+                        <span className="text-gray-200 font-medium text-xs uppercase flex items-center gap-2"><IconBoot /> ⚽ Jugar Partido</span>
                         <span className="font-black text-sm text-[#22c55e]">+1</span>
                     </div>
                     <ScoreRow label="👕 Ser Titular" pts="+1" color="text-[#22c55e]" />
