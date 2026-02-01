@@ -1,39 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
-  Plus, Timer, Check, X, Lock, ArrowUpDown, ArrowDownUp, Trash2, Ban, 
-  ArrowRight, Trophy, Edit3, Save, Volume2, VolumeX, 
-  Users, LogOut, Eye, ChevronDown, ChevronUp, User, UserCheck, 
-  FileText, CalendarDays, Shield
+  Plus, Timer, Check, X, Lock, ArrowRight, Trophy, Edit3, Save, Volume2, VolumeX, 
+  Users, LogOut, FileText, CalendarDays, Shield, ChevronUp, ChevronDown, User, Ban,
+  ArrowUpDown, ArrowDownUp, Trash2
 } from 'lucide-react';
 import { PLAYERS_DB } from './players';
 
-// --- 1. CONFIGURACIÓN Y DATOS ---
+// ==========================================
+// 1. CONFIGURACIÓN Y DATOS
+// ==========================================
+
 const MASTER_EMAIL = "admin@euro2024.com"; 
 const VALID_FORMATIONS = ["3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", "5-4-1"];
 
-const EURO_GROUPS = [
-  { name: "GRUPO A", teams: ["Alemania", "Escocia", "Hungría", "Suiza"] },
-  { name: "GRUPO B", teams: ["España", "Croacia", "Italia", "Albania"] },
-  { name: "GRUPO C", teams: ["Eslovenia", "Dinamarca", "Serbia", "Inglaterra"] },
-  { name: "GRUPO D", teams: ["Polonia", "Países Bajos", "Austria", "Francia"] },
-  { name: "GRUPO E", teams: ["Bélgica", "Eslovaquia", "Rumanía", "Ucrania"] },
-  { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
-];
-
 const posColors: Record<string, string> = {
-  "POR": "bg-[#facc15] text-black", "DEF": "bg-[#3b82f6] text-white",
-  "MED": "bg-[#10b981] text-white", "DEL": "bg-[#ef4444] text-white"
+  "POR": "bg-[#facc15] text-black", 
+  "DEF": "bg-[#3b82f6] text-white",
+  "MED": "bg-[#10b981] text-white", 
+  "DEL": "bg-[#ef4444] text-white"
 };
 
-const MOCK_TEAMS_DB = [
-  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 120, value: 295, squadIndex: 1 },
-  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 115, value: 299, squadIndex: 2 },
-  { id: 103, name: "Catenaccio FC", user: "Luigi_99", points: 98, value: 280, squadIndex: 3 },
-];
-
-// --- 2. FUNCIONES AUXILIARES ---
 const getFlag = (country: string) => {
   const flags: Record<string, string> = {
     "España": "🇪🇸", "Alemania": "🇩🇪", "Francia": "🇫🇷", "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 
@@ -45,24 +33,26 @@ const getFlag = (country: string) => {
   return flags[country] || "🏳️";
 };
 
-const generateFixture = () => {
-  return EURO_GROUPS.map(group => ({
-    group: group.name,
-    matches: [
-      { team1: group.teams[0], team2: group.teams[1], date: "Jornada 1", result: "- : -" },
-      { team1: group.teams[2], team2: group.teams[3], date: "Jornada 1", result: "- : -" },
-      { team1: group.teams[0], team2: group.teams[2], date: "Jornada 2", result: "- : -" },
-      { team1: group.teams[1], team2: group.teams[3], date: "Jornada 2", result: "- : -" },
-      { team1: group.teams[3], team2: group.teams[0], date: "Jornada 3", result: "- : -" },
-      { team1: group.teams[2], team2: group.teams[1], date: "Jornada 3", result: "- : -" },
-    ]
-  }));
-};
+const EURO_GROUPS_DATA = [
+  { name: "GRUPO A", teams: ["Alemania", "Escocia", "Hungría", "Suiza"] },
+  { name: "GRUPO B", teams: ["España", "Croacia", "Italia", "Albania"] },
+  { name: "GRUPO C", teams: ["Eslovenia", "Dinamarca", "Serbia", "Inglaterra"] },
+  { name: "GRUPO D", teams: ["Polonia", "Países Bajos", "Austria", "Francia"] },
+  { name: "GRUPO E", teams: ["Bélgica", "Eslovaquia", "Rumanía", "Ucrania"] },
+  { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
+];
 
+const MOCK_TEAMS_DB = [
+  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 0, value: 295 },
+  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 0, value: 299 },
+  { id: 103, name: "Catenaccio FC", user: "Luigi_99", points: 0, value: 280 },
+  { id: 104, name: "Oranje Power", user: "VanBasten_Fan", points: 0, value: 290 },
+];
+
+// Generador de plantillas falsas para los bots
 const getMockSquad = (offset: number) => {
+  const start = (offset * 11) % Math.max(1, PLAYERS_DB.length - 20);
   const safePlayers = PLAYERS_DB.length > 0 ? PLAYERS_DB : [];
-  if (safePlayers.length === 0) return { titulares: [], banquillo: [], extras: [] };
-  const start = offset * 11; 
   return {
     titulares: safePlayers.slice(start, start + 11),
     banquillo: safePlayers.slice(start + 11, start + 17),
@@ -70,83 +60,151 @@ const getMockSquad = (offset: number) => {
   };
 };
 
-// --- 3. COMPONENTES VISUALES ---
+// ==========================================
+// 2. COMPONENTES VISUALES
+// ==========================================
 
-const Typewriter = ({ text, delay = 0 }: { text: string, delay?: number }) => {
+const Typewriter = ({ text, stepTitle }: { text: string, stepTitle?: string }) => {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
     let i = 0; setDisplayedText(""); 
-    const startTyping = () => {
-      const intervalId = setInterval(() => {
-        setDisplayedText((prev) => text.substring(0, i + 1));
-        i++; if (i === text.length) clearInterval(intervalId);
-      }, 15);
-      return intervalId;
-    };
-    const timeoutId = setTimeout(() => { const interval = startTyping(); return () => clearInterval(interval); }, delay);
-    return () => clearTimeout(timeoutId);
-  }, [text, delay]);
-  return <span>{displayedText}</span>;
+    const fullText = text;
+    const intervalId = setInterval(() => {
+        setDisplayedText((prev) => fullText.substring(0, i + 1));
+        i++; if (i === fullText.length) clearInterval(intervalId);
+    }, 25);
+    return () => clearInterval(intervalId);
+  }, [text]);
+
+  return (
+    <span>
+      {stepTitle && <span className="text-[#22c55e] font-black mr-2">{stepTitle}</span>}
+      {displayedText}
+    </span>
+  );
 };
 
-const Countdown = ({ onTick }: { onTick?: (timeLeft: number) => void }) => {
-  const [timeLeft, setTimeLeft] = useState(136 * 24 * 60 * 60); 
+const CountdownBlock = () => {
+  const [timeLeft, setTimeLeft] = useState(11793600); 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        const newVal = prev > 0 ? prev - 1 : 0;
-        if (onTick) onTick(newVal);
-        return newVal;
-      });
-    }, 1000);
+    const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
     return () => clearInterval(timer);
-  }, [onTick]);
+  }, []);
   const formatTime = (s: number) => {
     const d = Math.floor(s / 86400); const h = Math.floor((s % 86400) / 3600);
     const m = Math.floor((s % 3600) / 60); const sec = s % 60;
     return `${d}D ${h}H ${m}M ${sec}S`;
   };
-  return <span className="text-xl font-black italic uppercase tracking-tighter w-44 inline-block text-[#facc15]">{formatTime(timeLeft)}</span>;
+  return (
+    <div className="flex items-center justify-between bg-black/40 rounded-xl p-3 border border-white/5 mt-2">
+       <div className="flex flex-col">
+          <span className="text-lg font-black text-[#facc15] font-mono leading-none tracking-tight">{formatTime(timeLeft)}</span>
+          <span className="text-[8px] font-bold text-[#22c55e] uppercase tracking-widest mt-1">TIEMPO RESTANTE PARA EDITAR MI EQUIPO</span>
+       </div>
+       <div className="bg-[#facc15] p-2 rounded-full text-black shadow-lg shadow-yellow-500/20"><Lock size={18} /></div>
+    </div>
+  );
 };
 
 const MusicPlayer = () => {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
   useEffect(() => {
     if (typeof window !== 'undefined') {
         audioRef.current = new Audio("/Banda sonora EF 2024.mp3"); 
-        audioRef.current.loop = true;
-        audioRef.current.volume = 0.5;
+        audioRef.current.loop = true; audioRef.current.volume = 0.5;
     }
     return () => { if (audioRef.current) audioRef.current.pause(); };
   }, []);
-
   useEffect(() => {
-    if (audioRef.current) {
-      if (playing) audioRef.current.play().catch(e => console.log("Audio block", e));
-      else audioRef.current.pause();
-    }
+    if (audioRef.current) { if (playing) audioRef.current.play().catch(console.error); else audioRef.current.pause(); }
   }, [playing]);
-
   return (
-    <button onClick={() => setPlaying(!playing)} className="p-3 bg-[#1c2a45] rounded-full border border-white/10 hover:bg-white/10 transition-all text-[#22c55e]">
-      {playing ? <Volume2 size={20} className="animate-pulse"/> : <VolumeX size={20} className="text-white/50"/>}
+    <button onClick={() => setPlaying(!playing)} className="p-2 bg-[#1c2a45] rounded-full border border-white/10 hover:bg-white/10 transition-all text-[#22c55e]">
+      {playing ? <Volume2 size={16} className="animate-pulse"/> : <VolumeX size={16} className="text-white/50"/>}
     </button>
   );
 };
 
+// --- COMPONENTE MINI JUGADOR (RECUPERADO) ---
+const MiniPlayer = ({ p, small }: any) => {
+  if (!p) return null;
+  return (
+    <div className={`flex flex-col items-center ${small ? 'gap-0.5' : 'gap-1'}`}>
+      <div className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full border-2 bg-white flex items-center justify-center border-[#22c55e] relative shadow-md`}>
+        <span className="text-[8px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop().substring(0, 8)}</span>
+      </div>
+      <span className={`text-[7px] font-black uppercase px-1 rounded ${posColors[p.posicion]}`}>{p.posicion}</span>
+    </div>
+  );
+}
+
+// --- COMPONENTE CAMPO ---
+const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain }: any) => {
+  return (
+    <div className="mt-6 relative w-full aspect-[3/4.2] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')]"></div>
+        {/* LÍNEAS */}
+        <div className="absolute inset-0 border-2 border-white/40 m-4 rounded-lg pointer-events-none"></div>
+        <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <div className="absolute top-4 left-1/2 w-48 h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-lg pointer-events-none"></div>
+        <div className="absolute top-4 left-1/2 w-20 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-lg pointer-events-none"></div>
+        <div className="absolute top-28 left-1/2 w-20 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-full pointer-events-none"></div>
+        <div className="absolute bottom-4 left-1/2 w-48 h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
+        <div className="absolute bottom-4 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
+        <div className="absolute bottom-28 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-full pointer-events-none"></div>
+
+        {/* ETIQUETAS */}
+        <div className="absolute top-[20%] left-0 -translate-y-1/2 bg-[#ef4444] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEL</div>
+        <div className="absolute top-[45%] left-0 -translate-y-1/2 bg-[#10b981] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">MED</div>
+        <div className="absolute top-[70%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1 px-2 rounded-r shadow-lg text-white text-[8px] font-black italic z-20">DEF</div>
+        <div className="absolute top-[90%] left-0 -translate-y-1/2 bg-[#facc15] py-1 px-2 rounded-r shadow-lg text-black text-[8px] font-black italic z-20">POR</div>
+        
+        {/* JUGADORES */}
+        <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">
+            {[1,2,3].map(i => (<Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />))}
+        </div>
+        <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />))}
+        </div>
+        <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between px-16 z-30">
+            {[1,2,3,4,5].map(i => (<Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />))}
+        </div>
+        <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30">
+            <Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} />
+        </div>
+    </div>
+  );
+};
+
+const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
+  <div className="fixed top-0 left-0 w-full z-[110] bg-[#0d1526] border-b border-white/10 px-4 py-3 shadow-lg">
+      <div className="max-w-md mx-auto flex justify-between items-center">
+          <button onClick={() => setView('rules')} className={`flex flex-col items-center gap-1 transition-all ${view === 'rules' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><FileText size={20} /><span className="text-[8px] font-black uppercase">Reglas</span></button>
+          <button onClick={() => setView('squad')} className={`flex flex-col items-center gap-1 transition-all ${view === 'squad' ? 'text-[#22c55e] scale-110' : 'text-white/40 hover:text-white'}`}><Shield size={20} /><span className="text-[8px] font-black uppercase">Plantilla</span></button>
+          <button disabled={!squadCompleted} onClick={() => squadCompleted && setView('quiniela')} className={`flex flex-col items-center gap-1 transition-all ${view === 'quiniela' ? 'text-purple-400 scale-110' : !squadCompleted ? 'text-white/10 cursor-not-allowed' : 'text-white/40 hover:text-white'}`}><Trophy size={20} /><span className="text-[8px] font-black uppercase">EUROQUINIELA</span></button>
+          <button onClick={() => setView('classification')} className={`flex flex-col items-center gap-1 transition-all ${view === 'classification' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><Users size={20} /><span className="text-[8px] font-black uppercase">Clasificación</span></button>
+          <button onClick={() => setView('calendar')} className={`flex flex-col items-center gap-1 transition-all ${view === 'calendar' ? 'text-sky-400 scale-110' : 'text-white/40 hover:text-white'}`}><CalendarDays size={20} /><span className="text-[8px] font-black uppercase">Calendario</span></button>
+          <button onClick={onLogout} className="flex flex-col items-center gap-1 text-white/40 hover:text-red-500 transition-all group"><LogOut size={20} /><span className="text-[8px] font-black uppercase">Salir</span></button>
+      </div>
+  </div>
+);
+
 const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, teamName?: string) => void }) => {
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [teamName, setTeamName] = useState(""); 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !username) return alert("Rellena todos los campos");
+    if (isRegister && !teamName) return alert("Debes poner un nombre a tu equipo");
     onLogin(email, username, isRegister ? teamName : undefined);
   };
+
   return (
     <div className="min-h-screen bg-[#05080f] flex items-center justify-center p-4 font-sans text-white">
       <div className="w-full max-w-md bg-[#162136] p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
@@ -157,69 +215,17 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
            <p className="text-white/50 text-xs uppercase tracking-widest font-bold">{isRegister ? "CREA TU EQUIPO Y GANA" : "ACCEDE A TU VESTUARIO"}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">USUARIO</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" /></div>
-          {isRegister && <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">NOMBRE EQUIPO</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" /></div>}
-          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">EMAIL</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" /></div>
-          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">CONTRASEÑA</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" /></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">USUARIO</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Tu nombre de manager" /></div>
+          {isRegister && <div className="space-y-1 animate-in fade-in"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">NOMBRE EQUIPO</label><input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="Ej: Los Invencibles" /></div>}
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">EMAIL</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="correo@ejemplo.com" /></div>
+          <div className="space-y-1"><label className="text-[10px] font-black uppercase text-[#22c55e] ml-2">CONTRASEÑA</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 rounded-xl bg-[#05080f] border border-white/10 text-white font-bold outline-none focus:border-[#22c55e]" placeholder="••••••••" /></div>
           <button type="submit" className="w-full py-4 mt-6 bg-[#22c55e] hover:bg-[#22c55e]/90 text-black font-black italic uppercase rounded-xl shadow-lg">{isRegister ? "CREAR CUENTA" : "ENTRAR"}</button>
         </form>
-        <div className="mt-6 text-center"><button onClick={() => setIsRegister(!isRegister)} className="text-xs text-white/50 hover:text-white font-bold underline uppercase">{isRegister ? "¿Ya tienes cuenta? Entra" : "Regístrate aquí"}</button></div>
+        <div className="mt-6 text-center border-t border-white/5 pt-4"><button type="button" onClick={() => setIsRegister(!isRegister)} className="text-xs text-white/50 hover:text-white font-bold underline uppercase">{isRegister ? "¿Ya tienes cuenta? Inicia Sesión" : "¿Nuevo aquí? Regístrate gratis"}</button></div>
       </div>
     </div>
   );
 };
-
-const MiniPlayer = ({ p, small }: any) => {
-  if (!p) return null;
-  return (
-    <div className={`flex flex-col items-center ${small ? 'gap-0.5' : 'gap-1'}`}>
-      <div className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full border-2 bg-white flex items-center justify-center border-[#22c55e] relative shadow-md`}><span className="text-[8px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop().substring(0, 8)}</span></div>
-      <span className={`text-[7px] font-black uppercase px-1 rounded ${posColors[p.posicion]}`}>{p.posicion}</span>
-    </div>
-  );
-}
-
-const TeamCard = ({ team, rank, isMyTeam }: any) => {
-  const [expanded, setExpanded] = useState(false);
-  const squadData = team.squad || getMockSquad(team.squadIndex);
-  return (
-    <div className={`rounded-2xl border transition-all overflow-hidden ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
-       <div onClick={() => setExpanded(!expanded)} className={`p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors`}>
-          <div className="flex items-center gap-4"><span className={`text-2xl font-black italic w-8 text-center ${rank === 1 ? 'text-[#facc15]' : 'text-white/30'}`}>#{rank}</span><div><h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><User size={10} /> {team.user}</div></div></div>
-          <div className="flex items-center gap-4"><div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>{expanded ? <ChevronUp size={20} className="text-white/30"/> : <ChevronDown size={20} className="text-white/30"/>}</div>
-       </div>
-       {expanded && (
-         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
-            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
-              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares.filter((p:any) => p.posicion === 'DEL').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares.filter((p:any) => p.posicion === 'MED').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares.filter((p:any) => p.posicion === 'DEF').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-                 <div className="w-full flex justify-center pt-1">{squadData.titulares.filter((p:any) => p.posicion === 'POR').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-3 gap-1">{squadData.banquillo.map((p:any) => <MiniPlayer key={p.id} p={p} small />)}</div></div>
-               <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-3 gap-1">{squadData.extras.map((p:any) => <MiniPlayer key={p.id} p={p} small />)}</div></div>
-            </div>
-         </div>
-       )}
-    </div>
-  );
-};
-
-const NavBar = ({ view, setView, onLogout }: any) => (
-    <div className="fixed top-0 left-0 w-full z-[110] bg-[#0d1526] border-b border-white/10 px-4 py-3 shadow-lg">
-        <div className="max-w-md mx-auto flex justify-between items-center">
-            <button onClick={() => setView('rules')} className={`flex flex-col items-center gap-1 transition-all ${view === 'rules' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><FileText size={20} /><span className="text-[8px] font-black uppercase">Reglas</span></button>
-            <button onClick={() => setView('squad')} className={`flex flex-col items-center gap-1 transition-all ${view === 'squad' ? 'text-[#22c55e] scale-110' : 'text-white/40 hover:text-white'}`}><Shield size={20} /><span className="text-[8px] font-black uppercase">Plantilla</span></button>
-            <button onClick={() => setView('classification')} className={`flex flex-col items-center gap-1 transition-all ${view === 'classification' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><Trophy size={20} /><span className="text-[8px] font-black uppercase">Rank</span></button>
-            <button onClick={() => setView('calendar')} className={`flex flex-col items-center gap-1 transition-all ${view === 'calendar' ? 'text-sky-400 scale-110' : 'text-white/40 hover:text-white'}`}><CalendarDays size={20} /><span className="text-[8px] font-black uppercase">Calendario</span></button>
-            <button onClick={onLogout} className="flex flex-col items-center gap-1 text-white/40 hover:text-red-500 transition-all group"><LogOut size={20} /><span className="text-[8px] font-black uppercase">Salir</span></button>
-        </div>
-    </div>
-);
 
 const Slot = ({ p, on, cap, setCap, showCap, active }: any) => (
   <div className="flex flex-col items-center gap-1.5">
@@ -228,40 +234,130 @@ const Slot = ({ p, on, cap, setCap, showCap, active }: any) => (
   </div>
 );
 
-const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, sortValue, setSortValue, sortAlpha, setSortAlpha, activeSortType, setActiveSortType, currentSelection, allPlayersSelected }: any) => {
+const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, currentSelection, allPlayersSelected, 
+  sortPrice, setSortPrice, sortAlpha, setSortAlpha, activeSort, setActiveSort 
+}: any) => {
   const isTitular = activeSlot.type === 'titular';
-  const forcedPos = isTitular ? activeSlot.pos : "TODOS";
   const [filterCountry, setFilterCountry] = useState("TODOS");
-  const [filterPos, setFilterPos] = useState(forcedPos);
+  const [filterPos, setFilterPos] = useState(isTitular ? activeSlot.pos : "TODOS");
 
-  const uniqueCountries = useMemo(() => { const countries = new Set(PLAYERS_DB.map(p => p.seleccion)); return ["TODOS", ...Array.from(countries).sort()]; }, []);
-  const countryCounts = useMemo(() => { return allPlayersSelected.reduce((acc: any, p: any) => { if (p.id !== currentSelection?.id) acc[p.seleccion] = (acc[p.seleccion] || 0) + 1; return acc; }, {}); }, [allPlayersSelected, currentSelection]);
+  const countryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allPlayersSelected.forEach((p: any) => { if (currentSelection && p.id === currentSelection.id) return; counts[p.seleccion] = (counts[p.seleccion] || 0) + 1; });
+    return counts;
+  }, [allPlayersSelected, currentSelection]);
+
+  const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
   const filteredPlayers = useMemo(() => {
     let result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id));
     if (filterCountry !== "TODOS") result = result.filter(p => p.seleccion === filterCountry);
     if (filterPos !== "TODOS") result = result.filter(p => p.posicion === filterPos);
-    result.sort((a, b) => { if (activeSortType === 'value') return sortValue === 'desc' ? b.precio - a.precio : a.precio - b.precio; return sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre); });
+    result.sort((a, b) => activeSort === 'price' ? (sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio) : (sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre)));
     return result;
-  }, [selectedIds, filterCountry, filterPos, sortValue, sortAlpha, activeSortType]);
+  }, [selectedIds, filterCountry, filterPos, activeSort, sortPrice, sortAlpha]);
 
   return (
     <div className="fixed inset-0 z-[200] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom duration-300">
       <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black italic uppercase tracking-tighter">ELEGIR JUGADOR</h2><button onClick={onClose} className="p-3 bg-white/5 rounded-full"><X/></button></div>
       {currentSelection && <button onClick={onRemove} className="mb-6 w-full bg-red-600 p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-xs uppercase"><Trash2 size={16}/> ELIMINAR</button>}
-      <div className="flex gap-2 mb-4">{["POR", "DEF", "MED", "DEL"].map(pos => (<button key={pos} disabled={isTitular} onClick={() => setFilterPos(pos)} className={`flex-1 py-2.5 rounded-xl font-black text-[10px] border-2 transition-all ${filterPos === pos ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10'} ${isTitular && filterPos !== pos ? 'opacity-20' : ''}`}>{pos}</button>))}</div>
-      <div className="flex flex-wrap gap-2 mb-6 max-h-44 overflow-y-auto pr-2 custom-scrollbar content-start">{uniqueCountries.map(s => { const count = countryCounts[s] || 0; const isFull = count >= 7; return (<button key={s} onClick={() => setFilterCountry(s)} className={`flex items-center gap-2 px-3 py-2 rounded-xl font-black text-[9px] italic whitespace-nowrap active:scale-95 mb-1 ${filterCountry === s ? 'bg-[#22c55e] text-black shadow-lg shadow-green-500/20' : (isFull ? 'bg-red-900/40 text-red-500 border border-red-500/30' : 'bg-[#162136] text-white/40 hover:bg-[#1c2a45]')}`}>{s !== "TODOS" && <span>{getFlag(s)}</span>} {s} {s !== "TODOS" && <span className={`${isFull ? 'text-red-400' : 'opacity-50'}`}>({count}/7)</span>}</button>); })}</div>
-      <div className="grid grid-cols-2 gap-3 mb-6"><button onClick={() => { setSortValue((prev: string) => prev === 'desc' ? 'asc' : 'desc'); setActiveSortType('value'); }} className={`border border-white/10 p-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-[10px] italic uppercase ${activeSortType === 'value' ? 'bg-[#162136] text-[#22c55e] border-[#22c55e]/50' : 'text-white/30'}`}><ArrowUpDown size={14}/> {sortValue === 'desc' ? '€ MAX' : '€ MIN'}</button><button onClick={() => { setSortAlpha((prev: string) => prev === 'asc' ? 'desc' : 'asc'); setActiveSortType('alpha'); }} className={`border border-white/10 p-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-[10px] italic uppercase ${activeSortType === 'alpha' ? 'bg-[#162136] text-[#22c55e] border-[#22c55e]/50' : 'text-white/30'}`}><ArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A-Z' : 'Z-A'}</button></div>
+      <div className="flex gap-2 mb-4">{["POR", "DEF", "MED", "DEL"].map(pos => (<button key={pos} disabled={isTitular && activeSlot.pos !== pos} onClick={() => setFilterPos(pos)} className={`flex-1 py-2.5 rounded-xl font-black text-[10px] border-2 transition-all ${filterPos === pos ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10'} ${isTitular && activeSlot.pos !== pos ? 'opacity-20' : ''}`}>{pos}</button>))}</div>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+          <button onClick={() => { setSortPrice((prev: any) => prev === 'desc' ? 'asc' : 'desc'); setActiveSort('price'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'price' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><ArrowUpDown size={14}/> {sortPrice === 'desc' ? 'PRECIO MÁX' : 'PRECIO MÍN'}</button>
+          <button onClick={() => { setSortAlpha((prev: any) => prev === 'asc' ? 'desc' : 'asc'); setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><ArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A - Z' : 'Z - A'}</button>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6 max-h-32 overflow-y-auto pr-2 custom-scrollbar content-start">{uniqueCountries.map(s => { const count = countryCounts[s] || 0; const isFull = count >= 7; return (<button key={s} onClick={() => setFilterCountry(s)} className={`flex items-center gap-2 px-3 py-2 rounded-xl font-black text-[9px] italic whitespace-nowrap active:scale-95 mb-1 ${filterCountry === s ? 'bg-[#22c55e] text-black shadow-lg shadow-green-500/20' : isFull ? 'bg-red-900/40 text-red-500 border border-red-500/30' : 'bg-[#162136] text-white/40 hover:bg-[#1c2a45]'}`}>{s !== "TODOS" && <span>{getFlag(s)}</span>} {s} {s !== "TODOS" && <span className={isFull ? "text-red-400" : "opacity-50"}>({count}/7)</span>}</button>); })}</div>
       <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1">{filteredPlayers.map(p => (<div key={p.id} onClick={() => onSelect(p)} className="p-4 rounded-2xl flex justify-between items-center border bg-[#162136] border-white/5 active:scale-95 cursor-pointer"><div className="flex items-center gap-3 font-black italic uppercase tracking-tighter"><span className="text-2xl">{getFlag(p.seleccion)}</span><div className="flex flex-col text-left"><span className="text-sm">{p.nombre}</span><span className="text-[8px] text-white/40 tracking-widest">{p.posicion}</span></div></div><div className="text-right"><span className="text-[#22c55e] font-black text-lg block">{p.precio}M</span></div></div>))}</div>
     </div>
   );
 };
 
-// --- 4. APLICACIÓN PRINCIPAL ---
+const generateFixture = () => {
+  const G = [
+    { n: "GRUPO A", m: [{t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00"},{t1:"Hungría",t2:"Suiza",d:"15 Jun 15:00"},{t1:"Alemania",t2:"Hungría",d:"19 Jun 18:00"},{t1:"Escocia",t2:"Suiza",d:"19 Jun 21:00"},{t1:"Suiza",t2:"Alemania",d:"23 Jun 21:00"},{t1:"Escocia",t2:"Hungría",d:"23 Jun 21:00"}]},
+    { n: "GRUPO B", m: [{t1:"España",t2:"Croacia",d:"15 Jun 18:00"},{t1:"Italia",t2:"Albania",d:"15 Jun 21:00"},{t1:"Croacia",t2:"Albania",d:"19 Jun 15:00"},{t1:"España",t2:"Italia",d:"20 Jun 21:00"},{t1:"Albania",t2:"España",d:"24 Jun 21:00"},{t1:"Croacia",t2:"Italia",d:"24 Jun 21:00"}]},
+    { n: "GRUPO C", m: [{t1:"Eslovenia",t2:"Dinamarca",d:"16 Jun 18:00"},{t1:"Serbia",t2:"Inglaterra",d:"16 Jun 21:00"},{t1:"Eslovenia",t2:"Serbia",d:"20 Jun 15:00"},{t1:"Dinamarca",t2:"Inglaterra",d:"20 Jun 18:00"},{t1:"Inglaterra",t2:"Eslovenia",d:"25 Jun 21:00"},{t1:"Dinamarca",t2:"Serbia",d:"25 Jun 21:00"}]},
+    { n: "GRUPO D", m: [{t1:"Polonia",t2:"Países Bajos",d:"16 Jun 15:00"},{t1:"Austria",t2:"Francia",d:"17 Jun 21:00"},{t1:"Polonia",t2:"Austria",d:"21 Jun 18:00"},{t1:"Países Bajos",t2:"Francia",d:"21 Jun 21:00"},{t1:"Países Bajos",t2:"Austria",d:"25 Jun 18:00"},{t1:"Francia",t2:"Polonia",d:"25 Jun 18:00"}]},
+    { n: "GRUPO E", m: [{t1:"Rumanía",t2:"Ucrania",d:"17 Jun 15:00"},{t1:"Bélgica",t2:"Eslovaquia",d:"17 Jun 18:00"},{t1:"Eslovaquia",t2:"Ucrania",d:"21 Jun 15:00"},{t1:"Bélgica",t2:"Rumanía",d:"22 Jun 21:00"},{t1:"Eslovaquia",t2:"Rumanía",d:"26 Jun 18:00"},{t1:"Ucrania",t2:"Bélgica",d:"26 Jun 18:00"}]},
+    { n: "GRUPO F", m: [{t1:"Turquía",t2:"Georgia",d:"18 Jun 18:00"},{t1:"Portugal",t2:"República Checa",d:"18 Jun 21:00"},{t1:"Georgia",t2:"República Checa",d:"22 Jun 15:00"},{t1:"Turquía",t2:"Portugal",d:"22 Jun 18:00"},{t1:"Georgia",t2:"Portugal",d:"26 Jun 21:00"},{t1:"República Checa",t2:"Turquía",d:"26 Jun 21:00"}]}
+  ];
+  return G;
+};
+
+const CalendarView = () => (
+  <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
+     <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><CalendarDays /> CALENDARIO</h1>
+     <div className="space-y-6">
+        {generateFixture().map((g) => (
+          <div key={g.n} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5">
+             <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.n}</h3></div>
+             <div className="divide-y divide-white/5">
+                 {g.m.map((m, i) => (
+                   <div key={i} className="p-3 flex justify-between items-center relative">
+                      {i % 2 === 0 && <div className="absolute top-0 left-0 w-full bg-black/20 text-center text-[8px] font-bold text-white/30 uppercase tracking-widest py-0.5">JORNADA {Math.floor(i/2) + 1}</div>}
+                      <div className="w-1/3 text-center pt-2"><span className="text-xl">{getFlag(m.t1)}</span><p className="text-[8px] font-bold mt-1">{m.t1}</p></div>
+                      <div className="text-center pt-2"><span className="text-[10px] text-[#facc15] font-mono font-bold block">{m.d}</span><span className="text-white/20 font-black text-xl">- : -</span></div>
+                      <div className="w-1/3 text-center pt-2"><span className="text-xl">{getFlag(m.t2)}</span><p className="text-[8px] font-bold mt-1">{m.t2}</p></div>
+                   </div>
+                 ))}
+             </div>
+          </div>
+        ))}
+     </div>
+  </div>
+);
+
+// COMPONENTE TARJETA DE EQUIPO (DISEÑO REPARADO)
+const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
+  const [expanded, setExpanded] = useState(false);
+  const canView = isMyTeam || isAdmin;
+  const squadData = team.squad || getMockSquad(team.id);
+
+  return (
+    <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
+       <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
+          <div className="flex items-center gap-4"><span className={`text-2xl font-black italic w-8 text-center ${rank === 1 ? 'text-[#facc15]' : 'text-white/30'}`}>#{rank}</span><div><h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><User size={10} /> {team.user}</div></div></div>
+          <div className="flex items-center gap-4"><div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>{!canView ? <Lock size={16} className="text-white/20"/> : (expanded ? <ChevronUp size={20} className="text-white/30"/> : <ChevronDown size={20} className="text-white/30"/>)}</div>
+       </div>
+       {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
+       
+       {/* RENDERIZADO DE PLANTILLA PRO */}
+       {expanded && canView && (
+         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
+            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
+              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'DEL').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
+                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'MED').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
+                 <div className="w-full flex justify-center gap-2 pb-2 border-b border-white/5">{squadData.titulares?.filter((p:any) => p.posicion === 'DEF').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
+                 <div className="w-full flex justify-center pt-1">{squadData.titulares?.filter((p:any) => p.posicion === 'POR').map((p:any) => <MiniPlayer key={p.id} p={p} />)}</div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3">
+                   <p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p>
+                   <div className="grid grid-cols-3 gap-1">{squadData.banquillo?.map((p:any) => <MiniPlayer key={p.id} p={p} small />)}</div>
+               </div>
+               <div className="border border-white/10 rounded-2xl bg-white/5 p-3">
+                   <p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p>
+                   <div className="grid grid-cols-3 gap-1">
+                       {squadData.extras?.length > 0 ? squadData.extras.map((p:any) => <MiniPlayer key={p.id} p={p} small />) : <span className="text-[8px] text-white/20 italic col-span-3 text-center">Vacío</span>}
+                   </div>
+               </div>
+            </div>
+         </div>
+       )}
+    </div>
+  );
+};
+
+// --- APP PRINCIPAL ---
 export default function EuroApp() {
   const [user, setUser] = useState<{email: string, username: string, teamName?: string} | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [view, setView] = useState<'rules' | 'squad' | 'classification' | 'calendar'>('squad'); 
+  const [view, setView] = useState<'rules' | 'squad' | 'classification' | 'calendar' | 'quiniela'>('squad'); 
   const [teamName, setTeamName] = useState("");
+  const [nameLocked, setNameLocked] = useState(false);
   const [selected, setSelected] = useState<any>({});
   const [bench, setBench] = useState<any>({});
   const [extras, setExtras] = useState<any>({});
@@ -269,52 +365,53 @@ export default function EuroApp() {
   const [activeSlot, setActiveSlot] = useState<any>(null);
   const [step, setStep] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isCountdownFinished, setIsCountdownFinished] = useState(false);
+  const [squadValidated, setSquadValidated] = useState(false);
   const [quinielaSelections, setQuinielaSelections] = useState<Record<string, string[]>>({});
   const [quinielaLocked, setQuinielaLocked] = useState(false);
   
-  // Sort states para el modal
-  const [sortValue, setSortValue] = useState<'desc' | 'asc'>('desc');
+  const [sortPrice, setSortPrice] = useState<'desc' | 'asc'>('desc');
   const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc');
-  const [activeSortType, setActiveSortType] = useState<'value' | 'alpha'>('value');
+  const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
+  
+  const [hasValidatedOnce, setHasValidatedOnce] = useState(false);
 
+  // --- PERSISTENCIA DE DATOS ---
   useEffect(() => {
     const savedUser = localStorage.getItem('euro_user');
     if (savedUser) {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
         setIsAdmin(parsed.email === MASTER_EMAIL);
-        if (parsed.teamName) setTeamName(parsed.teamName);
+        if (parsed.teamName) { setTeamName(parsed.teamName); setNameLocked(true); }
+        
+        const savedGame = localStorage.getItem(`euro_game_${parsed.email}`);
+        if (savedGame) {
+            const gameData = JSON.parse(savedGame);
+            setSelected(gameData.selected || {}); setBench(gameData.bench || {}); setExtras(gameData.extras || {});
+            setCaptain(gameData.captain || null); setStep(gameData.step || 1); setTeamName(gameData.teamName || parsed.teamName);
+            setQuinielaSelections(gameData.quinielaSelections || {}); setSquadValidated(gameData.squadValidated || false);
+            setQuinielaLocked(gameData.quinielaLocked || false); if (gameData.teamName) setNameLocked(true);
+            setHasValidatedOnce(gameData.hasValidatedOnce || false);
+        }
     }
   }, []);
 
+  useEffect(() => {
+    if (user) {
+        const gameState = { selected, bench, extras, captain, step, teamName, quinielaSelections, squadValidated, quinielaLocked, hasValidatedOnce };
+        localStorage.setItem(`euro_game_${user.email}`, JSON.stringify(gameState));
+    }
+  }, [selected, bench, extras, captain, step, teamName, quinielaSelections, squadValidated, quinielaLocked, user, hasValidatedOnce]);
+
   const handleLogin = (email: string, username: string, tName?: string) => {
     const newUser = { email, username, teamName: tName };
-    setUser(newUser);
-    setIsAdmin(email === MASTER_EMAIL);
-    if (tName) setTeamName(tName);
+    setUser(newUser); setIsAdmin(email === MASTER_EMAIL);
+    if (tName) { setTeamName(tName); setNameLocked(true); }
     localStorage.setItem('euro_user', JSON.stringify(newUser));
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setIsAdmin(false);
-    localStorage.removeItem('euro_user');
-    setView('squad'); 
-  };
+  const handleLogout = () => { setUser(null); setIsAdmin(false); localStorage.removeItem('euro_user'); setView('squad'); };
 
-  useEffect(() => {
-    if (isEditing) return;
-    if (step === 2 && Object.keys(selected).length === 11) setStep(3);
-    if (step === 3 && captain) setStep(4);
-    if (step === 4 && Object.keys(bench).length === 6) setStep(5);
-  }, [teamName, selected, captain, bench, step, isEditing]);
-
-  const allPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
-  const budgetSpent: number = allPlayers.reduce((acc: number, p: any) => acc + p.precio, 0);
-  const isOverBudget = budgetSpent > 300;
-  
   const tactic = useMemo(() => {
     const def = Object.keys(selected).filter(k => k.startsWith("DEF")).length;
     const med = Object.keys(selected).filter(k => k.startsWith("MED")).length;
@@ -323,191 +420,208 @@ export default function EuroApp() {
   }, [selected]);
 
   const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(tactic), [tactic]);
-  const canSeeAllTeams = isAdmin || isCountdownFinished;
-
-  const handleValidateAndSave = () => {
-    if (isOverBudget) { alert("⚠️ El presupuesto excede los 300M. Debes ajustar tu equipo."); return; }
-    if (Object.keys(selected).length !== 11) { alert("⚠️ Debes tener 11 jugadores titulares."); return; }
-    if (!isValidTactic) { alert(`⚠️ La táctica ${tactic} no es válida.\nEsquemas permitidos:\n${VALID_FORMATIONS.join(", ")}`); return; }
-    setIsEditing(false);
-    setIsSaved(true); 
-    alert("¡Equipo guardado con éxito! Ahora aparecerá en la clasificación.");
-  };
-
-  const handleFinishSquad = () => {
-      setStep(6);
-      setIsSaved(true); 
-  }
+  const allPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
+  const budgetSpent = allPlayers.reduce((acc: number, p: any) => acc + p.precio, 0);
+  const isOverBudget = budgetSpent > 300;
 
   const canInteractField = (step >= 2 && step <= 5) || isEditing;
   const canInteractBench = (step >= 4 && step <= 5) || isEditing;
   const canInteractExtras = (step === 5) || isEditing;
 
-  const combinedTeamsList = useMemo(() => {
-    let list: any[] = [...MOCK_TEAMS_DB]; 
-    if (isSaved && user) {
-        const mySquad = {
-            titulares: Object.values(selected),
-            banquillo: Object.values(bench),
-            extras: Object.values(extras)
-        };
-        const myTeam = { 
-            id: 999,
-            name: teamName || "Mi Equipo", 
-            user: user.username, 
-            points: 0, 
-            value: budgetSpent,
-            squad: mySquad
-        };
-        if (!list.find(t => t.id === 999)) list.push(myTeam);
+  useEffect(() => {
+    if (isEditing) return;
+    if (step === 2 && Object.keys(selected).length === 11) {
+        if (isValidTactic) setStep(3);
     }
-    return list.sort((a, b) => b.points - a.points);
-  }, [isSaved, user, teamName, selected, bench, extras, budgetSpent]);
+    if (step === 3 && captain) setStep(4);
+    if (step === 4 && Object.keys(bench).length === 6) setStep(5);
+  }, [selected, captain, bench, step, isEditing, isValidTactic]);
+
+  const handleValidateSquad = () => { 
+      if (!isValidTactic) return alert("⚠️ Táctica inválida. Revisa tu alineación.");
+      if (Object.keys(selected).length !== 11) return alert("⚠️ Debes tener 11 titulares.");
+      if (isOverBudget) return alert("⚠️ Presupuesto excedido.");
+      setSquadValidated(true); setHasValidatedOnce(true); setStep(6); 
+  };
+  const handleUnlockSquad = () => { setSquadValidated(false); setStep(5); };
+  const goToQuiniela = () => { setView('quiniela'); };
+
+  const getAssistantState = () => {
+      if (isEditing) return { title: "", text: "MODO EDICIÓN ACTIVADO. Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
+      if (isOverBudget) return { title: "ALERTA", text: "⚠️ Presupuesto excedido." };
+      if (view === 'quiniela') {
+          if (quinielaLocked) return { title: "¡HECHO!", text: "¡Enhorabuena, ya tienes tu equipo de elegidos para la gloria y tu apuesta en la Euroquiniela! Recuerda que puedes editar cualquier detalle hasta que se acabe el tiempo." };
+          return { title: "PASO 7 DE 7", text: "Te explico como funciona: debes elegir a las 2 selecciones que crees que se clasificarán para la siguiente fase. Cuando hayas rellenado todos los grupos pulsa en el botón VALIDAR." };
+      }
+      if (!squadValidated && hasValidatedOnce && step === 5) return { title: "MODO EDICIÓN", text: "Edita tu equipo y no olvides pulsar VALIDAR EQUIPO para guardar los cambios." };
+      if (squadValidated) return { title: "¡LISTO!", text: "Recuerda que puedes editar tu plantilla las veces que quieras hasta que acabe la cuenta atrás." };
+      
+      switch(step) {
+          case 1: return { title: "PASO 1 DE 7", text: "Comienza dándole un nombre a tu equipo." };
+          case 2: return { title: "PASO 2 DE 7", text: "Ahora escoge tu once inicial." };
+          case 3: return { title: "PASO 3 DE 7", text: "Escoge un capitán, pulsa sobre la “C” sobre cualquier jugador de tu alineación." };
+          case 4: return { title: "PASO 4 DE 7", text: "Es hora de escoger a tus suplentes. Recuerda que reemplazarán automáticamente a tus titulares si estos no juegan, pero entrarán estrictamente según el orden de los suplentes." };
+          case 5: return { title: "PASO 5 DE 7", text: "Por último escoge a los no convocados, recuerda que puedes elegir entre 0 y 3 jugadores." };
+          case 6: return { title: "PASO 6 DE 7", text: "Perfecto, ahora que ya tienes a tu plantilla pasemos a la Euroquiniela, pulsa en el botón verde que acaba de aparecer." };
+          default: return { title: "", text: "" };
+      }
+  };
+
+  const assistant = getAssistantState();
+
+  const toggleQuiniela = (group: string, team: string) => {
+      if (quinielaLocked) return;
+      const current = quinielaSelections[group] || [];
+      if (current.includes(team)) setQuinielaSelections({...quinielaSelections, [group]: current.filter(t => t !== team)});
+      else if (current.length < 2) setQuinielaSelections({...quinielaSelections, [group]: [...current, team]});
+  };
+
+  const combinedTeams = useMemo(() => {
+      const mySquad = { titulares: Object.values(selected), banquillo: Object.values(bench), extras: Object.values(extras) };
+      const myTeam = { id: 999, name: teamName || "Mi Equipo", user: user?.username || "Yo", points: 0, value: budgetSpent, squad: mySquad };
+      return [myTeam, ...MOCK_TEAMS_DB].sort((a,b) => b.points - a.points);
+  }, [teamName, user, budgetSpent, selected, bench, extras]);
+
+  const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
+  const inactiveClass = "border border-white/5 opacity-80";
 
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
-  // --- RENDERIZADO PRINCIPAL ---
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
-      <NavBar view={view} setView={setView} onLogout={handleLogout} />
+      <NavBar view={view} setView={setView} onLogout={handleLogout} squadCompleted={squadValidated} />
 
-      {/* VISTA 1: REGLAS */}
-      {view === 'rules' && (
-        <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-           <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><FileText /> REGLAMENTO</h1>
-           <div className="space-y-4">
-              <div className="bg-[#1c2a45] p-5 rounded-2xl border border-white/5"><h3 className="font-black text-[#facc15] text-sm uppercase mb-2">1. PRESUPUESTO</h3><p className="text-sm text-white/70 leading-relaxed">Dispones de <span className="text-white font-bold">300M€</span> para fichar a tus 20 jugadores.</p></div>
-              <div className="bg-[#1c2a45] p-5 rounded-2xl border border-white/5"><h3 className="font-black text-[#facc15] text-sm uppercase mb-2">2. PLANTILLA</h3><p className="text-sm text-white/70 leading-relaxed">Debes elegir <span className="text-white font-bold">11 titulares</span>, <span className="text-white font-bold">6 suplentes</span> y <span className="text-white font-bold">3 no convocados</span>.</p></div>
-              <div className="bg-[#1c2a45] p-5 rounded-2xl border border-white/5"><h3 className="font-black text-[#facc15] text-sm uppercase mb-2">3. PUNTUACIÓN</h3><p className="text-sm text-white/70 leading-relaxed">Los puntos se otorgan basándose en el rendimiento real de los jugadores en la Eurocopa 2024.</p></div>
-              <div className="bg-[#1c2a45] p-5 rounded-2xl border border-white/5"><h3 className="font-black text-[#facc15] text-sm uppercase mb-2">4. CAPITÁN</h3><p className="text-sm text-white/70 leading-relaxed">El capitán puntúa <span className="text-white font-bold">DOBLE</span>. ¡Elígelo sabiamente!</p></div>
-           </div>
-        </div>
-      )}
-
-      {/* VISTA 2: CLASIFICACIÓN */}
-      {view === 'classification' && (
-        <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><Trophy /> CLASIFICACIÓN</h1>
-            {!canSeeAllTeams ? (
-                <div className="space-y-6">
-                    <div className="bg-[#162136] border border-white/10 rounded-[2.5rem] p-8 text-center flex flex-col items-center gap-4 shadow-2xl animate-in fade-in">
-                        <div className="w-20 h-20 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-2"><Lock size={40} /></div>
-                        <h2 className="text-xl font-black italic uppercase text-white">TOP SECRET</h2>
-                        <div className="bg-black/30 p-4 rounded-xl w-full mt-4"><p className="text-[10px] uppercase font-black text-[#22c55e] mb-1">TIEMPO PARA DESBLOQUEO</p><Countdown /></div>
-                    </div>
-                    {isSaved && <div><p className="text-center text-[10px] font-black uppercase text-white/40 mb-2 tracking-widest">TU EQUIPO (VISIBLE SOLO PARA TI)</p>{combinedTeamsList.filter(t => t.id === 999).map((team) => <TeamCard key={team.id} team={team} rank={"-"} isMyTeam={true} />)}</div>}
-                </div>
-            ) : (
-                <div className="space-y-4">{isAdmin && <div className="bg-[#facc15]/20 border border-[#facc15] p-3 rounded-xl mb-6 flex items-center gap-3"><Eye size={20} className="text-[#facc15]" /><p className="text-[10px] font-black uppercase text-[#facc15]">MODO MASTER</p></div>}{combinedTeamsList.map((team, idx) => <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === 999} />)}</div>
-            )}
-        </div>
-      )}
-
-      {/* VISTA 3: CALENDARIO */}
-      {view === 'calendar' && (
-        <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-           <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><CalendarDays /> CALENDARIO</h1>
-           <div className="space-y-6">
-              {generateFixture().map((g) => (
-                <div key={g.group} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5">
-                   <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.group}</h3></div>
-                   <div className="divide-y divide-white/5">{g.matches.map((match, idx) => <div key={idx} className="p-4 flex items-center justify-between"><div className="flex flex-col items-center w-1/3"><span className="text-2xl">{getFlag(match.team1)}</span><span className="text-[9px] font-bold uppercase mt-1 text-center">{match.team1}</span></div><div className="flex flex-col items-center"><span className="text-xs text-white/40 mb-1">{match.date}</span><div className="bg-black/40 px-3 py-1 rounded-lg font-mono font-bold text-[#facc15] tracking-widest">{match.result}</div></div><div className="flex flex-col items-center w-1/3"><span className="text-2xl">{getFlag(match.team2)}</span><span className="text-[9px] font-bold uppercase mt-1 text-center">{match.team2}</span></div></div>)}</div>
-                </div>
-              ))}
-           </div>
-        </div>
-      )}
-
-      {/* VISTA 4: SQUAD */}
-      {view === 'squad' && (
-        <>
-          <div className="sticky top-[70px] z-[90] bg-[#05080f]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
+      {(view === 'squad' || view === 'quiniela') && (
+        <div className="sticky top-[60px] z-[100] bg-[#0d1526]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5">
             <div className="px-4 pt-4">
               <div className={`p-4 rounded-2xl border-l-4 transition-all duration-500 ${isOverBudget ? 'border-red-600 bg-red-950/20' : 'border-[#22c55e] bg-[#1c2a45]'} shadow-2xl mb-3`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <p className={`text-[10px] font-black italic uppercase mb-1 tracking-widest ${isOverBudget ? 'text-red-500' : 'text-[#22c55e]'}`}>{isOverBudget ? 'ALERTA DE PRESUPUESTO' : 'ASISTENTE VIRTUAL'}</p>
+                    <p className="text-[10px] font-black italic uppercase mb-1 tracking-widest text-[#22c55e]">ASISTENTE VIRTUAL</p>
                     <div className="text-xs font-semibold italic min-h-[3rem] leading-relaxed pr-2 whitespace-pre-line">
-                      {quinielaLocked ? <span className="text-white"><Typewriter text="Recuerda que puedes editar tu plantilla."/></span> :
-                        isOverBudget ? <span className="text-white"><Typewriter text="⚠️ Superas los 300M. Ajusta el presupuesto."/></span> :
-                        isEditing ? <span className="text-white"><Typewriter text="MODO EDICIÓN ACTIVADO. Ajusta tu equipo."/></span> : 
-                        step === 6 ? <><span className="text-[#22c55e] mr-1">PASO 6 DE 7.</span><Typewriter text="Perfecto, plantilla lista." /></> :
-                        step === 1 ? <span className="text-white"><Typewriter text="Bienvenido a la Eurocopa Fantástica 2024." /></span> :
-                        <><span className="text-[#22c55e] mr-1">PASO {step} DE 7.</span><Typewriter text={step === 2 ? "Ahora escoge tu once inicial." : step === 3 ? "Escoge capitán." : "Completa la plantilla."} /></>
-                      }
+                      {step === 1 && !isEditing && <div className="mb-2 text-white/70">Bienvenido a la Eurocopa Fantástica 2024. Te voy a guiar paso a paso para que hagas tu equipo y participes en este emocionante juego.</div>}
+                      <Typewriter text={assistant.text} stepTitle={assistant.title} />
                     </div>
+                    {view === 'squad' && (
+                        squadValidated ? (
+                            <button onClick={handleUnlockSquad} className="mt-3 w-full bg-[#facc15] text-black p-3 rounded-xl font-black italic text-xs uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Edit3 size={14}/> EDITAR EQUIPO</button>
+                        ) : (step === 6 && (
+                            <button onClick={goToQuiniela} className="mt-3 w-full bg-[#22c55e] text-black p-3 rounded-xl font-black italic text-xs uppercase shadow-lg flex items-center justify-center gap-2 animate-pulse hover:scale-105 transition-transform"><Trophy size={14}/> EUROQUINIELA</button>
+                        ))
+                    )}
+                    <CountdownBlock />
                   </div>
-                  <div className="flex flex-col gap-2 items-end"><MusicPlayer />{(step >= 6 && !isEditing && !isOverBudget && !quinielaLocked) && <button onClick={() => setView('squad')} className="bg-[#22c55e] text-black px-5 py-3 rounded-xl flex items-center gap-2 font-black italic text-[11px] uppercase transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:scale-105">Euroquiniela <ArrowRight size={16}/></button>}</div>
+                  <div className="flex flex-col gap-2 items-end"><MusicPlayer /></div>
                 </div>
               </div>
+              {view === 'squad' && <div className="mb-2"><div className="flex justify-between uppercase italic font-black text-[10px] mb-1"><span className="text-white/40">PRESUPUESTO</span><span className={isOverBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span></div><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5"><div className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} /></div></div>}
+            </div>
+        </div>
+      )}
 
-              <div className="mb-3 space-y-2">
-                {(step >= 6 && !isEditing && !quinielaLocked) && <button onClick={() => setIsEditing(true)} className="w-full bg-[#facc15] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300"><Edit3 size={20}/> EDITAR PLANTILLA</button>}
-                {isEditing && <button onClick={handleValidateAndSave} className="w-full bg-[#22c55e] text-black p-3 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300"><Save size={20}/> GUARDAR CAMBIOS</button>}
-              </div>
-              <div className="mb-2"><div className="flex justify-between uppercase italic font-black text-[10px] mb-1"><span className="text-white/40">PRESUPUESTO</span><span className={isOverBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / 300M</span></div><div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5"><div className={`h-full rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent / 300) * 100, 100)}%` }} /></div></div>
+      {view === 'classification' && (
+        <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><Users /> CLASIFICACIÓN</h1>
+            <div className="space-y-4">
+                {combinedTeams.map((team, idx) => (
+                    <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === 999} isAdmin={isAdmin} />
+                ))}
+            </div>
+        </div>
+      )}
+
+      {view === 'quiniela' && (
+        <div className="max-w-md mx-auto px-4 mt-6 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><Trophy /> EURO QUINIELA</h1>
+            <div className="grid grid-cols-1 gap-6">
+                {EURO_GROUPS_DATA.map(g => (
+                    <div key={g.name} className="bg-[#1c2a45] rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="bg-[#22c55e] p-2 text-center text-black font-black uppercase text-sm">{g.name}</div>
+                        <div className="p-4 grid grid-cols-2 gap-3">
+                            {g.teams.map(t => {
+                                const isSelected = (quinielaSelections[g.name] || []).includes(t);
+                                return (
+                                    <button key={t} onClick={() => toggleQuiniela(g.name, t)} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${isSelected ? 'bg-green-600/20 border-[#22c55e]' : 'bg-[#0d1526] border-white/10 hover:bg-white/5'}`}>
+                                        <span className="text-2xl">{getFlag(t)}</span>
+                                        <span className={`text-[10px] font-black uppercase ${isSelected ? 'text-[#22c55e]' : 'text-white'}`}>{t}</span>
+                                        {isSelected && <div className="absolute top-2 right-2 bg-[#22c55e] rounded-full p-0.5"><Check size={10} className="text-black"/></div>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50">
+                {!quinielaLocked ? (
+                    EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2) && 
+                    <button onClick={() => { setQuinielaLocked(true); setStep(7); alert("¡Quiniela validada!"); }} className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Check size={24}/> VALIDAR QUINIELA</button>
+                ) : (
+                    <button onClick={() => setQuinielaLocked(false)} className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 hover:scale-105 transition-transform"><Edit3 size={24}/> EDITAR QUINIELA</button>
+                )}
+            </div>
+        </div>
+      )}
+
+      {view === 'calendar' && <CalendarView />}
+      {view === 'rules' && <div className="max-w-md mx-auto px-4 mt-20 pb-32 text-center"><h1 className="text-2xl font-black text-[#22c55e]">REGLAMENTO</h1><p className="text-white/50 mt-4">Consulta las reglas oficiales aquí.</p></div>}
+
+      {view === 'squad' && (
+        <>
+          <div className="max-w-md mx-auto px-4 mt-32"> 
+            
+            <div className={`relative mb-3 transition-all duration-300 ${step === 1 ? 'scale-105 z-20' : ''}`}>
+                <div className={`relative rounded-2xl overflow-hidden ${step === 1 ? activeClass : 'border border-white/10'}`}>
+                    <input className={`w-full p-5 pr-32 bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner ${nameLocked ? 'opacity-80' : ''}`} placeholder="NOMBRE EQUIPO" value={teamName} disabled={nameLocked} onChange={(e) => setTeamName(e.target.value)} />
+                    {!nameLocked && teamName.trim().length >= 3 && (<button onClick={() => { setNameLocked(true); if(step===1) setStep(2); }} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#22c55e] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform">OK</button>)}
+                    {nameLocked && (<button onClick={() => setNameLocked(false)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#facc15] text-black px-4 py-2.5 rounded-xl font-black text-[10px] z-10 hover:scale-105 transition-transform flex items-center gap-1"><Edit3 size={12}/> EDITAR</button>)}
+                </div>
+            </div>
+            
+            <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">TÁCTICA: <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>{Object.keys(selected).length === 11 ? tactic : '-- -- --'}</span></div>
+
+            <Field selected={selected} step={step} canInteractField={canInteractField} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
+
+            <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 4 ? activeClass : inactiveClass}`}>
+                <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
+                <div className="grid grid-cols-3 gap-3">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractBench ? 'cursor-pointer' : 'opacity-80'}`}>{bench[id] ? <div className="w-full h-full flex flex-col items-center justify-center"><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{bench[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[bench[id].posicion]}`}>{bench[id].posicion}</div></div> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
+            </div>
+
+            <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 5 ? activeClass : inactiveClass}`}>
+                <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
+                <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractExtras ? 'cursor-pointer' : 'opacity-80'}`}>{extras[id] ? <div className="w-full h-full flex flex-col items-center justify-center"><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{extras[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div></div> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
+                
+                {step === 5 && !isEditing && (
+                    !squadValidated ? (
+                        Object.keys(extras).length === 0 ? (
+                            <button onClick={handleValidateSquad} className="w-full bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-2xl font-black italic text-[10px] uppercase flex items-center justify-center gap-2 mb-6 hover:bg-red-600/30 transition-all"><Ban size={14}/> NO QUIERO NO CONVOCADOS</button>
+                        ) : (
+                            <button onClick={handleValidateSquad} className="w-full bg-[#22c55e] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 mb-6 hover:scale-105 transition-transform"><Check size={24}/> VALIDAR EQUIPO</button>
+                        )
+                    ) : (
+                        <button onClick={handleUnlockSquad} className="w-full bg-[#facc15] text-black p-4 rounded-2xl font-black italic text-lg uppercase shadow-xl flex items-center justify-center gap-2 mb-6 hover:scale-105 transition-transform"><Edit3 size={24}/> EDITAR EQUIPO</button>
+                    )
+                )}
             </div>
           </div>
-
-          <div className="max-w-md mx-auto px-4">
-            <div className="mt-6 space-y-3">
-                <div className="relative"><input className={`w-full p-5 pr-32 rounded-2xl bg-[#1c2a45] text-left font-black text-xl text-[#22c55e] border-none outline-none shadow-inner transition-all ${step === 1 ? 'ring-4 ring-white' : ''}`} placeholder="NOMBRE EQUIPO" value={teamName} disabled={!isEditing && step > 1} onChange={(e) => setTeamName(e.target.value)} />{step === 1 && teamName.trim().length >= 3 && <button onClick={() => setStep(2)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#22c55e] text-black px-4 py-2.5 rounded-xl flex items-center gap-2 font-black italic text-[10px] uppercase transition-all animate-in zoom-in duration-300 hover:scale-105">CONTINUAR</button>}</div>
-                <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1">TÁCTICA: <span className={`${isValidTactic ? 'text-[#22c55e]' : 'text-red-500'} ml-2 transition-colors`}>{Object.keys(selected).length === 11 ? tactic : '-- -- --'}</span>{!isValidTactic && Object.keys(selected).length === 11 && <span className="text-red-500 text-[10px] ml-2 font-black italic">(NO VÁLIDA)</span>}</div>
-            </div>
-
-            <div className={`mt-6 relative w-full aspect-[3/4.2] bg-[#2e9d4a] rounded-[2.5rem] border-[4px] overflow-hidden shadow-2xl transition-all duration-300 ${(canInteractField && step < 6) ? 'border-white scale-[1.02]' : 'border-white/20'}`}>
-                <div className="absolute inset-0 pointer-events-none z-40 font-black text-[9px] italic">
-                    <div className="absolute top-[20%] left-0 -translate-y-1/2 bg-[#ef4444] py-1.5 px-3 rounded-r-lg shadow-lg text-white">DEL</div>
-                    <div className="absolute top-[45%] left-0 -translate-y-1/2 bg-[#10b981] py-1.5 px-3 rounded-r-lg shadow-lg text-white">MED</div>
-                    <div className="absolute top-[70%] left-0 -translate-y-1/2 bg-[#3b82f6] py-1.5 px-3 rounded-r-lg shadow-lg text-white">DEF</div>
-                    <div className="absolute top-[90%] left-0 -translate-y-1/2 bg-[#facc15] py-1.5 px-3 rounded-r-lg shadow-lg text-black">POR</div>
-                </div>
-                <div className="absolute top-[20%] w-full -translate-y-1/2 flex justify-center gap-6 px-16 z-30">{[1,2,3].map(i => <Slot key={i} active={canInteractField && !selected[`DEL-${i}`]} p={selected[`DEL-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEL-${i}`, type:'titular', pos:'DEL'})} cap={captain === selected[`DEL-${i}`]?.id} setCap={() => setCaptain(selected[`DEL-${i}`].id)} showCap={step >= 3} />)}</div>
-                <div className="absolute top-[45%] w-full -translate-y-1/2 flex justify-between px-16 z-30">{[1,2,3,4,5].map(i => <Slot key={i} active={canInteractField && !selected[`MED-${i}`]} p={selected[`MED-${i}`]} on={() => canInteractField && setActiveSlot({id: `MED-${i}`, type:'titular', pos:'MED'})} cap={captain === selected[`MED-${i}`]?.id} setCap={() => setCaptain(selected[`MED-${i}`].id)} showCap={step >= 3} />)}</div>
-                <div className="absolute top-[70%] w-full -translate-y-1/2 flex justify-between px-16 z-30">{[1,2,3,4,5].map(i => <Slot key={i} active={canInteractField && !selected[`DEF-${i}`]} p={selected[`DEF-${i}`]} on={() => canInteractField && setActiveSlot({id: `DEF-${i}`, type:'titular', pos:'DEF'})} cap={captain === selected[`DEF-${i}`]?.id} setCap={() => setCaptain(selected[`DEF-${i}`].id)} showCap={step >= 3} />)}</div>
-                <div className="absolute top-[90%] w-full -translate-y-1/2 flex justify-center z-30"><Slot active={canInteractField && !selected["POR-1"]} p={selected["POR-1"]} on={() => canInteractField && setActiveSlot({id: "POR-1", type:'titular', pos:'POR'})} cap={captain === selected["POR-1"]?.id} setCap={() => setCaptain(selected["POR-1"].id)} showCap={step >= 3} /></div>
-            </div>
-
-            <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 border-2 transition-all duration-300 ${(canInteractBench && step < 6) ? 'border-white' : 'border-white/5'}`}>
-                <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
-                <div className="grid grid-cols-3 gap-3">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => canInteractBench && setActiveSlot({id, type:'bench', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${bench[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractBench ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}>{bench[id] ? <><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs leading-tight">{bench[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[bench[id].posicion]}`}>{bench[id].posicion}</div></> : <span className="text-white/50 font-black text-sm italic">{id}</span>}</div>)}</div>
-            </div>
-
-            <div className={`mt-6 p-4 rounded-[2.5rem] border-2 bg-[#2a3b5a]/30 transition-all duration-300 ${(canInteractExtras && step < 6) ? 'border-white' : 'border-white/5'}`}>
-                <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
-                <div className="grid grid-cols-3 gap-3 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => canInteractExtras && setActiveSlot({id, type:'extras', pos: 'TODOS'})} className={`aspect-[1.5/1] rounded-2xl flex flex-col items-center justify-between border-2 overflow-hidden transition-all ${extras[id] ? 'bg-white border-white' : 'bg-[#1c2a45]/50 border-white/5 p-4'} ${canInteractExtras ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}`}>{extras[id] ? <><div className="flex-1 flex items-center justify-center p-2 text-center text-black font-black uppercase text-xs">{extras[id].nombre.split(' ').pop()}</div><div className={`w-full py-1 text-center text-[10px] font-black uppercase ${posColors[extras[id].posicion]}`}>{extras[id].posicion}</div></> : <span className="text-white/50 font-black text-sm italic">NC</span>}</div>)}</div>
-                {(step === 5 && !isEditing) && <button onClick={handleFinishSquad} className={`w-full p-4 rounded-2xl flex items-center justify-center gap-3 font-black italic text-[10px] uppercase border transition-all duration-300 ${Object.keys(extras).length > 0 ? 'bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30' : 'bg-red-600/20 text-red-500 border-red-500/30'}`}>{Object.keys(extras).length > 0 ? <><Check size={14}/> FINALIZAR</> : <><Ban size={14}/> NO QUIERO NO CONVOCADOS</>}</button>}
-            </div>
         </>
       )}
 
-      {/* FOOTER DEL TIMER */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
-        <div className="bg-[#0d1526]/95 border border-white/10 p-5 rounded-[2.5rem] flex justify-between items-center shadow-2xl backdrop-blur-xl">
-          <div><div className="flex items-center gap-2 text-[#22c55e]"><Timer size={22}/><Countdown onTick={(t) => setIsCountdownFinished(t === 0)} /></div><p className="text-[9px] font-black italic text-[#22c55e]/70 uppercase tracking-tight">TIEMPO RESTANTE PARA EDITAR MI EQUIPO</p></div>
-          <div className="w-14 h-14 rounded-full flex items-center justify-center text-black shadow-lg bg-[#facc15] cursor-pointer"><Lock size={28} /></div>
-        </div>
-      </div>
-
       {activeSlot && (
         <SelectionModal 
-          activeSlot={activeSlot} 
-          onClose={() => setActiveSlot(null)} 
-          sortValue={sortValue} setSortValue={setSortValue}
-          sortAlpha={sortAlpha} setSortAlpha={setSortAlpha}
-          activeSortType={activeSortType} setActiveSortType={setActiveSortType}
+          activeSlot={activeSlot} onClose={() => setActiveSlot(null)} 
+          selectedIds={allPlayers.map((p: any) => p.id)} allPlayersSelected={allPlayers}
+          sortPrice={sortPrice} setSortPrice={setSortPrice} sortAlpha={sortAlpha} setSortAlpha={setSortAlpha} activeSort={activeSort} setActiveSort={setActiveSort}
           onSelect={(p: any) => {
             const isTitular = activeSlot.type === 'titular';
             const currentCount = allPlayers.filter((pl: any) => pl.seleccion === p.seleccion && pl.id !== (selected[activeSlot.id] || bench[activeSlot.id] || extras[activeSlot.id])?.id).length;
-            if (currentCount >= 7) { alert(`⚠️ LÍMITE ALCANZADO: No puedes tener más de 7 jugadores de ${p.seleccion}.`); return; }
-            if (isTitular && !selected[activeSlot.id] && Object.keys(selected).length >= 11) { alert("¡Ya tienes 11 titulares! No puedes añadir más."); return; }
+            if (currentCount >= 7) { alert(`⚠️ Límite selección (7)`); return; }
+            if (isTitular && !selected[activeSlot.id] && Object.keys(selected).length >= 11) { alert("¡Ya tienes 11 titulares!"); return; }
             if (isTitular) setSelected({...selected, [activeSlot.id]: p}); else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p}); else if (activeSlot.type === 'extras') setExtras({...extras, [activeSlot.id]: p});
             setActiveSlot(null);
           }}
           onRemove={() => { if (activeSlot.type === 'titular') { const n = {...selected}; delete n[activeSlot.id]; setSelected(n); } else if (activeSlot.type === 'bench') { const n = {...bench}; delete n[activeSlot.id]; setBench(n); } else { const n = {...extras}; delete n[activeSlot.id]; setExtras(n); } setActiveSlot(null); }}
           currentSelection={activeSlot.type === 'titular' ? selected[activeSlot.id] : (activeSlot.type === 'bench' ? bench[activeSlot.id] : extras[activeSlot.id])} 
-          selectedIds={allPlayers.map((p: any) => p.id)} 
-          allPlayersSelected={allPlayers}
         />
       )}
     </div>
