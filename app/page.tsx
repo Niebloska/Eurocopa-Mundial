@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+// IMPORTACIONES SEGURAS (Solo iconos de sistema básicos para la UI)
+import { 
+  Plus, Check, X, Trophy, Edit3, Volume2, VolumeX, 
+  LogOut, FileText, Shield, Ban,
+  ArrowUpDown, ArrowDownUp, Trash2, RefreshCcw, ChevronUp, ChevronDown
+} from 'lucide-react';
 import { PLAYERS_DB } from './players';
 
 // ==========================================
@@ -59,34 +65,34 @@ const getMockSquad = (offset: number) => {
 // ==========================================
 
 // Helper base para SVGs
-const SvgIcon = ({ children, size = 24, className = "", fill = "none", stroke = "currentColor", strokeWidth = 2 }: any) => (
+const SvgBase = ({ children, className, size = 24, fill="none", stroke="currentColor", strokeWidth="2" }: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
     {children}
   </svg>
 );
 
 // --- Iconos de Interfaz (Ahora aceptan className) ---
-const IconPlus = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M5 12h14"/><path d="M12 5v14"/></SvgIcon>;
-const IconCheck = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
-const IconX = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgIcon>;
-const IconLock = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></SvgIcon>;
-const IconTrophy = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></SvgIcon>;
-const IconEdit = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></SvgIcon>;
-const IconVolume2 = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></SvgIcon>;
-const IconVolumeX = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></SvgIcon>;
-const IconUsers = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></SvgIcon>;
-const IconLogOut = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></SvgIcon>;
-const IconFileText = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></SvgIcon>;
-const IconCalendar = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></SvgIcon>;
-const IconShield = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></SvgIcon>;
-const IconChevronUp = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m18 15-6-6-6 6"/></SvgIcon>;
-const IconChevronDown = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m6 9 6 6 6-6"/></SvgIcon>;
-const IconUser = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgIcon>;
-const IconBan = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></SvgIcon>;
-const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgIcon>;
-const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgIcon>;
-const IconTrash2 = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgIcon>;
-const IconRefresh = ({ size=18, className="" }: any) => <SvgIcon size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgIcon>;
+const IconPlus = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M5 12h14"/><path d="M12 5v14"/></SvgBase>;
+const IconCheck = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><polyline points="20 6 9 17 4 12"/></SvgBase>;
+const IconX = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgBase>;
+const IconLock = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></SvgBase>;
+const IconTrophy = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></SvgBase>;
+const IconEdit = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></SvgBase>;
+const IconVolume2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></SvgBase>;
+const IconVolumeX = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></SvgBase>;
+const IconUsers = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></SvgBase>;
+const IconLogOut = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></SvgBase>;
+const IconFileText = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></SvgBase>;
+const IconCalendar = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></SvgBase>;
+const IconShield = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></SvgBase>;
+const IconChevronUp = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m18 15-6-6-6 6"/></SvgBase>;
+const IconChevronDown = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m6 9 6 6 6-6"/></SvgBase>;
+const IconUser = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgBase>;
+const IconBan = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></SvgBase>;
+const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgBase>;
+const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgBase>;
+const IconTrash2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgBase>;
+const IconRefresh = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgBase>;
 
 // --- Iconos Personalizados (Reglas) ---
 const IconStar = ({ className, fill = "currentColor" }: any) => (
@@ -137,9 +143,9 @@ const IconFourStars = ({ className="" }: any) => (
 );
 
 const IconAward = ({ className="" }: any) => (
-    <SvgIcon size={24} className={`text-[#ffd700] ${className}`}>
+    <SvgBase size={24} className={`text-[#ffd700] ${className}`}>
         <circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-    </SvgIcon>
+    </SvgBase>
 );
 
 
@@ -877,7 +883,7 @@ export default function EuroApp() {
       if (!isValidTactic) return alert("⚠️ Táctica inválida. Revisa tu alineación.");
       if (Object.keys(selected).length !== 11) return alert("⚠️ Debes tener 11 titulares.");
       if (isOverBudget) return alert("⚠️ Presupuesto excedido.");
-      setSquadValidated(true); setHasValidatedOnce(true); setStep(6); 
+      setStep(6); 
   };
   
   const handleGoToQuiniela = () => {
@@ -985,13 +991,16 @@ export default function EuroApp() {
                         ) : (step === 6 ? (
                             <button onClick={handleGoToQuiniela} className="bg-[#22c55e] text-black px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform flex-[2] animate-pulse"><IconTrophy size={14}/> IR A EUROQUINIELA</button>
                         ) : (
-                            <button 
-                                onClick={handleValidateSquad} 
-                                disabled={!isTeamComplete}
-                                className={`flex-[2] px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 transition-transform ${isTeamComplete ? 'bg-[#22c55e] text-black hover:scale-105 animate-pulse' : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-white/5'}`}
-                            >
-                                <IconCheck size={14}/> VALIDAR EQUIPO
-                            </button>
+                             // LÓGICA CORREGIDA: Ocultar botón validar en paso 5 si no hay extras
+                             !(step === 5 && Object.keys(extras).length === 0) && (
+                                <button 
+                                    onClick={handleValidateSquad} 
+                                    disabled={!isTeamComplete}
+                                    className={`flex-[2] px-4 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center justify-center gap-2 transition-transform ${isTeamComplete ? 'bg-[#22c55e] text-black hover:scale-105 animate-pulse' : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-white/5'}`}
+                                >
+                                    <IconCheck size={14}/> VALIDAR EQUIPO
+                                </button>
+                             )
                         ))}
                     </div>
                   </>
