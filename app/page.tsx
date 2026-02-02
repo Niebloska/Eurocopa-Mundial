@@ -80,7 +80,9 @@ const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgBase size={size}
 const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgBase>;
 const IconTrash2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgBase>;
 const IconRefresh = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgBase>;
+const IconAlertTriangle = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></SvgBase>;
 
+// --- Iconos Personalizados (Reglas) ---
 const IconStar = ({ className, fill = "currentColor" }: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 );
@@ -213,6 +215,30 @@ const MusicPlayer = () => {
     </div>
   );
 };
+
+// --- MODAL DE SALIDA (NUEVO) ---
+const ExitConfirmationModal = ({ onCancel, onConfirm }: any) => (
+    <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="bg-[#1c2a45] w-full max-w-sm rounded-[2.5rem] border border-white/10 p-6 shadow-2xl relative overflow-hidden text-center">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-[#facc15] to-red-500"></div>
+            <div className="mx-auto bg-red-500/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+                <IconAlertTriangle size={32} className="text-red-500" />
+            </div>
+            <h2 className="text-xl font-black italic text-white uppercase mb-2">¿Salir del juego?</h2>
+            <p className="text-white/60 text-xs font-bold mb-6 leading-relaxed">
+                Si sales ahora tendrás que volver a iniciar sesión para ver tu equipo.
+            </p>
+            <div className="flex gap-3">
+                <button onClick={onCancel} className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase hover:bg-white/10 transition-colors">
+                    NO, QUEDARME
+                </button>
+                <button onClick={onConfirm} className="flex-1 py-3 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase hover:bg-red-500 transition-colors shadow-lg shadow-red-600/20">
+                    SÍ, SALIR
+                </button>
+            </div>
+        </div>
+    </div>
+);
 
 // --- SLOT TITULAR ---
 const Slot = ({ p, on, cap, setCap, showCap, active, editable }: any) => (
@@ -850,6 +876,7 @@ export default function EuroApp() {
   const [squadValidated, setSquadValidated] = useState(false);
   const [quinielaSelections, setQuinielaSelections] = useState<Record<string, string[]>>({});
   const [quinielaLocked, setQuinielaLocked] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false); // Estado para el modal de salida
   
   const [sortPrice, setSortPrice] = useState<'desc' | 'asc'>('desc');
   const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc');
@@ -857,6 +884,44 @@ export default function EuroApp() {
   
   const [hasValidatedOnce, setHasValidatedOnce] = useState(false);
   const [allTeams, setAllTeams] = useState<any[]>([]); 
+
+  // --- LÓGICA DE BOTÓN ATRÁS (HISTORIAL) ---
+  useEffect(() => {
+    if (!user) return;
+
+    // 1. Inyectamos un estado "dummy" al historial al cargar la app logueada
+    window.history.pushState(null, '', window.location.href);
+
+    // 2. Escuchamos cuando el usuario pulsa "Atrás"
+    const handlePopState = (event: any) => {
+      // 3. Volvemos a inyectar el estado para "atrapar" al usuario en la página
+      // Esto evita que el navegador cambie de URL realmente
+      window.history.pushState(null, '', window.location.href);
+      
+      // 4. Mostramos el modal de confirmación
+      setShowExitModal(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user]);
+
+  const handleConfirmExit = async () => {
+      // Si confirma salir, hacemos logout
+      await handleLogout();
+      // Y dejamos que el navegador (o la lógica de logout) maneje el resto
+      setShowExitModal(false);
+  };
+
+  const handleCancelExit = () => {
+      // Si cancela, simplemente ocultamos el modal.
+      // El "estado trampa" ya se volvió a poner en el listener handlePopState
+      setShowExitModal(false);
+  };
+  // ------------------------------------------
 
   // 1. CARGA INICIAL
   useEffect(() => {
@@ -1079,18 +1144,15 @@ export default function EuroApp() {
 
   const assistant = getAssistantState();
 
-  // --- FALTABA ESTA FUNCIÓN ---
   const toggleQuiniela = (group: string, team: string) => {
       if (quinielaLocked) return;
       const current = quinielaSelections[group] || [];
       if (current.includes(team)) setQuinielaSelections({...quinielaSelections, [group]: current.filter(t => t !== team)});
       else if (current.length < 2) setQuinielaSelections({...quinielaSelections, [group]: [...current, team]});
   };
-  // ----------------------------
 
   const isQuinielaComplete = EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2);
 
-  // Clasificación REAL o Vacía si no hay nadie
   const displayTeams = allTeams; 
 
   const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
@@ -1277,6 +1339,9 @@ export default function EuroApp() {
           currentSelection={activeSlot.type === 'titular' ? selected[activeSlot.id] : (activeSlot.type === 'bench' ? bench[activeSlot.id] : extras[activeSlot.id])} 
         />
       )}
+
+      {/* RENDERIZADO DEL MODAL DE SALIDA */}
+      {showExitModal && <ExitConfirmationModal onCancel={handleCancelExit} onConfirm={handleConfirmExit} />}
     </div>
   );
 }
