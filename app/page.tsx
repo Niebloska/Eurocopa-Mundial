@@ -10,6 +10,7 @@ import { PLAYERS_DB } from './players';
 
 const MASTER_EMAIL = "admin@euro2024.com"; 
 const VALID_FORMATIONS = ["3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", "5-4-1"];
+const CHART_COLORS = ["#22d3ee", "#f472b6", "#a78bfa", "#34d399", "#fbbf24", "#f87171"];
 
 const posColors: Record<string, string> = {
   "POR": "bg-[#facc15] text-black", 
@@ -38,6 +39,11 @@ const EURO_GROUPS_DATA = [
   { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
 ];
 
+const MOCK_TEAMS_DB = [
+  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 150, value: 295 },
+  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 145, value: 299 },
+];
+
 const getMockSquad = (offset: number) => {
   const start = (offset * 11) % Math.max(1, PLAYERS_DB.length - 20);
   const safePlayers = PLAYERS_DB.length > 0 ? PLAYERS_DB : [];
@@ -48,16 +54,28 @@ const getMockSquad = (offset: number) => {
   };
 };
 
+const MOCK_WINNERS: Record<string, number> = { "J1": 102, "J2": 101, "J3": 103 };
+
+const generateMockStats = (team: any, index: number) => {
+    if (team.points > 0) return team;
+    const trophies = [];
+    if (index === 0) trophies.push("J1");
+    if (index === 1) trophies.push("J2");
+    
+    return {
+        ...team,
+        points: Math.floor(Math.random() * 200) + 50,
+        evolution: [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, index + 1],
+        matchdayPoints: { "J1": Math.floor(Math.random()*50)+10, "J2": Math.floor(Math.random()*50)+10, "J3": Math.floor(Math.random()*50)+10, "OCT": Math.floor(Math.random()*50)+10, "SEM": 0, "FIN": 0 },
+        trophies: trophies 
+    };
+};
+
 // ==========================================
-// 2. SISTEMA DE ICONOS (SVG PURO)
+// 2. SISTEMA DE ICONOS
 // ==========================================
 
-const SvgBase = ({ children, className, size = 24, fill="none", stroke="currentColor", strokeWidth="2" }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {children}
-  </svg>
-);
-
+const SvgBase = ({ children, className, size = 24, fill="none", stroke="currentColor", strokeWidth="2" }: any) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>);
 const IconPlus = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M5 12h14"/><path d="M12 5v14"/></SvgBase>;
 const IconCheck = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><polyline points="20 6 9 17 4 12"/></SvgBase>;
 const IconX = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></SvgBase>;
@@ -78,66 +96,19 @@ const IconBan = ({ size=18, className="" }: any) => <SvgBase size={size} classNa
 const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgBase>;
 const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgBase>;
 const IconTrash2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgBase>;
-// --- CORREGIDO: IconRefresh cerraba mal la etiqueta ---
 const IconRefresh = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgBase>;
 const IconClipboard = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></SvgBase>;
-
-const IconStar = ({ className, fill = "currentColor" }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-);
-
-const IconBoot = ({ className="" }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" fill="currentColor" className={className}>
-    <path d="M49.6 232.8C20.4 262.8 3.1 303 1.2 344.8 0 371.2 8.8 448 8.8 448l24.8 24.8 19.2-22.4 20.8 20.8 20-22.4 20 23.2 20-24 19.2 23.2 20.8-21.6 23.2 19.2 13.6-28.8c42.4-8 84.8-19.2 119.2-36 60-29.6 112-76 136.8-136.8 12.8-31.2 16-64 8.8-96.8-4-18.4-12-36-24-51.2-16.8-21.6-40.8-36.8-66.4-44.8-36-11.2-75.2-8-109.6 8-28.8 13.6-54.4 34.4-76.8 59.2-24 26.4-42.4 56.8-56.8 88.8l-1.6 2.4z" fill="#374151"/>
-    <path d="M137.6 244c-12 16-24.8 31.2-39.2 44.8l-20-20c13.6-12.8 25.6-27.2 36.8-42.4L137.6 244zM180.8 204.8c-12 17.6-26.4 33.6-41.6 48.8l-20.8-20.8c14.4-14.4 27.2-29.6 38.4-46.4L180.8 204.8zM221.6 163.2c-12.8 18.4-27.2 35.2-43.2 50.4l-20-20.8c15.2-14.4 28.8-30.4 40.8-48L221.6 163.2z" fill="#9ca3af"/>
-    <path d="M52 480h16v32H52zM108 472h16v32h-16zM164 464h16v32h-16zM220 448h16v32h-16z" fill="#d1d5db"/>
-  </svg>
-);
-
-const IconSub = ({ className="", size=24 }: any) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 5v14" stroke="none" /> 
-    <path d="M16 9l-4-4-4 4" stroke="#22c55e" />
-    <path d="M12 5v7" stroke="#22c55e" />
-    <path d="M12 19l4-4" stroke="#ef4444" />
-    <path d="M8 15l4 4" stroke="#ef4444" />
-    <path d="M12 12v7" stroke="#ef4444" />
-  </svg>
-);
-
-const IconCaptain = ({ className="" }: any) => (
-    <div className={`w-6 h-4 bg-[#facc15] rounded-sm flex items-center justify-center shadow-sm border border-yellow-600/50 ${className}`}>
-        <span className="text-black font-black text-[10px] leading-none">C</span>
-    </div>
-);
-
-const IconDoubleYellow = ({ className="" }: any) => (
-    <div className={`flex items-center relative h-5 w-6 ${className}`}>
-       <div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div>
-       <div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div>
-    </div>
-);
-
-const IconFourStars = ({ className="" }: any) => (
-    <div className={`flex flex-col items-center leading-none gap-0.5 ${className}`}>
-       <div className="flex -space-x-0.5">
-         <IconStar className="text-[#facc15]" />
-         <IconStar className="text-[#facc15] -mt-1.5" />
-         <IconStar className="text-[#facc15]" />
-       </div>
-       <IconStar className="text-[#facc15] -mt-1" />
-    </div>
-);
-
-const IconAward = ({ className="" }: any) => (
-    <SvgBase size={24} className={`text-[#ffd700] ${className}`}>
-        <circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-    </SvgBase>
-);
-
+const IconChart = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></SvgBase>;
+const IconStar = ({ className, fill = "currentColor" }: any) => (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>);
+const IconBoot = ({ className="" }: any) => (<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" fill="currentColor" className={className}><path d="M49.6 232.8C20.4 262.8 3.1 303 1.2 344.8 0 371.2 8.8 448 8.8 448l24.8 24.8 19.2-22.4 20.8 20.8 20-22.4 20 23.2 20-24 19.2 23.2 20.8-21.6 23.2 19.2 13.6-28.8c42.4-8 84.8-19.2 119.2-36 60-29.6 112-76 136.8-136.8 12.8-31.2 16-64 8.8-96.8-4-18.4-12-36-24-51.2-16.8-21.6-40.8-36.8-66.4-44.8-36-11.2-75.2-8-109.6 8-28.8 13.6-54.4 34.4-76.8 59.2-24 26.4-42.4 56.8-56.8 88.8l-1.6 2.4z" fill="#374151"/><path d="M137.6 244c-12 16-24.8 31.2-39.2 44.8l-20-20c13.6-12.8 25.6-27.2 36.8-42.4L137.6 244zM180.8 204.8c-12 17.6-26.4 33.6-41.6 48.8l-20.8-20.8c14.4-14.4 27.2-29.6 38.4-46.4L180.8 204.8zM221.6 163.2c-12.8 18.4-27.2 35.2-43.2 50.4l-20-20.8c15.2-14.4 28.8-30.4 40.8-48L221.6 163.2z" fill="#9ca3af"/><path d="M52 480h16v32H52zM108 472h16v32h-16zM164 464h16v32h-16zM220 448h16v32h-16z" fill="#d1d5db"/></svg>);
+const IconSub = ({ className="", size=24 }: any) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5v14" stroke="none" /><path d="M16 9l-4-4-4 4" stroke="#22c55e" /><path d="M12 5v7" stroke="#22c55e" /><path d="M12 19l4-4" stroke="#ef4444" /><path d="M8 15l4 4" stroke="#ef4444" /><path d="M12 12v7" stroke="#ef4444" /></svg>);
+const IconCaptain = ({ className="" }: any) => (<div className={`w-6 h-4 bg-[#facc15] rounded-sm flex items-center justify-center shadow-sm border border-yellow-600/50 ${className}`}><span className="text-black font-black text-[10px] leading-none">C</span></div>);
+const IconDoubleYellow = ({ className="" }: any) => (<div className={`flex items-center relative h-5 w-6 ${className}`}><div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div><div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div></div>);
+const IconFourStars = ({ className="" }: any) => (<div className={`flex flex-col items-center leading-none gap-0.5 ${className}`}><div className="flex -space-x-0.5"><IconStar className="text-[#facc15]" /><IconStar className="text-[#facc15] -mt-1.5" /><IconStar className="text-[#facc15]" /></div><IconStar className="text-[#facc15] -mt-1" /></div>);
+const IconAward = ({ className="" }: any) => (<SvgBase size={24} className={`text-[#ffd700] ${className}`}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></SvgBase>);
 
 // ==========================================
-// 3. COMPONENTES VISUALES APP
+// 3. COMPONENTES VISUALES
 // ==========================================
 
 const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: string, isError?: boolean }) => {
@@ -151,71 +122,24 @@ const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: st
     }, 25);
     return () => clearInterval(intervalId);
   }, [text]);
-
-  return (
-    <span>
-      {stepTitle && <span className={`${isError ? 'text-red-500' : 'text-[#22c55e]'} font-black mr-2`}>{stepTitle}</span>}
-      <span className={isError ? "text-red-400 font-bold" : ""}>{displayedText}</span>
-    </span>
-  );
+  return (<span>{stepTitle && <span className={`${isError ? 'text-red-500' : 'text-[#22c55e]'} font-black mr-2`}>{stepTitle}</span>}<span className={isError ? "text-red-400 font-bold" : ""}>{displayedText}</span></span>);
 };
 
 const CountdownBlock = () => {
   const [timeLeft, setTimeLeft] = useState(11793600); 
-  useEffect(() => {
-    const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  const formatTime = (s: number) => {
-    const d = Math.floor(s / 86400); const h = Math.floor((s % 86400) / 3600);
-    const m = Math.floor((s % 3600) / 60); const sec = s % 60;
-    return `${d}D ${h}H ${m}M ${sec}S`;
-  };
-  return (
-    <div className="flex items-center justify-between bg-black/40 rounded-xl p-3 border border-white/5 mt-2">
-       <div className="flex flex-col">
-          <span className="text-lg font-black text-[#facc15] font-mono leading-none tracking-tight">{formatTime(timeLeft)}</span>
-          <span className="text-[8px] font-bold text-[#22c55e] uppercase tracking-widest mt-1">TIEMPO RESTANTE PARA EDITAR MI EQUIPO</span>
-       </div>
-       <div className="bg-[#facc15] p-2 rounded-full text-black shadow-lg shadow-yellow-500/20"><IconLock size={18} /></div>
-    </div>
-  );
+  useEffect(() => { const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000); return () => clearInterval(timer); }, []);
+  const formatTime = (s: number) => { const d = Math.floor(s / 86400); const h = Math.floor((s % 86400) / 3600); const m = Math.floor((s % 3600) / 60); const sec = s % 60; return `${d}D ${h}H ${m}M ${sec}S`; };
+  return (<div className="flex items-center justify-between bg-black/40 rounded-xl p-3 border border-white/5 mt-2"><div className="flex flex-col"><span className="text-lg font-black text-[#facc15] font-mono leading-none tracking-tight">{formatTime(timeLeft)}</span><span className="text-[8px] font-bold text-[#22c55e] uppercase tracking-widest mt-1">TIEMPO RESTANTE PARA EDITAR MI EQUIPO</span></div><div className="bg-[#facc15] p-2 rounded-full text-black shadow-lg shadow-yellow-500/20"><IconLock size={18} /></div></div>);
 };
 
 const MusicPlayer = () => {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        audioRef.current = new Audio("/Banda sonora EF 2024.mp3"); 
-        audioRef.current.loop = true; 
-        audioRef.current.volume = 0.5;
-    }
-    return () => { if (audioRef.current) audioRef.current.pause(); };
-  }, []);
-
-  useEffect(() => {
-    if (audioRef.current) { 
-        if (playing) audioRef.current.play().catch(console.error); 
-        else audioRef.current.pause(); 
-    }
-  }, [playing]);
-
-  return (
-    <div className="fixed top-[70px] right-4 z-[200]">
-        <button 
-            onClick={() => setPlaying(!playing)} 
-            className={`flex items-center gap-2 ${playing ? 'bg-[#22c55e] text-black' : 'bg-[#ef4444] text-white'} px-4 py-2 rounded-full font-black text-[10px] uppercase shadow-lg transition-transform hover:scale-105 border-2 border-white`}
-        >
-            {playing ? <IconVolume2 size={14} className="animate-pulse"/> : <IconVolumeX size={14}/>}
-            <span>MÚSICA {playing ? 'ON' : 'OFF'}</span>
-        </button>
-    </div>
-  );
+  useEffect(() => { if (typeof window !== 'undefined') { audioRef.current = new Audio("/Banda sonora EF 2024.mp3"); audioRef.current.loop = true; audioRef.current.volume = 0.5; } return () => { if (audioRef.current) audioRef.current.pause(); }; }, []);
+  useEffect(() => { if (audioRef.current) { if (playing) audioRef.current.play().catch(console.error); else audioRef.current.pause(); } }, [playing]);
+  return (<div className="fixed top-[70px] right-4 z-[200]"><button onClick={() => setPlaying(!playing)} className={`flex items-center gap-2 ${playing ? 'bg-[#22c55e] text-black' : 'bg-[#ef4444] text-white'} px-4 py-2 rounded-full font-black text-[10px] uppercase shadow-lg transition-transform hover:scale-105 border-2 border-white`}>{playing ? <IconVolume2 size={14} className="animate-pulse"/> : <IconVolumeX size={14}/>}<span>MÚSICA {playing ? 'ON' : 'OFF'}</span></button></div>);
 };
 
-// --- SLOT TITULAR ---
 const Slot = ({ p, on, cap, setCap, showCap, active, editable }: any) => (
   <div className="relative flex flex-col items-center group" onClick={on}>
     <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'} ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : (p && on) ? 'cursor-pointer' : 'cursor-default'}`}>
@@ -230,23 +154,60 @@ const Slot = ({ p, on, cap, setCap, showCap, active, editable }: any) => (
   </div>
 );
 
-// --- CROMO BANQUILLO/NO CONV ---
 const BenchCard = ({ player, id, posColor }: any) => {
     return (
         <div className={`w-full h-full flex flex-col items-center justify-between p-1.5 ${player ? 'bg-white' : 'bg-transparent'}`}>
             {player ? (
                 <>
                     <span className="text-[10px] font-black text-black text-center uppercase leading-none truncate w-full">{player.nombre.split(' ').pop()}</span>
-                    <div className="flex-1 flex items-center justify-center">
-                        <span className="text-4xl leading-none drop-shadow-md filter">{getFlag(player.seleccion)}</span>
-                    </div>
+                    <div className="flex-1 flex items-center justify-center"><span className="text-4xl leading-none drop-shadow-md filter">{getFlag(player.seleccion)}</span></div>
                     <div className={`w-full text-center text-[10px] font-black uppercase py-0.5 rounded-sm ${posColors[player.posicion]}`}>{player.posicion}</div>
                 </>
-            ) : (
-                <span className="text-white/50 font-black text-sm italic self-center my-auto">{id}</span>
-            )}
+            ) : (<span className="text-white/50 font-black text-sm italic self-center my-auto">{id}</span>)}
         </div>
     );
+};
+
+const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
+  const [expanded, setExpanded] = useState(false);
+  const canView = isMyTeam || isAdmin;
+  const squadData = team.squad || getMockSquad(team.id);
+  const filterByPos = (pos: string) => squadData.titulares?.filter((p:any) => p.posicion === pos) || [];
+  const trophies = team.trophies || [];
+  const getRankColor = (r: number) => { if (r === 1) return "text-[#ffd700] drop-shadow-md"; if (r === 2) return "text-[#c0c0c0]"; if (r === 3) return "text-[#cd7f32]"; return "text-white/30"; };
+
+  return (
+    <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e] animate-pulse-slow shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#1c2a45] border-white/5'}`}>
+       <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
+          <div className="flex items-center gap-4">
+              <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
+              <div>
+                  <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
+                  <div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>
+                  {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
+              </div>
+          </div>
+          <div className="flex items-center gap-4"><div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>{!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}</div>
+       </div>
+       {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
+       
+       {expanded && canView && (
+         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
+            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
+              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>))}</div></div>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>))}</div></div>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>))}</div></div>
+              <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>))}</div></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo?.map((p:any) => <BenchCard key={p.id} player={p} id="S" />)}</div></div>
+               <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-2 gap-2">{squadData.extras?.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
+            </div>
+         </div>
+       )}
+    </div>
+  );
 };
 
 const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain }: any) => {
@@ -284,6 +245,9 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
     </div>
   );
 };
+// ==========================================
+// 4. COMPONENTES DE NAVEGACIÓN Y GRÁFICAS
+// ==========================================
 
 const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
   <div className="fixed top-0 left-0 w-full z-[110] bg-[#0d1526] border-b border-white/10 px-4 py-3 shadow-lg">
@@ -291,7 +255,6 @@ const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
           <button onClick={() => setView('rules')} className={`flex flex-col items-center gap-1 transition-all ${view === 'rules' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconFileText /><span className="text-[8px] font-black uppercase">Reglas</span></button>
           <button onClick={() => setView('squad')} className={`flex flex-col items-center gap-1 transition-all ${view === 'squad' ? 'text-[#22c55e] scale-110' : 'text-white/40 hover:text-white'}`}><IconShield /><span className="text-[8px] font-black uppercase">Plantilla</span></button>
           <button disabled={!squadCompleted} onClick={() => squadCompleted && setView('quiniela')} className={`flex flex-col items-center gap-1 transition-all ${view === 'quiniela' ? 'text-purple-400 scale-110' : !squadCompleted ? 'text-white/10 cursor-not-allowed' : 'text-white/40 hover:text-white'}`}><IconTrophy /><span className="text-[8px] font-black uppercase">EUROQUINIELA</span></button>
-          {/* NUEVO BOTÓN PUNTUACIONES */}
           <button onClick={() => setView('scores')} className={`flex flex-col items-center gap-1 transition-all ${view === 'scores' ? 'text-cyan-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconClipboard /><span className="text-[8px] font-black uppercase">Puntos</span></button>
           <button onClick={() => setView('classification')} className={`flex flex-col items-center gap-1 transition-all ${view === 'classification' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconUsers /><span className="text-[8px] font-black uppercase">Clasificación</span></button>
           <button onClick={() => setView('calendar')} className={`flex flex-col items-center gap-1 transition-all ${view === 'calendar' ? 'text-sky-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconCalendar /><span className="text-[8px] font-black uppercase">Calendario</span></button>
@@ -300,49 +263,162 @@ const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
   </div>
 );
 
+const EvolutionChart = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
+    const height = 220; const width = 350; const padding = 30;
+    const matchdays = ["J1", "J2", "J3", "J4"]; 
+    const maxRank = Math.max(...teams.map(t => Math.max(...(t.evolution || [1]))), 4); 
+    const getX = (index: number) => padding + (index * (width - 2 * padding)) / (matchdays.length - 1);
+    const getY = (rank: number) => padding + ((rank - 1) * (height - 2 * padding)) / (maxRank - 1);
+
+    return (
+        <div className="w-full bg-[#1c2a45] rounded-2xl p-5 border border-white/5 shadow-xl mb-6 overflow-hidden relative">
+            <h3 className="text-sm font-black italic uppercase text-[#facc15] mb-6 flex items-center gap-2"><IconChart size={14} /> EVOLUCIÓN DEL RANKING</h3>
+            <div className="flex justify-center">
+                <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                    {matchdays.map((day, i) => (<g key={i}><line x1={getX(i)} y1={padding} x2={getX(i)} y2={height - padding} stroke="rgba(255,255,255,0.03)" strokeDasharray="4" /><text x={getX(i)} y={height - 5} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontWeight="bold">{day}</text></g>))}
+                    {[...Array(maxRank)].map((_, i) => (<g key={i}><line x1={padding} y1={getY(i + 1)} x2={width - padding} y2={getY(i + 1)} stroke="rgba(255,255,255,0.03)" /><text x={padding - 12} y={getY(i + 1) + 3} textAnchor="end" fill="rgba(255,255,255,0.3)" fontSize="9" fontWeight="bold">{i + 1}</text></g>))}
+                    {teams.map((team, index) => {
+                        const isMyTeam = team.id === myTeamId;
+                        const evolution = team.evolution || [];
+                        if (evolution.length < 2) return null;
+                        const teamColor = CHART_COLORS[index % CHART_COLORS.length];
+                        const points = evolution.map((rank: number, i: number) => `${getX(i)},${getY(rank)}`).join(" ");
+                        return (
+                            <g key={team.id} style={{ zIndex: isMyTeam ? 10 : 1 }} className="relative">
+                                <polyline points={points} fill="none" stroke={teamColor} strokeWidth={isMyTeam ? 3 : 2} strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 ${isMyTeam ? '6px' : '3px'} ${teamColor})` }} className="transition-all duration-500"/>
+                                {evolution.map((rank: number, i: number) => (<circle key={i} cx={getX(i)} cy={getY(rank)} r={isMyTeam ? 4 : 3} fill={teamColor} stroke="#1c2a45" strokeWidth="1.5" style={{ filter: `drop-shadow(0 0 4px ${teamColor})` }} className="transition-all duration-500"/>))}
+                            </g>
+                        );
+                    })}
+                </svg>
+            </div>
+            <div className="mt-6 flex flex-wrap justify-center gap-4 px-2">
+                {teams.map((team, index) => {
+                    const teamColor = CHART_COLORS[index % CHART_COLORS.length];
+                    return (<div key={team.id} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded-full border border-white/5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: teamColor, boxShadow: `0 0 6px ${teamColor}` }}></div><span className="text-[9px] font-bold uppercase text-white/70 truncate max-w-[80px]">{team.name}</span></div>)
+                })}
+            </div>
+        </div>
+    );
+};
+
+const MatchdayStandings = ({ teams }: { teams: any[] }) => {
+    const [selectedJornada, setSelectedJornada] = useState("J1");
+    const jornadas = ["J1", "J2", "J3", "OCT", "SEM", "FIN"];
+    const standings = useMemo(() => {
+        return [...teams].sort((a, b) => {
+            const ptsA = a.matchdayPoints?.[selectedJornada] || 0;
+            const ptsB = b.matchdayPoints?.[selectedJornada] || 0;
+            return ptsB - ptsA;
+        });
+    }, [teams, selectedJornada]);
+
+    const getRankColor = (index: number) => {
+        if (index === 0) return "text-[#ffd700] drop-shadow-md"; 
+        if (index === 1) return "text-[#c0c0c0]"; 
+        if (index === 2) return "text-[#cd7f32]"; 
+        return "text-white/50";
+    };
+
+    return (
+        <div className="bg-[#1c2a45] rounded-2xl border border-white/5 overflow-hidden">
+             <div className="p-4 border-b border-white/5">
+                 <h3 className="text-2xl font-black italic uppercase text-[#22c55e] tracking-tighter mb-3 flex items-center gap-2"><IconTrophy /> CLASIFICACIÓN POR JORNADA</h3>
+                 <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                     {jornadas.map(j => (
+                         <button key={j} onClick={() => setSelectedJornada(j)} className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase transition-all ${selectedJornada === j ? 'bg-[#22c55e] text-black scale-105 shadow-lg' : 'bg-black/40 text-white/40 hover:bg-white/10'}`}>{j}</button>
+                     ))}
+                 </div>
+             </div>
+             <div className="p-2 space-y-1">
+                 {standings.map((team, idx) => (
+                     <div key={team.id} className="flex items-center justify-between p-3 rounded-xl bg-[#0d1526] border border-white/5">
+                         <div className="flex items-center gap-3">
+                             <span className={`font-black text-xl w-6 text-center ${getRankColor(idx)}`}>{idx + 1}</span>
+                             <div className="flex flex-col"><span className="text-xs font-bold text-white uppercase">{team.name}</span><span className="text-[8px] text-white/30 uppercase">{team.user}</span></div>
+                         </div>
+                         <span className="text-[#22c55e] font-black text-sm">{team.matchdayPoints?.[selectedJornada] || 0} PTS</span>
+                     </div>
+                 ))}
+             </div>
+        </div>
+    );
+};
+
+const generateFixture = () => {
+  const G = [
+    { n: "GRUPO A", m: [{t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00"},{t1:"Hungría",t2:"Suiza",d:"15 Jun 15:00"},{t1:"Alemania",t2:"Hungría",d:"19 Jun 18:00"},{t1:"Escocia",t2:"Suiza",d:"19 Jun 21:00"},{t1:"Suiza",t2:"Alemania",d:"23 Jun 21:00"},{t1:"Escocia",t2:"Hungría",d:"23 Jun 21:00"}]},
+    { n: "GRUPO B", m: [{t1:"España",t2:"Croacia",d:"15 Jun 18:00"},{t1:"Italia",t2:"Albania",d:"15 Jun 21:00"},{t1:"Croacia",t2:"Albania",d:"19 Jun 15:00"},{t1:"España",t2:"Italia",d:"20 Jun 21:00"},{t1:"Albania",t2:"España",d:"24 Jun 21:00"},{t1:"Croacia",t2:"Italia",d:"24 Jun 21:00"}]},
+    { n: "GRUPO C", m: [{t1:"Eslovenia",t2:"Dinamarca",d:"16 Jun 18:00"},{t1:"Serbia",t2:"Inglaterra",d:"16 Jun 21:00"},{t1:"Eslovenia",t2:"Serbia",d:"20 Jun 15:00"},{t1:"Dinamarca",t2:"Inglaterra",d:"20 Jun 18:00"},{t1:"Inglaterra",t2:"Eslovenia",d:"25 Jun 21:00"},{t1:"Dinamarca",t2:"Serbia",d:"25 Jun 21:00"}]},
+    { n: "GRUPO D", m: [{t1:"Polonia",t2:"Países Bajos",d:"16 Jun 15:00"},{t1:"Austria",t2:"Francia",d:"17 Jun 21:00"},{t1:"Polonia",t2:"Austria",d:"21 Jun 18:00"},{t1:"Países Bajos",t2:"Francia",d:"21 Jun 21:00"},{t1:"Países Bajos",t2:"Austria",d:"25 Jun 18:00"},{t1:"Francia",t2:"Polonia",d:"25 Jun 18:00"}]},
+    { n: "GRUPO E", m: [{t1:"Rumanía",t2:"Ucrania",d:"17 Jun 15:00"},{t1:"Bélgica",t2:"Eslovaquia",d:"17 Jun 18:00"},{t1:"Eslovaquia",t2:"Ucrania",d:"21 Jun 15:00"},{t1:"Bélgica",t2:"Rumanía",d:"22 Jun 21:00"},{t1:"Eslovaquia",t2:"Rumanía",d:"26 Jun 18:00"},{t1:"Ucrania",t2:"Bélgica",d:"26 Jun 18:00"}]},
+    { n: "GRUPO F", m: [{t1:"Turquía",t2:"Georgia",d:"18 Jun 18:00"},{t1:"Portugal",t2:"República Checa",d:"18 Jun 21:00"},{t1:"Georgia",t2:"República Checa",d:"22 Jun 15:00"},{t1:"Turquía",t2:"Portugal",d:"22 Jun 18:00"},{t1:"Georgia",t2:"Portugal",d:"26 Jun 21:00"},{t1:"República Checa",t2:"Turquía",d:"26 Jun 21:00"}]}
+  ];
+  return G;
+};
+
+const CalendarView = () => (
+  <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
+     <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconCalendar /> CALENDARIO</h1>
+     <div className="space-y-6">
+        {generateFixture().map((g) => (
+          <div key={g.n} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5">
+             <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.n}</h3></div>
+             <div className="divide-y divide-white/5">
+                 {g.m.map((m, i) => (
+                   <div key={i} className="flex flex-col relative">
+                      {i % 2 === 0 && <div className="bg-blue-600 w-full text-center text-[10px] font-black text-white uppercase tracking-widest py-1">JORNADA {Math.floor(i/2) + 1}</div>}
+                      <div className="p-4 pt-6 flex items-center justify-between">
+                          <div className="w-[40%] flex items-center justify-end gap-2 text-right">
+                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t1}</span>
+                              <span className="text-3xl">{getFlag(m.t1)}</span>
+                          </div>
+                          <div className="w-[20%] text-center">
+                              <span className="text-[9px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span>
+                              <span className="text-[9px] text-white/40 block mb-1">{m.d.split(' ')[2]}</span>
+                              <span className="text-white/20 font-black text-xl tracking-widest">-:-</span>
+                          </div>
+                          <div className="w-[40%] flex items-center justify-start gap-2 text-left">
+                              <span className="text-3xl">{getFlag(m.t2)}</span>
+                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t2}</span>
+                          </div>
+                      </div>
+                   </div>
+                 ))}
+             </div>
+          </div>
+        ))}
+     </div>
+  </div>
+);
+
 // ==========================================
-// 4. COMPONENTES PEQUEÑOS DE REGLAS (ANTES DE RULESVIEW)
+// 5. REGLAS Y PUNTUACIONES
 // ==========================================
 
 const RuleCard = ({ color, title, icon, children }: any) => {
   return (
     <div className="bg-[#1c2a45] rounded-2xl border border-white/5 overflow-hidden mb-6 shadow-xl">
-      <div 
-        className="p-4 flex items-center justify-between"
-        style={{ borderLeft: `6px solid ${color}` }}
-      >
-        <div className="flex items-center gap-3">
-          {icon}
-          <h3 className="font-black italic uppercase text-lg tracking-wide text-white">{title}</h3>
-        </div>
+      <div className="p-4 flex items-center justify-between" style={{ borderLeft: `6px solid ${color}` }}>
+        <div className="flex items-center gap-3">{icon}<h3 className="font-black italic uppercase text-lg tracking-wide text-white">{title}</h3></div>
       </div>
-      <div className="p-5 border-t border-white/5 bg-[#0d1526]/50 text-sm text-gray-100 leading-relaxed text-left">
-        {children}
-      </div>
+      <div className="p-5 border-t border-white/5 bg-[#0d1526]/50 text-sm text-gray-100 leading-relaxed text-left">{children}</div>
     </div>
   );
 };
 
 const ScoreRow = ({ label, pts, color = "text-white" }: any) => (
     <div className="flex justify-between items-center py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded transition-colors">
-        <span className="text-gray-200 font-medium text-xs uppercase">{label}</span>
-        <span className={`font-black text-sm ${color}`}>{pts}</span>
+        <span className="text-gray-200 font-medium text-xs uppercase">{label}</span><span className={`font-black text-sm ${color}`}>{pts}</span>
     </div>
 );
-
-// ==========================================
-// 5. VISTAS COMPLETAS (DEFINIDAS ANTES DE EUROAPP)
-// ==========================================
 
 const RulesView = () => {
   return (
     <div className="pb-32 animate-in fade-in duration-500">
-      
-      {/* HERO SECTION DE REGLAS */}
       <div className="relative h-72 w-full mb-8 overflow-hidden">
         <div className="absolute inset-0 bg-[#05080f]/50 z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#05080f] via-[#05080f]/20 to-transparent z-10"></div>
-        {/* Imagen de fondo (div) para evitar warning de <img> */}
         <div className="absolute inset-0 z-0">
            <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1624280433509-b4dca387790d?q=80&w=2070&auto=format&fit=crop')" }}></div>
         </div>
@@ -373,7 +449,7 @@ const RulesView = () => {
               <p className="text-sm"><strong className="text-red-400 uppercase">Penalización:</strong> Cada hueco vacío en el 11 resta <strong>-1 punto</strong>.</p>
             </div>
              <div className="flex items-center gap-3">
-              <IconSub className="w-7 h-7 text-blue-400" /> {/* ICONO AGRANDADO A W-7 H-7 */}
+              <IconSub className="w-7 h-7 text-blue-400" />
               <p className="text-sm"><strong className="text-blue-400 uppercase">Suplentes:</strong> Entran automático por orden (S1→S6) si un titular no juega.</p>
             </div>
           </div>
@@ -405,8 +481,6 @@ const RulesView = () => {
         {/* 4. PUNTUACIONES */}
         <RuleCard color="#facc15" title="4. Puntuaciones" icon={<IconFileText />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* OFENSIVA */}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                     <h4 className="text-[#22c55e] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Acción Ofensiva</h4>
                     <ScoreRow label="⚽ Gol (Cualquiera)" pts="+5" color="text-[#22c55e]" />
@@ -416,29 +490,23 @@ const RulesView = () => {
                     <ScoreRow label="📉 Gol Propia Meta" pts="-1" color="text-red-500" />
                 </div>
 
-                {/* DEFENSIVA (DIVIDIDA) */}
                 <div className="space-y-6">
-                    {/* PORTERO */}
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                         <h4 className="text-[#facc15] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Portero (POR)</h4>
-                        {/* REORDENADO: PENALTI PRIMERO, LUEGO PORTERÍA A CERO */}
                         <ScoreRow label={<div className="flex items-center gap-2">🥅 ⛔ <span>Penalti Parado</span></div>} pts="+3" color="text-[#22c55e]" />
                         <ScoreRow label={<div className="flex items-center gap-2">🥅 🧤 <span>Portería a 0 (+60&apos;)</span></div>} pts="+4" color="text-[#22c55e]" />
-                        
                         <div className="pt-2 border-t border-white/5 mt-2">
                              <ScoreRow label={<div className="flex items-center gap-1">🥅 ⚽ <span>1 Gol Encajado</span></div>} pts="0" color="text-gray-400" />
                              <ScoreRow label={<div className="flex items-center gap-1">🥅 ⚽⚽ / + <span>2 Goles Enc.</span></div>} pts="-2 / -3..." color="text-red-400" />
                              <p className="text-[10px] text-red-400 italic mt-1 text-right">-1 punto extra por cada gol adicional.</p>
                         </div>
                     </div>
-                    {/* DEFENSA */}
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                         <h4 className="text-[#3b82f6] font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Defensa (DEF)</h4>
                         <ScoreRow label="🛡️ Portería a 0 (+45&apos;)" pts="+2" color="text-[#22c55e]" />
                     </div>
                 </div>
 
-                {/* PARTIDO */}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                     <h4 className="text-white/60 font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Partido y Resultado</h4>
                     <div className="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 px-2 rounded transition-colors">
@@ -450,7 +518,6 @@ const RulesView = () => {
                     <ScoreRow label="❌ Derrota Equipo" pts="-1" color="text-red-500" />
                 </div>
 
-                {/* SANCIONES */}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/5">
                     <h4 className="text-red-400 font-black uppercase text-xs tracking-widest mb-3 border-b border-white/10 pb-2">Sanciones</h4>
                     <div className="flex justify-between items-center py-2 border-b border-white/5 hover:bg-white/5 px-2 rounded transition-colors">
@@ -467,7 +534,6 @@ const RulesView = () => {
            <p className="mb-4 text-left text-gray-300 text-sm">Puntos extra basados en la nota del jugador en la App <span className="text-blue-400 font-black uppercase">SOFASCORE</span></p>
            <div className="grid grid-cols-2 gap-4 text-center text-xs">
               
-              {/* COLUMNA IZQUIERDA (TOP TIER) */}
               <div className="space-y-3">
                   <div className="bg-[#1e4620] p-3 rounded-lg border border-[#22c55e]/30 shadow-lg">
                     <div className="font-black text-white text-sm uppercase mb-2 border-b border-white/10 pb-1">Excelente</div>
@@ -492,7 +558,6 @@ const RulesView = () => {
                   </div>
               </div>
 
-              {/* COLUMNA DERECHA (MID/LOW TIER) */}
               <div className="space-y-3">
                   <div className="bg-[#374151] p-3 rounded-lg border border-gray-500/20 shadow-lg">
                      <div className="font-black text-gray-300 text-sm uppercase mb-2 border-b border-white/10 pb-1">Medio</div>
@@ -578,249 +643,89 @@ const RulesView = () => {
   );
 };
 
-const ScoresView = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
-    const sortedTeams = useMemo(() => {
-        return [...teams].sort((a, b) => a.name.localeCompare(b.name));
-    }, [teams]);
-
+// COMPONENTE PARA LA FILA DE PUNTOS (CON DESPLEGABLE)
+const ScoreTeamRow = ({ team, isMyTeam }: any) => {
+    // Si es mi equipo, abierto por defecto. Si no, cerrado.
+    const [isOpen, setIsOpen] = useState(isMyTeam);
     const positionOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
+    
+    // Preparar jugadores
+    const squad = team.squad || getMockSquad(team.id);
+    const allPlayers = [...(squad.titulares || []), ...(squad.banquillo || []), ...(squad.extras || [])];
+    allPlayers.sort((a: any, b: any) => { 
+        const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; 
+        if (posDiff !== 0) return posDiff; 
+        return a.nombre.localeCompare(b.nombre); 
+    });
 
     return (
-        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
-            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2">
-                <IconClipboard /> TABLA DE PUNTUACIONES
-            </h1>
-            
-            <div className="space-y-8">
-                {sortedTeams.map((team) => {
-                    const isMyTeam = team.id === myTeamId;
-                    
-                    const allPlayers = [
-                        ...(team.squad.titulares || []),
-                        ...(team.squad.banquillo || []),
-                        ...(team.squad.extras || [])
-                    ];
-
-                    allPlayers.sort((a: any, b: any) => {
-                        const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion];
-                        if (posDiff !== 0) return posDiff;
-                        return a.nombre.localeCompare(b.nombre);
-                    });
-
-                    return (
-                        <div 
-                            key={team.id} 
-                            className={`bg-[#1c2a45] rounded-2xl overflow-hidden shadow-xl transition-all ${isMyTeam ? 'border-2 border-[#facc15] shadow-[#facc15]/20 animate-pulse-slow' : 'border border-white/5'}`}
-                        >
-                            <div className={`p-4 flex justify-between items-center ${isMyTeam ? 'bg-[#facc15]/10' : 'bg-black/20'}`}>
-                                <div>
-                                    <h2 className={`text-lg font-black italic uppercase ${isMyTeam ? 'text-[#facc15]' : 'text-white'}`}>{team.name}</h2>
-                                    <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest flex items-center gap-1"><IconUser size={10}/> {team.user}</span>
-                                </div>
-                                <div className="text-right">
-                                    <span className="block text-2xl font-black text-cyan-400">{team.points} PTS</span>
-                                </div>
-                            </div>
-
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full text-left border-collapse min-w-[600px]">
-                                    <thead>
-                                        <tr className="bg-white/5 text-[10px] font-black uppercase text-white tracking-widest border-b-2 border-cyan-500/50 shadow-[0_5px_15px_rgba(6,182,212,0.15)]">
-                                            <th className="p-3">Pos</th>
-                                            <th className="p-3 text-center">SEL</th> 
-                                            <th className="p-3 w-1/3">Nombre</th>
-                                            <th className="p-3 text-center bg-blue-900/30 text-cyan-400 border-x border-white/5">Total</th>
-                                            <th className="p-3 text-center">J1</th>
-                                            <th className="p-3 text-center">J2</th>
-                                            <th className="p-3 text-center">J3</th>
-                                            <th className="p-3 text-center">Oct</th>
-                                            <th className="p-3 text-center">Sem</th>
-                                            <th className="p-3 text-center">Fin</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-xs font-bold text-white divide-y divide-white/5">
-                                        {/* FILA DE TOTALES POR JORNADA */}
-                                        <tr className="bg-blue-600/20 text-xs font-black text-cyan-400 border-b-2 border-white/10">
-                                            <td colSpan={3} className="p-3 text-right uppercase tracking-widest">PUNTOS JORNADA</td>
-                                            <td className="p-3 text-center text-white bg-blue-600/40 border-x border-white/10 text-sm">{team.points}</td>
-                                            <td className="p-3 text-center">0</td>
-                                            <td className="p-3 text-center">0</td>
-                                            <td className="p-3 text-center">0</td>
-                                            <td className="p-3 text-center">0</td>
-                                            <td className="p-3 text-center">0</td>
-                                            <td className="p-3 text-center">0</td>
-                                        </tr>
-
-                                        {allPlayers.map((p: any) => (
-                                            <tr key={p.id} className="hover:bg-white/5 transition-colors group">
-                                                <td className="p-3">
-                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${posColors[p.posicion]}`}>{p.posicion}</span>
-                                                </td>
-                                                <td className="p-3 text-center text-lg">{getFlag(p.seleccion)}</td>
-                                                <td className="p-3 truncate max-w-[120px] font-medium text-white/90 group-hover:text-white">{p.nombre}</td>
-                                                <td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">0</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                                <td className="p-3 text-center text-white/30">-</td>
-                                            </tr>
-                                        ))}
-                                        {allPlayers.length === 0 && (
-                                            <tr>
-                                                <td colSpan={10} className="p-6 text-center text-white/20 italic text-xs">Sin jugadores fichados</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    );
-                })}
-                 {sortedTeams.length === 0 && (
-                    <div className="text-center text-white/40 italic mt-10 p-10 border border-dashed border-white/10 rounded-3xl">
-                        No hay equipos registrados para mostrar puntuaciones.
-                    </div>
-                )}
+        <div className={`bg-[#1c2a45] rounded-2xl overflow-hidden shadow-xl transition-all mb-4 ${isMyTeam ? 'border-2 border-[#facc15] shadow-[#facc15]/20' : 'border border-white/5'}`}>
+            <div 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`p-4 flex justify-between items-center cursor-pointer transition-colors ${isMyTeam ? 'bg-[#facc15]/10' : 'bg-black/20 hover:bg-white/5'}`}
+            >
+                <div>
+                    <h2 className={`text-lg font-black italic uppercase ${isMyTeam ? 'text-[#facc15]' : 'text-white'}`}>{team.name}</h2>
+                    <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest flex items-center gap-1"><IconUser size={10}/> {team.user}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="block text-2xl font-black text-cyan-400">{team.points} PTS</span>
+                    {isOpen ? <IconChevronUp size={20} className="text-white/40"/> : <IconChevronDown size={20} className="text-white/40"/>}
+                </div>
             </div>
+
+            {/* TABLA DESPLEGABLE */}
+            {isOpen && (
+                <div className="overflow-x-auto custom-scrollbar animate-in slide-in-from-top duration-300">
+                    <table className="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr className="bg-white/5 text-[10px] font-black uppercase text-white tracking-widest border-b-2 border-cyan-500/50">
+                                <th className="p-3">Pos</th>
+                                <th className="p-3 text-center">SEL</th>
+                                <th className="p-3 w-1/3">Nombre</th>
+                                <th className="p-3 text-center bg-blue-900/30 text-cyan-400 border-x border-white/5">Total</th>
+                                <th className="p-3 text-center">J1</th>
+                                <th className="p-3 text-center">J2</th>
+                                <th className="p-3 text-center">J3</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-xs font-bold text-white divide-y divide-white/5">
+                            <tr className="bg-blue-600/20 text-xs font-black text-cyan-400 border-b-2 border-white/10">
+                                <td colSpan={3} className="p-3 text-right uppercase tracking-widest">PUNTOS JORNADA</td>
+                                <td className="p-3 text-center text-white bg-blue-600/40 border-x border-white/10 text-sm">{team.points}</td>
+                                <td className="p-3 text-center">0</td>
+                                <td className="p-3 text-center">0</td>
+                                <td className="p-3 text-center">0</td>
+                            </tr>
+                            {allPlayers.map((p: any) => (
+                                <tr key={p.id} className="hover:bg-white/5 transition-colors group">
+                                    <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${posColors[p.posicion]}`}>{p.posicion}</span></td>
+                                    <td className="p-3 text-center text-lg">{getFlag(p.seleccion)}</td>
+                                    <td className="p-3 truncate max-w-[120px] font-medium text-white/90 group-hover:text-white">{p.nombre}</td>
+                                    <td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">0</td>
+                                    <td className="p-3 text-center text-white/30">-</td>
+                                    <td className="p-3 text-center text-white/30">-</td>
+                                    <td className="p-3 text-center text-white/30">-</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };
 
-const generateFixture = () => {
-  const G = [
-    { n: "GRUPO A", m: [{t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00"},{t1:"Hungría",t2:"Suiza",d:"15 Jun 15:00"},{t1:"Alemania",t2:"Hungría",d:"19 Jun 18:00"},{t1:"Escocia",t2:"Suiza",d:"19 Jun 21:00"},{t1:"Suiza",t2:"Alemania",d:"23 Jun 21:00"},{t1:"Escocia",t2:"Hungría",d:"23 Jun 21:00"}]},
-    { n: "GRUPO B", m: [{t1:"España",t2:"Croacia",d:"15 Jun 18:00"},{t1:"Italia",t2:"Albania",d:"15 Jun 21:00"},{t1:"Croacia",t2:"Albania",d:"19 Jun 15:00"},{t1:"España",t2:"Italia",d:"20 Jun 21:00"},{t1:"Albania",t2:"España",d:"24 Jun 21:00"},{t1:"Croacia",t2:"Italia",d:"24 Jun 21:00"}]},
-    { n: "GRUPO C", m: [{t1:"Eslovenia",t2:"Dinamarca",d:"16 Jun 18:00"},{t1:"Serbia",t2:"Inglaterra",d:"16 Jun 21:00"},{t1:"Eslovenia",t2:"Serbia",d:"20 Jun 15:00"},{t1:"Dinamarca",t2:"Inglaterra",d:"20 Jun 18:00"},{t1:"Inglaterra",t2:"Eslovenia",d:"25 Jun 21:00"},{t1:"Dinamarca",t2:"Serbia",d:"25 Jun 21:00"}]},
-    { n: "GRUPO D", m: [{t1:"Polonia",t2:"Países Bajos",d:"16 Jun 15:00"},{t1:"Austria",t2:"Francia",d:"17 Jun 21:00"},{t1:"Polonia",t2:"Austria",d:"21 Jun 18:00"},{t1:"Países Bajos",t2:"Francia",d:"21 Jun 21:00"},{t1:"Países Bajos",t2:"Austria",d:"25 Jun 18:00"},{t1:"Francia",t2:"Polonia",d:"25 Jun 18:00"}]},
-    { n: "GRUPO E", m: [{t1:"Rumanía",t2:"Ucrania",d:"17 Jun 15:00"},{t1:"Bélgica",t2:"Eslovaquia",d:"17 Jun 18:00"},{t1:"Eslovaquia",t2:"Ucrania",d:"21 Jun 15:00"},{t1:"Bélgica",t2:"Rumanía",d:"22 Jun 21:00"},{t1:"Eslovaquia",t2:"Rumanía",d:"26 Jun 18:00"},{t1:"Ucrania",t2:"Bélgica",d:"26 Jun 18:00"}]},
-    { n: "GRUPO F", m: [{t1:"Turquía",t2:"Georgia",d:"18 Jun 18:00"},{t1:"Portugal",t2:"República Checa",d:"18 Jun 21:00"},{t1:"Georgia",t2:"República Checa",d:"22 Jun 15:00"},{t1:"Turquía",t2:"Portugal",d:"22 Jun 18:00"},{t1:"Georgia",t2:"Portugal",d:"26 Jun 21:00"},{t1:"República Checa",t2:"Turquía",d:"26 Jun 21:00"}]}
-  ];
-  return G;
-};
-
-const CalendarView = () => (
-  <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-     <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconCalendar /> CALENDARIO</h1>
-     <div className="space-y-6">
-        {generateFixture().map((g) => (
-          <div key={g.n} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5">
-             <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.n}</h3></div>
-             <div className="divide-y divide-white/5">
-                 {g.m.map((m, i) => (
-                   <div key={i} className="flex flex-col relative">
-                      {i % 2 === 0 && <div className="bg-blue-600 w-full text-center text-[10px] font-black text-white uppercase tracking-widest py-1">JORNADA {Math.floor(i/2) + 1}</div>}
-                      <div className="p-4 pt-6 flex items-center justify-between">
-                          <div className="w-[40%] flex items-center justify-end gap-2 text-right">
-                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t1}</span>
-                              <span className="text-3xl">{getFlag(m.t1)}</span>
-                          </div>
-
-                          <div className="w-[20%] text-center">
-                              <span className="text-[9px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span>
-                              <span className="text-[9px] text-white/40 block mb-1">{m.d.split(' ')[2]}</span>
-                              <span className="text-white/20 font-black text-xl tracking-widest">-:-</span>
-                          </div>
-
-                          <div className="w-[40%] flex items-center justify-start gap-2 text-left">
-                              <span className="text-3xl">{getFlag(m.t2)}</span>
-                              <span className="text-xs font-black uppercase text-white leading-tight">{m.t2}</span>
-                          </div>
-                      </div>
-                   </div>
-                 ))}
-             </div>
-          </div>
-        ))}
-     </div>
-  </div>
-);
-
-const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
-  const [expanded, setExpanded] = useState(false);
-  const canView = isMyTeam || isAdmin;
-  const squadData = team.squad || getMockSquad(team.id);
-
-  const filterByPos = (pos: string) => squadData.titulares?.filter((p:any) => p.posicion === pos) || [];
-
-  return (
-    <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
-       <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
-          <div className="flex items-center gap-4"><span className={`text-2xl font-black italic w-8 text-center ${rank === 1 ? 'text-[#facc15]' : 'text-white/30'}`}>#{rank}</span><div><h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div></div></div>
-          <div className="flex items-center gap-4"><div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>{!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}</div>
-       </div>
-       {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
-       
-       {expanded && canView && (
-         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
-            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
-              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
-              
-              <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div>
-                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
-                      {filterByPos('DEL').map((p:any) => (
-                          <div key={p.id} className="flex flex-col items-center">
-                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
-                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div>
-                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
-                      {filterByPos('MED').map((p:any) => (
-                          <div key={p.id} className="flex flex-col items-center">
-                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
-                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div>
-                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
-                      {filterByPos('DEF').map((p:any) => (
-                          <div key={p.id} className="flex flex-col items-center">
-                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
-                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-              <div className="flex items-center gap-2">
-                  <div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div>
-                  <div className="flex flex-wrap gap-2 flex-1 justify-center">
-                      {filterByPos('POR').map((p:any) => (
-                          <div key={p.id} className="flex flex-col items-center">
-                              <span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span>
-                              <span className="text-xl leading-none">{getFlag(p.seleccion)}</span>
-                          </div>
-                      ))}
-                  </div>
-              </div>
+const ScoresView = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
+    const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => a.name.localeCompare(b.name)); }, [teams]);
+    return (
+        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
+            <div className="space-y-4">
+                {sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} />)}
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3">
-                   <p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p>
-                   <div className="grid grid-cols-2 gap-2">
-                       {squadData.banquillo?.map((p:any) => <BenchCard key={p.id} player={p} id="S" />)}
-                   </div>
-               </div>
-               <div className="border border-white/10 rounded-2xl bg-white/5 p-3">
-                   <p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p>
-                   <div className="grid grid-cols-2 gap-2">
-                       {squadData.extras?.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}
-                   </div>
-               </div>
-            </div>
-         </div>
-       )}
-    </div>
-  );
+        </div>
+    );
 };
 
 const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, teamName?: string) => void }) => {
@@ -839,14 +744,12 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
 
     try {
         if (isRegister) {
-            // REGISTRO
             if (!email || !password || !username || !teamName) throw new Error("Rellena todos los campos");
-            
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
-                    data: { username, team_name: teamName } // Guardamos metadatos extra en el usuario
+                    data: { username, team_name: teamName }
                 }
             });
 
@@ -855,9 +758,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
                  onLogin(authData.user.email!, username, teamName);
             }
         } else {
-            // LOGIN
              if (!email || !password) throw new Error("Rellena email y contraseña");
-             
              const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                  email,
                  password
@@ -907,7 +808,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
              {loading ? "CARGANDO..." : (isRegister ? "CREAR CUENTA" : "ENTRAR")}
           </button>
         </form>
-        {/* ENLACE DE REGISTRO DESTACADO CON EFECTO NEÓN PARPADEANTE */}
         <div className="mt-6 text-center border-t border-white/5 pt-4">
             <button 
                 type="button" 
@@ -982,7 +882,7 @@ export default function EuroApp() {
   const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
   
   const [hasValidatedOnce, setHasValidatedOnce] = useState(false);
-  const [allTeams, setAllTeams] = useState<any[]>([]); 
+  const [allTeams, setAllTeams] = useState<any[]>(MOCK_TEAMS_DB); 
 
   // 1. CARGA INICIAL
   useEffect(() => {
@@ -1000,47 +900,68 @@ export default function EuroApp() {
           const { data, error } = await supabase
             .from('teams')
             .select('*')
-            .eq('id', authUser.id)
-            .single();
+            .order('points', { ascending: false });
 
-          if (error && error.code !== 'PGRST116') { console.error("Error loading team:", error); return; }
+          if (error) { console.error("Error loading teams:", error); return; }
 
           if (data) {
-              setUser({ email: authUser.email, username: data.username, teamName: data.team_name, id: authUser.id });
-              setIsAdmin(authUser.email === MASTER_EMAIL);
-              setTeamName(data.team_name || "");
-              if (data.team_name) setNameLocked(true);
+              // Buscar mi usuario en la lista
+              const myData = data.find((d:any) => d.id === authUser.id);
               
-              const squad = data.squad || {};
-              setSelected(squad.selected || {});
-              setBench(squad.bench || {});
-              setExtras(squad.extras || {});
-              setCaptain(squad.captain || null);
-              setStep(squad.step || 1);
-              setSquadValidated(data.is_validated || false);
-              setHasValidatedOnce(squad.hasValidatedOnce || false);
-              
-              const quiniela = data.quiniela || {};
-              setQuinielaSelections(quiniela.selections || {});
-              setQuinielaLocked(quiniela.locked || false);
+              if (myData) {
+                  setUser({ email: authUser.email, username: myData.username, teamName: myData.team_name, id: authUser.id });
+                  setIsAdmin(authUser.email === MASTER_EMAIL);
+                  setTeamName(myData.team_name || "");
+                  if (myData.team_name) setNameLocked(true);
+                  
+                  const squad = myData.squad || {};
+                  setSelected(squad.selected || {});
+                  setBench(squad.bench || {});
+                  setExtras(squad.extras || {});
+                  setCaptain(squad.captain || null);
+                  setStep(squad.step || 1);
+                  setSquadValidated(myData.is_validated || false);
+                  setHasValidatedOnce(squad.hasValidatedOnce || false);
+                  
+                  const quiniela = myData.quiniela || {};
+                  setQuinielaSelections(quiniela.selections || {});
+                  setQuinielaLocked(quiniela.locked || false);
+              } else {
+                  // NUEVO USUARIO
+                  const uName = authUser.user_metadata.username || "Mister";
+                  const tName = authUser.user_metadata.team_name || "";
+                  
+                  setUser({ email: authUser.email, username: uName, teamName: tName, id: authUser.id });
+                  setTeamName(tName);
+                  if (tName) setNameLocked(true);
+                  setStep(1); 
+                  
+                  await supabase.from('teams').insert([{
+                      id: authUser.id,
+                      email: authUser.email,
+                      username: uName,
+                      team_name: tName,
+                      squad: { step: 1 }
+                  }]);
+              }
 
-          } else {
-              // NUEVO USUARIO: Paso 1 Directo
-              const uName = authUser.user_metadata.username || "Mister";
-              const tName = authUser.user_metadata.team_name || "";
-              
-              setUser({ email: authUser.email, username: uName, teamName: tName, id: authUser.id });
-              setTeamName(tName);
-              if (tName) setNameLocked(true);
-              setStep(1); 
-              
-              await supabase.from('teams').insert([{
-                  id: authUser.id,
-                  email: authUser.email,
-                  username: uName,
-                  team_name: tName,
-                  squad: { step: 1 }
-              }]);
+              // Preparar datos para clasificación (Mezcla Real + Mock para demo)
+              const formatted = data.map((d: any, idx: number) => {
+                  const baseTeam = {
+                       id: d.id,
+                       name: d.team_name,
+                       user: d.username,
+                       points: d.points || 0,
+                       value: 300 - (d.budget || 0),
+                       squad: {
+                           titulares: Object.values(d.squad?.selected || {}),
+                           banquillo: Object.values(d.squad?.bench || {}),
+                           extras: Object.values(d.squad?.extras || {})
+                       }
+                   };
+                   return generateMockStats(baseTeam, idx);
+              });
+              setAllTeams(formatted);
           }
       } catch (e) {
           console.error("Load Exception:", e);
@@ -1073,25 +994,29 @@ export default function EuroApp() {
       return () => clearTimeout(saveTimeoutRef.current);
   }, [selected, bench, extras, captain, step, teamName, squadValidated, quinielaSelections, quinielaLocked, hasValidatedOnce, user]);
 
-  // Cargar clasificación REAL (Sin bots) + PUNTUACIONES
+  // Cargar clasificación REAL (Y añadir datos ficticios para demo)
   useEffect(() => {
-      // Ahora cargamos datos tanto para 'classification' como para 'scores'
       if (view === 'classification' || view === 'scores') {
           const fetchRanking = async () => {
               const { data } = await supabase.from('teams').select('*').order('points', { ascending: false });
-              if (data) {
-                   const formatted = data.map((d: any) => ({
-                       id: d.id,
-                       name: d.team_name,
-                       user: d.username,
-                       points: d.points,
-                       value: 300 - (d.budget || 0),
-                       squad: {
-                           titulares: Object.values(d.squad?.selected || {}),
-                           banquillo: Object.values(d.squad?.bench || {}),
-                           extras: Object.values(d.squad?.extras || {})
-                       }
-                   }));
+              if (data && data.length > 0) {
+                   const formatted = data.map((d: any, idx: number) => {
+                       // Recuperamos datos reales y añadimos "magia" mock si están vacíos
+                       const baseTeam = {
+                           id: d.id,
+                           name: d.team_name,
+                           user: d.username,
+                           points: d.points || 0,
+                           value: 300 - (d.budget || 0),
+                           squad: {
+                               titulares: Object.values(d.squad?.selected || {}),
+                               banquillo: Object.values(d.squad?.bench || {}),
+                               extras: Object.values(d.squad?.extras || {})
+                           }
+                       };
+                       // Enriquecer con datos fake para la gráfica y trofeos
+                       return generateMockStats(baseTeam, idx); 
+                   });
                    setAllTeams(formatted);
               }
           };
@@ -1215,7 +1140,6 @@ export default function EuroApp() {
 
   const isQuinielaComplete = EURO_GROUPS_DATA.every(g => (quinielaSelections[g.name] || []).length === 2);
 
-  // Clasificación REAL o Vacía si no hay nadie
   const displayTeams = allTeams; 
 
   const activeClass = "border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)] z-20 relative";
@@ -1295,13 +1219,23 @@ export default function EuroApp() {
 
       {view === 'classification' && (
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconUsers /> CLASIFICACIÓN</h1>
-            <div className="space-y-4">
+            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconUsers /> CLASIFICACIÓN GENERAL</h1>
+            
+            {/* 1. CLASIFICACIÓN GENERAL */}
+            <div className="space-y-4 mb-10">
                 {displayTeams.length > 0 ? displayTeams.map((team, idx) => (
                     <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === user.id} isAdmin={isAdmin} />
                 )) : (
                     <div className="text-center text-white/40 italic mt-10">No hay equipos registrados aún.</div>
                 )}
+            </div>
+
+            {/* 2. GRÁFICA DE EVOLUCIÓN NEÓN */}
+            <EvolutionChart teams={displayTeams} myTeamId={user.id} />
+            
+            {/* 3. CLASIFICACIÓN POR JORNADAS */}
+            <div className="mb-8">
+               <MatchdayStandings teams={displayTeams} />
             </div>
         </div>
       )}
