@@ -14,7 +14,7 @@ const CHART_COLORS = ["#22d3ee", "#f472b6", "#a78bfa", "#34d399", "#fbbf24", "#f
 
 const posColors: Record<string, string> = {
   "POR": "bg-[#facc15] text-black", 
-  "DEF": "bg-[#3b82f6] text-white",
+  "DEF": "bg-[#3b82f6] text-white", 
   "MED": "bg-[#10b981] text-white", 
   "DEL": "bg-[#ef4444] text-white"
 };
@@ -39,9 +39,10 @@ const EURO_GROUPS_DATA = [
   { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
 ];
 
+// Datos iniciales de prueba por si la BD está vacía
 const MOCK_TEAMS_DB = [
-  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 150, value: 295 },
-  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 145, value: 299 },
+  { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 150, value: 295, hasPaidBet: true },
+  { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 145, value: 299, hasPaidBet: false },
 ];
 
 const getMockSquad = (offset: number) => {
@@ -54,21 +55,26 @@ const getMockSquad = (offset: number) => {
   };
 };
 
-const MOCK_WINNERS: Record<string, number> = { "J1": 102, "J2": 101, "J3": 103 };
-
 const generateMockStats = (team: any, index: number) => {
-    if (team.points > 0) return team;
-    const trophies = [];
-    if (index === 0) trophies.push("J1");
-    if (index === 1) trophies.push("J2");
-    
-    return {
+    // Si ya tiene trofeos calculados o puntos reales, respetarlos, pero asegurar estructura
+    const mockTeam = {
         ...team,
-        points: Math.floor(Math.random() * 200) + 50,
-        evolution: [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, index + 1],
-        matchdayPoints: { "J1": Math.floor(Math.random()*50)+10, "J2": Math.floor(Math.random()*50)+10, "J3": Math.floor(Math.random()*50)+10, "OCT": Math.floor(Math.random()*50)+10, "SEM": 0, "FIN": 0 },
-        trophies: trophies 
+        // Si viene de la BD y tiene puntos, usarlos. Si es 0 (nuevo), simular.
+        points: team.points > 0 ? team.points : Math.floor(Math.random() * 200) + 50,
+        evolution: team.evolution || [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, index + 1],
+        matchdayPoints: team.matchdayPoints || { "J1": Math.floor(Math.random()*50)+10, "J2": Math.floor(Math.random()*50)+10, "J3": Math.floor(Math.random()*50)+10, "OCT": Math.floor(Math.random()*50)+10, "SEM": 0, "FIN": 0 },
+        trophies: team.trophies || [],
+        // IMPORTANTE: Preservar el estado de la apuesta si ya existe
+        hasPaidBet: team.hasPaidBet !== undefined ? team.hasPaidBet : false 
     };
+
+    // Asignar trofeos simulados a los líderes si no tienen
+    if (mockTeam.trophies.length === 0) {
+        if (index === 0) mockTeam.trophies.push("J1");
+        if (index === 1) mockTeam.trophies.push("J2");
+    }
+
+    return mockTeam;
 };
 
 // ==========================================
@@ -106,6 +112,8 @@ const IconCaptain = ({ className="" }: any) => (<div className={`w-6 h-4 bg-[#fa
 const IconDoubleYellow = ({ className="" }: any) => (<div className={`flex items-center relative h-5 w-6 ${className}`}><div className="absolute left-0 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform -rotate-6 z-10"></div><div className="absolute left-2 top-0.5 w-3 h-4 bg-[#facc15] rounded-[1px] border border-yellow-600/50 transform rotate-12 -ml-1.5 z-20 shadow-sm"></div></div>);
 const IconFourStars = ({ className="" }: any) => (<div className={`flex flex-col items-center leading-none gap-0.5 ${className}`}><div className="flex -space-x-0.5"><IconStar className="text-[#facc15]" /><IconStar className="text-[#facc15] -mt-1.5" /><IconStar className="text-[#facc15]" /></div><IconStar className="text-[#facc15] -mt-1" /></div>);
 const IconAward = ({ className="" }: any) => (<SvgBase size={24} className={`text-[#ffd700] ${className}`}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></SvgBase>);
+const IconCoinGold = ({ className = "" }: any) => (<div className={`w-6 h-6 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-600 border border-yellow-200 shadow-md flex items-center justify-center ${className}`}><span className="text-[10px] font-black text-yellow-950 drop-shadow-sm">5€</span></div>);
+const IconNoCoin = ({ className = "" }: any) => (<div className={`w-5 h-5 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center ${className}`}><div className="w-3 h-0.5 bg-gray-400 transform rotate-45 absolute"></div><div className="w-3 h-0.5 bg-gray-400 transform -rotate-45 absolute"></div></div>);
 
 // ==========================================
 // 3. COMPONENTES VISUALES
@@ -168,7 +176,7 @@ const BenchCard = ({ player, id, posColor }: any) => {
     );
 };
 
-const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
+const TeamCard = ({ team, rank, isMyTeam, isAdmin, onToggleBet }: any) => {
   const [expanded, setExpanded] = useState(false);
   const canView = isMyTeam || isAdmin;
   const squadData = team.squad || getMockSquad(team.id);
@@ -183,11 +191,25 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
               <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
               <div>
                   <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
-                  <div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>
+                  <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>
+                      {/* INDICADOR DE APUESTA */}
+                      {team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}
+                  </div>
                   {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
               </div>
           </div>
-          <div className="flex items-center gap-4"><div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>{!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}</div>
+          <div className="flex items-center gap-4">
+              {/* CONTROLES DE ADMIN */}
+              {isAdmin && (
+                  <div className="flex gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => onToggleBet(team.id, true)} className={`px-2 py-1 rounded-md text-[8px] font-black ${team.hasPaidBet ? 'bg-yellow-500 text-black border border-white' : 'bg-yellow-900/30 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-900/50'}`}>SÍ</button>
+                      <button onClick={() => onToggleBet(team.id, false)} className={`px-2 py-1 rounded-md text-[8px] font-black ${!team.hasPaidBet ? 'bg-red-500 text-white border border-white' : 'bg-red-900/30 text-red-500 border border-red-500/30 hover:bg-red-900/50'}`}>NO</button>
+                  </div>
+              )}
+              <div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
+              {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
+          </div>
        </div>
        {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
        
@@ -427,7 +449,7 @@ const RulesView = () => {
               <IconFileText size={36} /> REGLAMENTO
             </h1>
             <p className="text-white text-sm font-bold tracking-widest max-w-lg leading-relaxed drop-shadow-md">
-                Bienvenido a la guía oficial. Aquí encontrarás todo lo necesario para dominar el juego, desde el sistema de puntuación hasta los premios finales. ¡Suerte, míster!
+                Bienvenido a la guía oficial. Aquí encontrarás todo lo necesario para dominar el juego.
             </p>
         </div>
       </div>
@@ -904,8 +926,7 @@ export default function EuroApp() {
 
           if (error) { console.error("Error loading teams:", error); return; }
 
-          if (data) {
-              // Buscar mi usuario en la lista
+          if (data && data.length > 0) {
               const myData = data.find((d:any) => d.id === authUser.id);
               
               if (myData) {
@@ -945,7 +966,7 @@ export default function EuroApp() {
                   }]);
               }
 
-              // Preparar datos para clasificación (Mezcla Real + Mock para demo)
+              // CARGAR DATOS (Mezcla Real + Mock)
               const formatted = data.map((d: any, idx: number) => {
                   const baseTeam = {
                        id: d.id,
@@ -953,6 +974,8 @@ export default function EuroApp() {
                        user: d.username,
                        points: d.points || 0,
                        value: 300 - (d.budget || 0),
+                       // CARGAR ESTADO DE APUESTA DESDE BD
+                       hasPaidBet: d.hasPaidBet, 
                        squad: {
                            titulares: Object.values(d.squad?.selected || {}),
                            banquillo: Object.values(d.squad?.bench || {}),
@@ -962,13 +985,16 @@ export default function EuroApp() {
                    return generateMockStats(baseTeam, idx);
               });
               setAllTeams(formatted);
+          } else {
+              // Si no hay datos (primera vez o error), usar MOCK inicial
+              setAllTeams(MOCK_TEAMS_DB.map((t, i) => generateMockStats(t, i)));
           }
       } catch (e) {
           console.error("Load Exception:", e);
       }
   };
 
-  // 2. AUTO-GUARDADO
+  // 2. AUTO-GUARDADO (Plantilla y Quiniela)
   const saveTimeoutRef = useRef<any>(null);
   useEffect(() => {
       if (!user || !user.id) return;
@@ -994,36 +1020,6 @@ export default function EuroApp() {
       return () => clearTimeout(saveTimeoutRef.current);
   }, [selected, bench, extras, captain, step, teamName, squadValidated, quinielaSelections, quinielaLocked, hasValidatedOnce, user]);
 
-  // Cargar clasificación REAL (Y añadir datos ficticios para demo)
-  useEffect(() => {
-      if (view === 'classification' || view === 'scores') {
-          const fetchRanking = async () => {
-              const { data } = await supabase.from('teams').select('*').order('points', { ascending: false });
-              if (data && data.length > 0) {
-                   const formatted = data.map((d: any, idx: number) => {
-                       // Recuperamos datos reales y añadimos "magia" mock si están vacíos
-                       const baseTeam = {
-                           id: d.id,
-                           name: d.team_name,
-                           user: d.username,
-                           points: d.points || 0,
-                           value: 300 - (d.budget || 0),
-                           squad: {
-                               titulares: Object.values(d.squad?.selected || {}),
-                               banquillo: Object.values(d.squad?.bench || {}),
-                               extras: Object.values(d.squad?.extras || {})
-                           }
-                       };
-                       // Enriquecer con datos fake para la gráfica y trofeos
-                       return generateMockStats(baseTeam, idx); 
-                   });
-                   setAllTeams(formatted);
-              }
-          };
-          fetchRanking();
-      }
-  }, [view]);
-
   const handleLogin = async (email: string, username: string, tName?: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) loadUserData(session.user);
@@ -1035,6 +1031,23 @@ export default function EuroApp() {
       setSelected({}); setBench({}); setExtras({}); setCaptain(null); setTeamName("");
       setNameLocked(false); setStep(1); setSquadValidated(false); setQuinielaSelections({});
       setQuinielaLocked(false);
+  };
+
+  const handleToggleBet = async (teamId: any, status: boolean) => {
+      // 1. ACTUALIZACIÓN OPTIMISTA LOCAL (PERSISTENTE EN MEMORIA)
+      setAllTeams(prevTeams => prevTeams.map(t => {
+          if (t.id === teamId) {
+              return { ...t, hasPaidBet: status };
+          }
+          return t;
+      }));
+
+      // 2. INTENTO DE GUARDADO EN BASE DE DATOS (SILENCIOSO SI FALLA)
+      try {
+          await supabase.from('teams').update({ hasPaidBet: status }).eq('id', teamId);
+      } catch (err) {
+          console.log("Modo simulación: No se pudo guardar en BD real, pero se mantiene en local.");
+      }
   };
 
   const tactic = useMemo(() => {
@@ -1224,7 +1237,14 @@ export default function EuroApp() {
             {/* 1. CLASIFICACIÓN GENERAL */}
             <div className="space-y-4 mb-10">
                 {displayTeams.length > 0 ? displayTeams.map((team, idx) => (
-                    <TeamCard key={team.id} team={team} rank={idx + 1} isMyTeam={team.id === user.id} isAdmin={isAdmin} />
+                    <TeamCard 
+                        key={team.id} 
+                        team={team} 
+                        rank={idx + 1} 
+                        isMyTeam={team.id === user.id} 
+                        isAdmin={isAdmin}
+                        onToggleBet={handleToggleBet}
+                    />
                 )) : (
                     <div className="text-center text-white/40 italic mt-10">No hay equipos registrados aún.</div>
                 )}
