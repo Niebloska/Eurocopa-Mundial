@@ -39,7 +39,7 @@ const EURO_GROUPS_DATA = [
   { name: "GRUPO F", teams: ["Turquía", "Georgia", "Portugal", "República Checa"] },
 ];
 
-// Datos iniciales de prueba por si la BD está vacía
+// Datos iniciales de prueba
 const MOCK_TEAMS_DB = [
   { id: 101, name: "Los Galácticos", user: "CarlosCR7", points: 150, value: 295, hasPaidBet: true },
   { id: 102, name: "La Furia Roja", user: "Ana_Futbol", points: 145, value: 299, hasPaidBet: false },
@@ -56,24 +56,18 @@ const getMockSquad = (offset: number) => {
 };
 
 const generateMockStats = (team: any, index: number) => {
-    // Si ya tiene trofeos calculados o puntos reales, respetarlos, pero asegurar estructura
     const mockTeam = {
         ...team,
-        // Si viene de la BD y tiene puntos, usarlos. Si es 0 (nuevo), simular.
         points: team.points > 0 ? team.points : Math.floor(Math.random() * 200) + 50,
         evolution: team.evolution || [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1, index + 1],
         matchdayPoints: team.matchdayPoints || { "J1": Math.floor(Math.random()*50)+10, "J2": Math.floor(Math.random()*50)+10, "J3": Math.floor(Math.random()*50)+10, "OCT": Math.floor(Math.random()*50)+10, "SEM": 0, "FIN": 0 },
         trophies: team.trophies || [],
-        // IMPORTANTE: Preservar el estado de la apuesta si ya existe
         hasPaidBet: team.hasPaidBet !== undefined ? team.hasPaidBet : false 
     };
-
-    // Asignar trofeos simulados a los líderes si no tienen
     if (mockTeam.trophies.length === 0) {
         if (index === 0) mockTeam.trophies.push("J1");
         if (index === 1) mockTeam.trophies.push("J2");
     }
-
     return mockTeam;
 };
 
@@ -148,6 +142,24 @@ const MusicPlayer = () => {
   return (<div className="fixed top-[70px] right-4 z-[200]"><button onClick={() => setPlaying(!playing)} className={`flex items-center gap-2 ${playing ? 'bg-[#22c55e] text-black' : 'bg-[#ef4444] text-white'} px-4 py-2 rounded-full font-black text-[10px] uppercase shadow-lg transition-transform hover:scale-105 border-2 border-white`}>{playing ? <IconVolume2 size={14} className="animate-pulse"/> : <IconVolumeX size={14}/>}<span>MÚSICA {playing ? 'ON' : 'OFF'}</span></button></div>);
 };
 
+// ==========================================
+// 4. COMPONENTES BASE
+// ==========================================
+
+const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
+  <div className="fixed top-0 left-0 w-full z-[110] bg-[#0d1526] border-b border-white/10 px-4 py-3 shadow-lg">
+      <div className="max-w-md mx-auto flex justify-between items-center">
+          <button onClick={() => setView('rules')} className={`flex flex-col items-center gap-1 transition-all ${view === 'rules' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconFileText /><span className="text-[8px] font-black uppercase">Reglas</span></button>
+          <button onClick={() => setView('squad')} className={`flex flex-col items-center gap-1 transition-all ${view === 'squad' ? 'text-[#22c55e] scale-110' : 'text-white/40 hover:text-white'}`}><IconShield /><span className="text-[8px] font-black uppercase">Plantilla</span></button>
+          <button disabled={!squadCompleted} onClick={() => squadCompleted && setView('quiniela')} className={`flex flex-col items-center gap-1 transition-all ${view === 'quiniela' ? 'text-purple-400 scale-110' : !squadCompleted ? 'text-white/10 cursor-not-allowed' : 'text-white/40 hover:text-white'}`}><IconTrophy /><span className="text-[8px] font-black uppercase">EUROQUINIELA</span></button>
+          <button onClick={() => setView('scores')} className={`flex flex-col items-center gap-1 transition-all ${view === 'scores' ? 'text-cyan-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconClipboard /><span className="text-[8px] font-black uppercase">Puntos</span></button>
+          <button onClick={() => setView('classification')} className={`flex flex-col items-center gap-1 transition-all ${view === 'classification' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconUsers /><span className="text-[8px] font-black uppercase">Clasificación</span></button>
+          <button onClick={() => setView('calendar')} className={`flex flex-col items-center gap-1 transition-all ${view === 'calendar' ? 'text-sky-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconCalendar /><span className="text-[8px] font-black uppercase">Calendario</span></button>
+          <button onClick={onLogout} className="flex flex-col items-center gap-1 text-white/40 hover:text-red-500 transition-all group"><IconLogOut /><span className="text-[8px] font-black uppercase">Salir</span></button>
+      </div>
+  </div>
+);
+
 const Slot = ({ p, on, cap, setCap, showCap, active, editable }: any) => (
   <div className="relative flex flex-col items-center group" onClick={on}>
     <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'} ${active ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : (p && on) ? 'cursor-pointer' : 'cursor-default'}`}>
@@ -193,14 +205,12 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin, onToggleBet }: any) => {
                   <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
                   <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>
-                      {/* INDICADOR DE APUESTA */}
                       {team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}
                   </div>
                   {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
               </div>
           </div>
           <div className="flex items-center gap-4">
-              {/* CONTROLES DE ADMIN */}
               {isAdmin && (
                   <div className="flex gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => onToggleBet(team.id, true)} className={`px-2 py-1 rounded-md text-[8px] font-black ${team.hasPaidBet ? 'bg-yellow-500 text-black border border-white' : 'bg-yellow-900/30 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-900/50'}`}>SÍ</button>
@@ -268,22 +278,8 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
   );
 };
 // ==========================================
-// 4. COMPONENTES DE NAVEGACIÓN Y GRÁFICAS
+// 4. GRÁFICAS Y COMPONENTES DE VISUALIZACIÓN
 // ==========================================
-
-const NavBar = ({ view, setView, onLogout, squadCompleted }: any) => (
-  <div className="fixed top-0 left-0 w-full z-[110] bg-[#0d1526] border-b border-white/10 px-4 py-3 shadow-lg">
-      <div className="max-w-md mx-auto flex justify-between items-center">
-          <button onClick={() => setView('rules')} className={`flex flex-col items-center gap-1 transition-all ${view === 'rules' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconFileText /><span className="text-[8px] font-black uppercase">Reglas</span></button>
-          <button onClick={() => setView('squad')} className={`flex flex-col items-center gap-1 transition-all ${view === 'squad' ? 'text-[#22c55e] scale-110' : 'text-white/40 hover:text-white'}`}><IconShield /><span className="text-[8px] font-black uppercase">Plantilla</span></button>
-          <button disabled={!squadCompleted} onClick={() => squadCompleted && setView('quiniela')} className={`flex flex-col items-center gap-1 transition-all ${view === 'quiniela' ? 'text-purple-400 scale-110' : !squadCompleted ? 'text-white/10 cursor-not-allowed' : 'text-white/40 hover:text-white'}`}><IconTrophy /><span className="text-[8px] font-black uppercase">EUROQUINIELA</span></button>
-          <button onClick={() => setView('scores')} className={`flex flex-col items-center gap-1 transition-all ${view === 'scores' ? 'text-cyan-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconClipboard /><span className="text-[8px] font-black uppercase">Puntos</span></button>
-          <button onClick={() => setView('classification')} className={`flex flex-col items-center gap-1 transition-all ${view === 'classification' ? 'text-[#facc15] scale-110' : 'text-white/40 hover:text-white'}`}><IconUsers /><span className="text-[8px] font-black uppercase">Clasificación</span></button>
-          <button onClick={() => setView('calendar')} className={`flex flex-col items-center gap-1 transition-all ${view === 'calendar' ? 'text-sky-400 scale-110' : 'text-white/40 hover:text-white'}`}><IconCalendar /><span className="text-[8px] font-black uppercase">Calendario</span></button>
-          <button onClick={onLogout} className="flex flex-col items-center gap-1 text-white/40 hover:text-red-500 transition-all group"><IconLogOut /><span className="text-[8px] font-black uppercase">Salir</span></button>
-      </div>
-  </div>
-);
 
 const EvolutionChart = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
     const height = 220; const width = 350; const padding = 30;
@@ -492,11 +488,10 @@ const RulesView = () => {
 
         {/* 3. FICHAJES */}
         <RuleCard color="#ec4899" title="3. Mercado de Fichajes" icon={<IconRefresh />}>
-           <p className="mb-4 font-bold text-white text-base">Ventana abierta: Jornada 3 → Octavos</p>
+           <p className="mb-4 font-bold text-white text-base">Ventana abierta: Jornada 3 → Octavos.</p>
            <ul className="space-y-3 text-sm text-gray-200">
              <li className="flex items-center gap-3 bg-white/5 p-2 rounded"><IconCheck size={16} className="text-[#22c55e]"/> Máximo <strong>7 cambios</strong> permitidos.</li>
-             <li className="flex items-center gap-3 bg-white/5 p-2 rounded"><IconCheck size={16} className="text-[#22c55e]"/> Límite por país sube de 7 a <strong>8 jugadores.</strong></li>
-             <li className="flex items-center gap-3 bg-white/5 p-2 rounded"><IconCheck size={16} className="text-[#22c55e]"/> Tu presupuesto aumenta con los premios de la <span className="text-[#22c55e] font-black uppercase ml-1">EUROQUINIELA.</span></li>
+             <li className="flex items-center gap-3 bg-white/5 p-2 rounded"><IconCheck size={16} className="text-[#22c55e]"/> Límite: <strong>8 jugadores/país</strong>.</li>
            </ul>
         </RuleCard>
 
@@ -666,7 +661,7 @@ const RulesView = () => {
 };
 
 // COMPONENTE PARA LA FILA DE PUNTOS (CON DESPLEGABLE)
-const ScoreTeamRow = ({ team, isMyTeam }: any) => {
+const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
     // Si es mi equipo, abierto por defecto. Si no, cerrado.
     const [isOpen, setIsOpen] = useState(isMyTeam);
     const positionOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
@@ -680,11 +675,14 @@ const ScoreTeamRow = ({ team, isMyTeam }: any) => {
         return a.nombre.localeCompare(b.nombre); 
     });
 
+    // LÓGICA DE CANDADO
+    const canView = isMyTeam || isAdmin;
+
     return (
         <div className={`bg-[#1c2a45] rounded-2xl overflow-hidden shadow-xl transition-all mb-4 ${isMyTeam ? 'border-2 border-[#facc15] shadow-[#facc15]/20' : 'border border-white/5'}`}>
             <div 
-                onClick={() => setIsOpen(!isOpen)}
-                className={`p-4 flex justify-between items-center cursor-pointer transition-colors ${isMyTeam ? 'bg-[#facc15]/10' : 'bg-black/20 hover:bg-white/5'}`}
+                onClick={() => canView && setIsOpen(!isOpen)}
+                className={`p-4 flex justify-between items-center ${canView ? 'cursor-pointer hover:bg-white/5' : 'cursor-default'} transition-colors ${isMyTeam ? 'bg-[#facc15]/10' : 'bg-black/20'}`}
             >
                 <div>
                     <h2 className={`text-lg font-black italic uppercase ${isMyTeam ? 'text-[#facc15]' : 'text-white'}`}>{team.name}</h2>
@@ -692,12 +690,14 @@ const ScoreTeamRow = ({ team, isMyTeam }: any) => {
                 </div>
                 <div className="flex items-center gap-4">
                     <span className="block text-2xl font-black text-cyan-400">{team.points} PTS</span>
-                    {isOpen ? <IconChevronUp size={20} className="text-white/40"/> : <IconChevronDown size={20} className="text-white/40"/>}
+                    {!canView ? <IconLock size={16} /> : (isOpen ? <IconChevronUp size={20} className="text-white/40"/> : <IconChevronDown size={20} className="text-white/40"/>)}
                 </div>
             </div>
 
             {/* TABLA DESPLEGABLE */}
-            {isOpen && (
+            {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
+
+            {isOpen && canView && (
                 <div className="overflow-x-auto custom-scrollbar animate-in slide-in-from-top duration-300">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
@@ -738,13 +738,13 @@ const ScoreTeamRow = ({ team, isMyTeam }: any) => {
     );
 };
 
-const ScoresView = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
+const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: string | undefined, isAdmin: boolean }) => {
     const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => a.name.localeCompare(b.name)); }, [teams]);
     return (
         <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
             <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
             <div className="space-y-4">
-                {sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} />)}
+                {sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} isAdmin={isAdmin} />)}
             </div>
         </div>
     );
@@ -906,6 +906,16 @@ export default function EuroApp() {
   const [hasValidatedOnce, setHasValidatedOnce] = useState(false);
   const [allTeams, setAllTeams] = useState<any[]>(MOCK_TEAMS_DB); 
 
+  // --- NUEVO: AVISO DE SALIDA ---
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ''; 
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   // 1. CARGA INICIAL
   useEffect(() => {
      const checkSession = async () => {
@@ -926,8 +936,15 @@ export default function EuroApp() {
 
           if (error) { console.error("Error loading teams:", error); return; }
 
-          if (data && data.length > 0) {
-              const myData = data.find((d:any) => d.id === authUser.id);
+          let teamsData = data && data.length > 0 ? data : null;
+          
+          // --- LOGICA PERSISTENCIA LOCAL (APUESTA) ---
+          // Recuperar estado local de las apuestas si existe
+          const localBetData = typeof window !== 'undefined' ? localStorage.getItem('euro_teams_bet_status') : null;
+          const parsedBetData = localBetData ? JSON.parse(localBetData) : {};
+
+          if (teamsData) {
+              const myData = teamsData.find((d:any) => d.id === authUser.id);
               
               if (myData) {
                   setUser({ email: authUser.email, username: myData.username, teamName: myData.team_name, id: authUser.id });
@@ -966,16 +983,18 @@ export default function EuroApp() {
                   }]);
               }
 
-              // CARGAR DATOS (Mezcla Real + Mock)
-              const formatted = data.map((d: any, idx: number) => {
+              // CARGAR DATOS (Mezcla Real + Mock + Local Storage Override)
+              const formatted = teamsData.map((d: any, idx: number) => {
+                  // Prioridad: Local Storage > DB > Mock Default
+                  const betStatus = parsedBetData[d.id] !== undefined ? parsedBetData[d.id] : (d.hasPaidBet !== undefined ? d.hasPaidBet : false);
+
                   const baseTeam = {
                        id: d.id,
                        name: d.team_name,
                        user: d.username,
                        points: d.points || 0,
                        value: 300 - (d.budget || 0),
-                       // CARGAR ESTADO DE APUESTA DESDE BD
-                       hasPaidBet: d.hasPaidBet, 
+                       hasPaidBet: betStatus, 
                        squad: {
                            titulares: Object.values(d.squad?.selected || {}),
                            banquillo: Object.values(d.squad?.bench || {}),
@@ -986,8 +1005,11 @@ export default function EuroApp() {
               });
               setAllTeams(formatted);
           } else {
-              // Si no hay datos (primera vez o error), usar MOCK inicial
-              setAllTeams(MOCK_TEAMS_DB.map((t, i) => generateMockStats(t, i)));
+              // Si no hay datos (primera vez o error), usar MOCK inicial + LocalStorage
+              setAllTeams(MOCK_TEAMS_DB.map((t, i) => {
+                  const betStatus = parsedBetData[t.id] !== undefined ? parsedBetData[t.id] : t.hasPaidBet;
+                  return generateMockStats({...t, hasPaidBet: betStatus}, i);
+              }));
           }
       } catch (e) {
           console.error("Load Exception:", e);
@@ -1034,19 +1056,27 @@ export default function EuroApp() {
   };
 
   const handleToggleBet = async (teamId: any, status: boolean) => {
-      // 1. ACTUALIZACIÓN OPTIMISTA LOCAL (PERSISTENTE EN MEMORIA)
-      setAllTeams(prevTeams => prevTeams.map(t => {
+      // 1. ACTUALIZACIÓN OPTIMISTA LOCAL (En Memoria React)
+      const updatedTeams = allTeams.map(t => {
           if (t.id === teamId) {
               return { ...t, hasPaidBet: status };
           }
           return t;
-      }));
+      });
+      setAllTeams(updatedTeams);
 
-      // 2. INTENTO DE GUARDADO EN BASE DE DATOS (SILENCIOSO SI FALLA)
+      // 2. PERSISTENCIA LOCAL (LocalStorage - Para sobrevivir recargas/salidas)
+      // Guardamos un objeto simple { teamId: status, ... }
+      const currentLocalData = localStorage.getItem('euro_teams_bet_status');
+      const parsedData = currentLocalData ? JSON.parse(currentLocalData) : {};
+      parsedData[teamId] = status;
+      localStorage.setItem('euro_teams_bet_status', JSON.stringify(parsedData));
+
+      // 3. INTENTO DE GUARDADO EN BASE DE DATOS (SILENCIOSO SI FALLA O ES MOCK)
       try {
           await supabase.from('teams').update({ hasPaidBet: status }).eq('id', teamId);
       } catch (err) {
-          console.log("Modo simulación: No se pudo guardar en BD real, pero se mantiene en local.");
+          console.log("Modo simulación: Guardado en LocalStorage.");
       }
   };
 
@@ -1228,7 +1258,7 @@ export default function EuroApp() {
       )}
 
       {/* VISTA DE PUNTUACIONES (NUEVO) */}
-      {view === 'scores' && <ScoresView teams={displayTeams} myTeamId={user.id} />}
+      {view === 'scores' && <ScoresView teams={displayTeams} myTeamId={user.id} isAdmin={isAdmin} />}
 
       {view === 'classification' && (
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
