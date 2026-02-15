@@ -711,19 +711,20 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [filterCountry, setFilterCountry] = useState("TODOS");
     const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
   
-    const getCountryCount = (country: string) => {
+    // UseCallback para evitar warnings de dependencias
+    const getCountryCount = React.useCallback((country: string) => {
         if (!allPlayersSelected) return 0;
         return allPlayersSelected.filter((p: any) => p.seleccion === country).length;
-    };
+    }, [allPlayersSelected]);
   
-    const getPlayerStatus = (playerId: number) => {
+    const getPlayerStatus = React.useCallback((playerId: number) => {
         if (!lineupTopology) return "NONE";
         const { selected, bench, extras } = lineupTopology;
         if (Object.values(selected).find((p:any) => p.id === playerId)) return "TITULAR";
         if (Object.values(bench).find((p:any) => p.id === playerId)) return "BANQUILLO";
         if (Object.values(extras).find((p:any) => p.id === playerId)) return "NO CONVOCADO";
         return "NONE";
-    };
+    }, [lineupTopology]);
   
     const filteredPlayers = useMemo(() => {
       let result: any[] = [];
@@ -756,7 +757,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
       }
       
       return result;
-    }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort]);
+    }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus]);
   
     const getStatusBg = (id: number) => {
         const s = getPlayerStatus(id);
@@ -869,13 +870,14 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   
     useEffect(() => { const c = async () => { const { data: { session } } = await supabase.auth.getSession(); if (session) loadUserData(session.user); }; c(); }, []);
     
+    // Sincronización Inicial de Alineación (Con dependencias corregidas para Vercel)
     useEffect(() => {
        if (lineupViewJornada === CURRENT_REAL_MATCHDAY) {
            setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras);
        } else if (Object.keys(lineupSelected).length === 0 && Object.keys(selected).length > 0) {
            setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras);
        }
-    }, [selected, bench, extras, lineupViewJornada]);
+    }, [selected, bench, extras, lineupViewJornada, lineupSelected]); // Añadido lineupSelected para evitar warning
   
     const loadUserData = async (u: any) => { 
         try {
@@ -925,7 +927,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         const sourceBench = view === 'lineups' ? lineupBench : bench;
         const sourceExtras = view === 'lineups' ? lineupExtras : extras;
   
-        // 1. ELIMINAR DE ORIGEN 
         const cleanState = (obj: any) => {
             const newObj = { ...obj };
             Object.keys(newObj).forEach(key => { if (newObj[key].id === player.id) delete newObj[key]; });
@@ -937,12 +938,10 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         const cleanedExt = cleanState(sourceExtras);
   
         setTimeout(() => {
-            // 2. INSERTAR EN DESTINO
             if (slotType === 'selected') cleanedSel[slotId] = player;
             else if (slotType === 'bench') cleanedBen[slotId] = player;
             else cleanedExt[slotId] = player;
   
-            // 3. ACTUALIZAR ESTADOS
             if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
             else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
         }, 0);
