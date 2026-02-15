@@ -869,7 +869,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   
     useEffect(() => { const c = async () => { const { data: { session } } = await supabase.auth.getSession(); if (session) loadUserData(session.user); }; c(); }, []);
     
-    // Sincronización Inicial de Alineación (Con dependencias corregidas para Vercel)
     useEffect(() => {
        if (lineupViewJornada === CURRENT_REAL_MATCHDAY) {
            setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras);
@@ -921,29 +920,62 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         }
     };
   
+    // --- FUNCIÓN SWAP CORREGIDA: INTERCAMBIO REAL SIN DUPLICADOS ---
     const handleLineupSwap = (slotId: string, player: any, slotType: 'selected' | 'bench' | 'extras') => {
-        const sourceSelected = view === 'lineups' ? lineupSelected : selected;
-        const sourceBench = view === 'lineups' ? lineupBench : bench;
-        const sourceExtras = view === 'lineups' ? lineupExtras : extras;
+        const isLineup = view === 'lineups';
+        const sourceSelected = isLineup ? lineupSelected : selected;
+        const sourceBench = isLineup ? lineupBench : bench;
+        const sourceExtras = isLineup ? lineupExtras : extras;
   
-        const cleanState = (obj: any) => {
-            const newObj = { ...obj };
-            Object.keys(newObj).forEach(key => { if (newObj[key].id === player.id) delete newObj[key]; });
-            return newObj;
-        };
+        // 1. CLONAR ESTADOS
+        const newSel = { ...sourceSelected };
+        const newBen = { ...sourceBench };
+        const newExt = { ...sourceExtras };
   
-        const cleanedSel = cleanState(sourceSelected);
-        const cleanedBen = cleanState(sourceBench);
-        const cleanedExt = cleanState(sourceExtras);
+        // 2. BUSCAR DÓNDE ESTÁ EL JUGADOR ENTRANTE (ORIGEN)
+        let sourceKey = null;
+        let sourceList = null;
   
-        setTimeout(() => {
-            if (slotType === 'selected') cleanedSel[slotId] = player;
-            else if (slotType === 'bench') cleanedBen[slotId] = player;
-            else cleanedExt[slotId] = player;
+        // Buscar en selected
+        Object.entries(newSel).forEach(([key, p]: any) => { if (p.id === player.id) { sourceKey = key; sourceList = 'selected'; } });
+        // Buscar en bench
+        if (!sourceKey) Object.entries(newBen).forEach(([key, p]: any) => { if (p.id === player.id) { sourceKey = key; sourceList = 'bench'; } });
+        // Buscar en extras
+        if (!sourceKey) Object.entries(newExt).forEach(([key, p]: any) => { if (p.id === player.id) { sourceKey = key; sourceList = 'extras'; } });
   
-            if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
-            else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
-        }, 0);
+        // 3. IDENTIFICAR AL JUGADOR QUE VA A SER REEMPLAZADO (DESTINO)
+        let playerBeingReplaced = null;
+        if (slotType === 'selected') playerBeingReplaced = newSel[slotId];
+        else if (slotType === 'bench') playerBeingReplaced = newBen[slotId];
+        else playerBeingReplaced = newExt[slotId];
+  
+        // 4. EJECUTAR EL SWAP
+        
+        // A) Poner al jugador entrante en el hueco destino
+        if (slotType === 'selected') newSel[slotId] = player;
+        else if (slotType === 'bench') newBen[slotId] = player;
+        else newExt[slotId] = player;
+  
+        // B) Poner al jugador reemplazado en el hueco origen (si existe)
+        if (sourceKey) {
+            if (playerBeingReplaced) {
+                if (sourceList === 'selected') newSel[sourceKey] = playerBeingReplaced;
+                else if (sourceList === 'bench') newBen[sourceKey] = playerBeingReplaced;
+                else newExt[sourceKey] = playerBeingReplaced;
+            } else {
+                // Si no había nadie en el destino, el origen queda vacío
+                if (sourceList === 'selected') delete newSel[sourceKey];
+                else if (sourceList === 'bench') delete newBen[sourceKey];
+                else delete newExt[sourceKey];
+            }
+        }
+  
+        // 5. ACTUALIZAR ESTADO
+        if (isLineup) {
+            setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
+        } else {
+            setSelected(newSel); setBench(newBen); setExtras(newExt);
+        }
     };
   
     const handleLineupToExtras = () => {
@@ -1142,11 +1174,11 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
               activeSlot={activeSlot} 
               onClose={() => setActiveSlot(null)} 
               selectedIds={allSquadPlayers.map((p: any) => p.id)} 
-              // Eliminar prop duplicada (la borré aquí)
+              allPlayersSelected={allSquadPlayers}
               mode={view === 'lineups' ? 'lineup' : 'market'} 
               lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
               sortPrice={sortPrice} setSortPrice={setSortPrice} activeSort={activeSort} setActiveSort={setActiveSort}
-              allPlayersSelected={allSquadPlayers} 
+              // allPlayersSelected={allSquadPlayers}  <-- LÍNEA ELIMINADA PARA EVITAR DUPLICADO
               onSelect={(p: any) => {
                   if (view === 'lineups') { handleLineupSwap(activeSlot.id, p, activeSlot.type === 'titular' ? 'selected' : activeSlot.type); }
                   else { if (activeSlot.type === 'titular') setSelected({...selected, [activeSlot.id]: p}); else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p}); else setExtras({...extras, [activeSlot.id]: p}); }
