@@ -711,7 +711,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [filterCountry, setFilterCountry] = useState("TODOS");
     const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
   
-    // UseCallback para evitar warnings de dependencias
     const getCountryCount = React.useCallback((country: string) => {
         if (!allPlayersSelected) return 0;
         return allPlayersSelected.filter((p: any) => p.seleccion === country).length;
@@ -877,7 +876,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
        } else if (Object.keys(lineupSelected).length === 0 && Object.keys(selected).length > 0) {
            setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras);
        }
-    }, [selected, bench, extras, lineupViewJornada, lineupSelected]); // Añadido lineupSelected para evitar warning
+    }, [selected, bench, extras, lineupViewJornada, lineupSelected]); 
   
     const loadUserData = async (u: any) => { 
         try {
@@ -1143,7 +1142,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
               activeSlot={activeSlot} 
               onClose={() => setActiveSlot(null)} 
               selectedIds={allSquadPlayers.map((p: any) => p.id)} 
-              allPlayersSelected={allSquadPlayers}
+              // Eliminar prop duplicada (la borré aquí)
               mode={view === 'lineups' ? 'lineup' : 'market'} 
               lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
               sortPrice={sortPrice} setSortPrice={setSortPrice} activeSort={activeSort} setActiveSort={setActiveSort}
