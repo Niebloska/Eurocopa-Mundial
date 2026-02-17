@@ -677,9 +677,20 @@ const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: stri
 // 7. PANTALLAS MODALES Y APP PRINCIPAL
 // ==========================================
 
-// --- SIMULACIÓN DE FECHA: PRE-TORNEO (13 Junio) ---
-// Configurado para que la cuenta atrás termine mañana.
-const SIMULATED_GAME_START = new Date(Date.now() + 24 * 60 * 60 * 1000 + 3600000).toISOString(); 
+// --- SIMULACIÓN: MAÑANA A LAS 21:00 ---
+const getTomorrow9PM = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(21, 0, 0, 0);
+    return d.toISOString();
+};
+const SIMULATED_GAME_START = getTomorrow9PM();
+
+// --- DATOS SIMULADOS ---
+const MOCK_SCORES: Record<string, number | null> = {
+    "Florian Wirtz": 14, "Jamal Musiala": 12, "Kai Havertz": 9, "Toni Kroos": 6, 
+    "Ryan Porteous": -4, "Leroy Sané": null, "Niclas Füllkrug": 8, "Angus Gunn": -2
+};
 
 const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, teamName?: string) => void }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -710,7 +721,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   );
 };
 
-const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected }: any) => {
+const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected, sortAlpha, setSortAlpha }: any) => {
   const [filterPos, setFilterPos] = useState((mode === 'lineup' && activeSlot.type === 'titular') ? activeSlot.pos : "TODOS");
   const [filterCountry, setFilterCountry] = useState("TODOS");
   const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
@@ -734,6 +745,7 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
     if (mode === 'lineup' && lineupTopology) {
         const { selected, bench, extras } = lineupTopology;
         const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
+        
         if (activeSlot.type === 'titular') { 
             result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); 
         } else { 
@@ -752,10 +764,15 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
             return statusOrder[getPlayerStatus(a.id)] - statusOrder[getPlayerStatus(b.id)];
         });
     } else {
-        result.sort((a:any, b:any) => activeSort === 'price' ? (sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio) : b.nombre.localeCompare(a.nombre));
+        // LÓGICA ORDENACIÓN MERCADO MEJORADA (A-Z / Z-A)
+        if (activeSort === 'price') {
+            result.sort((a:any, b:any) => sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio);
+        } else {
+            result.sort((a:any, b:any) => sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre));
+        }
     }
     return result;
-  }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus]);
+  }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus, sortAlpha]);
 
   const getStatusBg = (id: number) => {
       const s = getPlayerStatus(id);
@@ -775,7 +792,18 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
           </button>
       )}
       
-      <div className="flex gap-2 mb-4">{["POR", "DEF", "MED", "DEL"].map(pos => (<button key={pos} disabled={mode === 'lineup' && activeSlot.type === 'titular'} onClick={() => setFilterPos(pos)} className={`flex-1 py-2 rounded-xl font-black text-[10px] border ${filterPos === pos ? 'bg-white text-black' : 'text-white border-white/20'} ${mode === 'lineup' && activeSlot.type === 'titular' && activeSlot.pos !== pos ? 'opacity-20' : ''}`}>{pos}</button>))}</div>
+      <div className="flex gap-2 mb-4">
+          {["POR", "DEF", "MED", "DEL"].map(pos => (
+              <button 
+                  key={pos} 
+                  disabled={activeSlot.type === 'titular'} 
+                  onClick={() => setFilterPos(pos)} 
+                  className={`flex-1 py-2 rounded-xl font-black text-[10px] border ${filterPos === pos ? 'bg-white text-black' : 'text-white border-white/20'} ${activeSlot.type === 'titular' && activeSlot.pos !== pos ? 'opacity-20 cursor-not-allowed' : ''}`}
+              >
+                  {pos}
+              </button>
+          ))}
+      </div>
       
       {mode === 'market' && (
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
@@ -790,7 +818,7 @@ const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, 
       {mode === 'market' && (
           <div className="grid grid-cols-2 gap-3 mb-4">
               <button onClick={() => { setSortPrice((prev: any) => prev === 'desc' ? 'asc' : 'desc'); setActiveSort('price'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'price' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowUpDown size={14}/> {sortPrice === 'desc' ? 'PRECIO MÁX' : 'PRECIO MÍN'}</button>
-              <button onClick={() => { setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowDownUp size={14}/> A - Z</button>
+              <button onClick={() => { setSortAlpha((prev: any) => prev === 'asc' ? 'desc' : 'asc'); setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A - Z' : 'Z - A'}</button>
           </div>
       )}
 
@@ -840,6 +868,7 @@ export default function EuroApp() {
   const [benchFilter, setBenchFilter] = useState("TODOS");
   const [extrasFilter, setExtrasFilter] = useState("TODOS");
   const [sortPrice, setSortPrice] = useState<'desc' | 'asc'>('desc');
+  const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc'); // ESTADO ORDEN A-Z
   const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
   const [showExitModal, setShowExitModal] = useState(false);
 
@@ -858,11 +887,8 @@ export default function EuroApp() {
 
   const isValidLineupTactic = useMemo(() => VALID_FORMATIONS.includes(currentLineupTactic), [currentLineupTactic]);
 
-  // --- LÓGICA PRE-TORNEO ---
   const isJornadaEditable = (j: string) => {
-      // SI ES ANTES DE MAÑANA, NADIE TOCA NADA.
       if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return false;
-      
       const activeIndex = LINEUP_MATCHDAYS.indexOf(CURRENT_REAL_MATCHDAY);
       const targetIndex = LINEUP_MATCHDAYS.indexOf(j);
       return targetIndex === activeIndex + 1; 
@@ -941,80 +967,59 @@ export default function EuroApp() {
       }
   };
 
-  // --- SWAP ROBUSTO Y SIN DUPLICADOS (FIXED) ---
   const handleLineupSwap = (slotId: string, player: any, slotType: 'selected' | 'bench' | 'extras') => {
       const isLineup = view === 'lineups';
       const sourceSelected = isLineup ? lineupSelected : selected;
       const sourceBench = isLineup ? lineupBench : bench;
       const sourceExtras = isLineup ? lineupExtras : extras;
 
-      // 1. CLONAR ESTADOS
-      const newSel = { ...sourceSelected };
-      const newBen = { ...sourceBench };
-      const newExt = { ...sourceExtras };
+      const cleanState = (obj: any) => {
+          const newObj = { ...obj };
+          Object.keys(newObj).forEach(key => { if (newObj[key].id === player.id) delete newObj[key]; });
+          return newObj;
+      };
 
-      // 2. BUSCAR DÓNDE ESTÁ EL JUGADOR ENTRANTE (ORIGEN)
-      let sourceKey = null;
-      let sourceList = null;
+      const cleanedSel = cleanState(sourceSelected);
+      const cleanedBen = cleanState(sourceBench);
+      const cleanedExt = cleanState(sourceExtras);
 
-      Object.entries(newSel).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'selected'; } });
-      if (!sourceKey) Object.entries(newBen).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'bench'; } });
-      if (!sourceKey) Object.entries(newExt).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'extras'; } });
+      setTimeout(() => {
+          if (slotType === 'selected') cleanedSel[slotId] = player;
+          else if (slotType === 'bench') cleanedBen[slotId] = player;
+          else cleanedExt[slotId] = player;
 
-      // 3. IDENTIFICAR AL JUGADOR QUE VA A SER REEMPLAZADO (DESTINO)
-      let playerBeingReplaced = null;
-      if (slotType === 'selected') playerBeingReplaced = newSel[slotId];
-      else if (slotType === 'bench') playerBeingReplaced = newBen[slotId];
-      else playerBeingReplaced = newExt[slotId];
-
-      // 4. EJECUTAR EL SWAP
-      
-      // A) Poner el nuevo jugador en el destino
-      if (slotType === 'selected') newSel[slotId] = player;
-      else if (slotType === 'bench') newBen[slotId] = player;
-      else newExt[slotId] = player;
-
-      // B) Poner al jugador reemplazado en el hueco origen (si existe)
-      if (sourceKey && sourceList) {
-          if (playerBeingReplaced) {
-              if (sourceList === 'selected') newSel[sourceKey] = playerBeingReplaced;
-              else if (sourceList === 'bench') newBen[sourceKey] = playerBeingReplaced;
-              else newExt[sourceKey] = playerBeingReplaced;
-          } else {
-              // Si no había nadie en el destino, el origen queda vacío
-              if (sourceList === 'selected') delete newSel[sourceKey];
-              else if (sourceList === 'bench') delete newBen[sourceKey];
-              else delete newExt[sourceKey];
-          }
-      }
-
-      // 5. ACTUALIZAR ESTADO
-      if (isLineup) {
-          setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
-      } else {
-          setSelected(newSel); setBench(newBen); setExtras(newExt);
-      }
+          if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
+          else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
+      }, 0);
   };
 
   const handleLineupToExtras = () => {
       if (!activeSlot) return;
-      const playerToRemove = view === 'lineups' 
-          ? (activeSlot.type === 'titular' ? lineupSelected[activeSlot.id] : lineupBench[activeSlot.id]) 
-          : (activeSlot.type === 'titular' ? selected[activeSlot.id] : bench[activeSlot.id]);
-      if (!playerToRemove) return;
-
-      if (view === 'lineups') {
-          const newKey = `NC-${Date.now()}`;
-          const newExtras = { ...lineupExtras, [newKey]: playerToRemove };
-          let newSelected = { ...lineupSelected };
-          let newBench = { ...lineupBench };
-          if (activeSlot.type === 'titular') delete newSelected[activeSlot.id]; else delete newBench[activeSlot.id];
-          setLineupSelected(newSelected); setLineupBench(newBench); setLineupExtras(newExtras);
-      } else {
+      
+      if (view !== 'lineups') {
           const n = {...selected}; delete n[activeSlot.id]; setSelected(n);
           const b = {...bench}; delete b[activeSlot.id]; setBench(b);
           const e = {...extras}; delete e[activeSlot.id]; setExtras(e);
+          setActiveSlot(null);
+          return;
       }
+
+      let playerToMove = null;
+      if (activeSlot.type === 'titular') playerToMove = lineupSelected[activeSlot.id];
+      else if (activeSlot.type === 'bench') playerToMove = lineupBench[activeSlot.id];
+      else playerToMove = lineupExtras[activeSlot.id];
+
+      if (!playerToMove) return;
+
+      const newKey = `NC-${Date.now()}`;
+      const newExt = { ...lineupExtras, [newKey]: playerToMove };
+      let newSel = { ...lineupSelected };
+      let newBen = { ...lineupBench };
+      
+      if (activeSlot.type === 'titular') delete newSel[activeSlot.id]; 
+      else if (activeSlot.type === 'bench') delete newBen[activeSlot.id];
+      
+      setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
       setActiveSlot(null);
   };
 
@@ -1068,7 +1073,6 @@ export default function EuroApp() {
       if (view === 'quiniela') return "Predice los 2 clasificados de cada grupo. ¡Acierta y gana presupuesto!";
       if (view === 'lineups') {
           if (lineupViewJornada === CURRENT_REAL_MATCHDAY) return `VISUALIZANDO ${lineupViewJornada}: Esta jornada ya está en juego. No se puede editar.`;
-          // LOGICA PRE-TORNEO
           if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return "El torneo aún no ha comenzado. Las alineaciones se abrirán tras el pitido inicial.";
           if (isJornadaEditable(lineupViewJornada)) {
               if (!isValidLineupTactic) return `⚠️ TÁCTICA ${currentLineupTactic} INCORRECTA. Revisa tu 11.`;
@@ -1081,12 +1085,29 @@ export default function EuroApp() {
 
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
+  const renderPointsBadge = (player: any) => {
+      const pts = MOCK_SCORES[player?.nombre];
+      if (pts === undefined) return null; 
+      
+      let bgColor = "bg-gray-500";
+      let text = "-";
+      if (pts !== null) {
+          bgColor = pts >= 0 ? "bg-green-500" : "bg-red-500";
+          text = (pts > 0 ? "+" : "") + pts;
+      }
+
+      return (
+          <div className={`absolute -bottom-2 -right-2 w-7 h-7 rounded-full ${bgColor} border-2 border-white flex items-center justify-center text-white font-black text-[10px] shadow-lg z-50`}>
+              {text}
+          </div>
+      );
+  };
+
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
       <MusicPlayer />
       <NavBar view={view} setView={setView} onLogout={() => setShowExitModal(true)} squadCompleted={squadValidated} />
       
-      {/* MODAL DE SALIDA SEGURA */}
       {showExitModal && (
           <div className="fixed inset-0 z-[300] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
               <div className="bg-[#1c2a45] p-6 rounded-2xl border border-white/10 shadow-2xl max-w-xs w-full text-center">
@@ -1099,22 +1120,21 @@ export default function EuroApp() {
           </div>
       )}
       
-      {/* HEADER FIJO CON ASISTENTE */}
       {['squad', 'lineups', 'quiniela'].includes(view) && (
         <div className="sticky top-[60px] z-[100] bg-[#0d1526]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5 px-4 pt-4">
             <div className="flex justify-between items-start bg-[#1c2a45] p-3 rounded-xl border-l-4 border-[#22c55e]">
                <div className="flex-1"><p className="text-[10px] font-black text-[#22c55e]">ASISTENTE VIRTUAL</p><div className="text-xs font-semibold italic min-h-[1.5rem]"><Typewriter text={getAssistantText()} isError={false}/></div><CountdownBlock targetDate={SIMULATED_GAME_START} /></div>
             </div>
             
-            {/* BOTONES PLANTILLA */}
+            {/* BOTONES PLANTILLA SIMÉTRICOS */}
             {view === 'squad' && (
                 <div className="mt-2">
                     {squadValidated ? (
                         <button onClick={handleUnlockSquad} className="w-full bg-[#facc15] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"><IconEdit size={14}/> EDITAR PLANTILLA</button>
                     ) : (
                         <div className="grid grid-cols-2 gap-2">
-                            <button onClick={handleValidateSquad} className="bg-[#22c55e] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg animate-pulse-slow"><IconCheck size={14}/> VALIDAR EQUIPO</button>
-                            <button onClick={handleResetTeam} className="bg-red-500/20 text-red-500 border border-red-500/50 p-2 rounded-lg font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"><IconTrash2 size={14}/> REINICIAR</button>
+                            <button onClick={handleValidateSquad} className="flex-1 bg-[#22c55e] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg animate-pulse-slow"><IconCheck size={14}/> VALIDAR</button>
+                            <button onClick={handleResetTeam} className="flex-1 bg-red-500/20 text-red-500 border border-red-500/50 p-2 rounded-lg font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"><IconTrash2 size={14}/> REINICIAR</button>
                         </div>
                     )}
                 </div>
@@ -1189,37 +1209,72 @@ export default function EuroApp() {
                  </div>
              )}
 
-             <Field 
-                selected={lineupViewJornada === CURRENT_REAL_MATCHDAY ? selected : lineupSelected} 
-                step={2} 
-                canInteractField={isJornadaEditable(lineupViewJornada) && isLineupEditing} 
-                setActiveSlot={isLineupEditing ? setActiveSlot : undefined} 
-                captain={isLineupEditing ? lineupCaptain : (lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain)} 
-                setCaptain={isLineupEditing ? setLineupCaptain : () => {}} 
-             />
+             <div className="mt-6 relative w-full aspect-[4/5] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')]"></div>
+                <div className="absolute inset-0 border-2 border-white/40 m-4 rounded-lg pointer-events-none"></div>
+                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-white/40 -translate-y-1/2 pointer-events-none"></div>
+                <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white/40 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+                <div className="absolute top-4 left-1/2 w-48 h-24 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-lg pointer-events-none"></div>
+                <div className="absolute top-4 left-1/2 w-20 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-lg pointer-events-none"></div>
+                <div className="absolute top-28 left-1/2 w-20 h-10 border-2 border-t-0 border-white/40 -translate-x-1/2 rounded-b-full pointer-events-none"></div>
+                <div className="absolute bottom-4 left-1/2 w-48 h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
+                <div className="absolute bottom-4 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
+                <div className="absolute bottom-28 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-full pointer-events-none"></div>
+                
+                {[
+                    {pos: 'DEL', top: '20%', slots: [1,2,3]},
+                    {pos: 'MED', top: '45%', slots: [1,2,3,4,5]},
+                    {pos: 'DEF', top: '70%', slots: [1,2,3,4,5]},
+                    {pos: 'POR', top: '90%', slots: [1]}
+                ].map(row => (
+                    <div key={row.pos} className={`absolute w-full -translate-y-1/2 flex justify-${row.slots.length===1?'center':'between'} gap-1 px-6 z-30`} style={{top: row.top}}>
+                        {row.slots.map(i => {
+                            const id = `${row.pos}-${i}`;
+                            const p = (lineupViewJornada===CURRENT_REAL_MATCHDAY ? selected : lineupSelected)[id];
+                            return (
+                                <div key={i} className="relative flex flex-col items-center group" onClick={() => isJornadaEditable(lineupViewJornada) && isLineupEditing && setActiveSlot({id, type:'titular', pos:row.pos})}>
+                                    <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'}`}>
+                                        {p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <IconPlus size={18} />}
+                                        {p && (isLineupEditing ? lineupCaptain : captain) === p.id && <IconCaptain className="absolute -top-2 -right-2" />}
+                                        {p && !isJornadaEditable(lineupViewJornada) && renderPointsBadge(p)}
+                                    </div>
+                                    {p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ))}
+             </div>
              
-             {isJornadaEditable(lineupViewJornada) ? (
-                 <div className={`mt-8 transition-all duration-300 ${isLineupEditing ? 'opacity-100 translate-y-0' : 'opacity-60 grayscale pointer-events-none translate-y-4'}`}>
-                     <div className="p-4 rounded-[2.5rem] bg-[#1c2a45]/50 border border-white/5 mb-4 shadow-xl">
-                         <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">BANQUILLO</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setBenchFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${benchFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
-                         <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => { const p = lineupBench[id]; if(benchFilter!=="TODOS" && p?.posicion!==benchFilter) return null; return (<div key={id} onClick={() => setActiveSlot({id, type:'bench', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1 cursor-pointer hover:bg-white/10 transition-colors"><BenchCard player={p} id={id} posColor={posColors[p?.posicion]} /></div>)})}</div>
-                     </div>
-                     <div className="p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 border border-white/5 mb-10 shadow-xl">
-                         <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">NO CONVOCADOS</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setExtrasFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${extrasFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
-                         <div className="grid grid-cols-3 gap-2">
-                             {Object.entries(lineupExtras).map(([key, p]: any) => {
-                                 if (extrasFilter !== "TODOS" && p.posicion !== extrasFilter) return null;
-                                 return (<div key={key} onClick={() => setActiveSlot({id: key, type:'extras', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1 cursor-pointer hover:bg-white/10 transition-colors"><BenchCard player={p} id={key} posColor={posColors[p.posicion]} /></div>);
-                             })}
-                         </div>
+             <div className="mt-8 transition-all duration-300">
+                 <div className="p-4 rounded-[2.5rem] bg-[#1c2a45]/50 border border-white/5 mb-4 shadow-xl">
+                     <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">BANQUILLO</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setBenchFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${benchFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
+                     <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => { 
+                         const p = (lineupViewJornada===CURRENT_REAL_MATCHDAY ? bench : lineupBench)[id];
+                         if(benchFilter!=="TODOS" && p?.posicion!==benchFilter) return null;
+                         return (
+                             <div key={id} onClick={() => isJornadaEditable(lineupViewJornada) && isLineupEditing && setActiveSlot({id, type:'bench', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1 relative">
+                                 <BenchCard player={p} id={id} posColor={posColors[p?.posicion]} />
+                                 {p && !isJornadaEditable(lineupViewJornada) && renderPointsBadge(p)}
+                             </div>
+                         )
+                     })}</div>
+                 </div>
+                 
+                 <div className="p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 border border-white/5 mb-10 shadow-xl">
+                     <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">NO CONVOCADOS</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setExtrasFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${extrasFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
+                     <div className="grid grid-cols-3 gap-2">
+                         {Object.entries(lineupViewJornada===CURRENT_REAL_MATCHDAY ? extras : lineupExtras).map(([key, p]: any) => {
+                             if(extrasFilter!=="TODOS" && p?.posicion!==extrasFilter) return null;
+                             return (
+                                 <div key={key} onClick={() => isJornadaEditable(lineupViewJornada) && isLineupEditing && setActiveSlot({id: key, type:'extras', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1 cursor-pointer hover:bg-white/10 transition-colors">
+                                     <BenchCard player={p} id={key} posColor={posColors[p.posicion]} />
+                                 </div>
+                             );
+                         })}
                      </div>
                  </div>
-             ) : (
-                 <div className="mt-4 text-center text-white/30 text-xs italic font-bold p-6 border border-white/10 rounded-xl bg-black/20 flex flex-col items-center gap-2">
-                     <IconLock size={24} className="text-white/20"/>
-                     <span>{lineupViewJornada === CURRENT_REAL_MATCHDAY ? "Jornada en curso (Solo lectura)" : "Jornada bloqueada"}</span>
-                 </div>
-             )}
+             </div>
          </div>
       )}
 
@@ -1228,11 +1283,11 @@ export default function EuroApp() {
             activeSlot={activeSlot} 
             onClose={() => setActiveSlot(null)} 
             selectedIds={allSquadPlayers.map((p: any) => p.id)} 
-            // allPlayersSelected={allSquadPlayers} // DUPLICADO ELIMINADO AQUÍ
-            allPlayersSelected={allSquadPlayers} // SE QUEDA ESTE
+            allPlayersSelected={allSquadPlayers} 
             mode={view === 'lineups' ? 'lineup' : 'market'} 
             lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
             sortPrice={sortPrice} setSortPrice={setSortPrice} activeSort={activeSort} setActiveSort={setActiveSort}
+            sortAlpha={sortAlpha} setSortAlpha={setSortAlpha}
             onSelect={(p: any) => {
                 if (view === 'lineups') { handleLineupSwap(activeSlot.id, p, activeSlot.type === 'titular' ? 'selected' : activeSlot.type); }
                 else { if (activeSlot.type === 'titular') setSelected({...selected, [activeSlot.id]: p}); else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p}); else setExtras({...extras, [activeSlot.id]: p}); }
