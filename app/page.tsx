@@ -818,7 +818,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [lineupSelected, setLineupSelected] = useState<any>({});
     const [lineupBench, setLineupBench] = useState<any>({});
     const [lineupExtras, setLineupExtras] = useState<any>({});
-    const [lineupCaptain, setLineupCaptain] = useState<number | null>(null); // NUEVO ESTADO PARA CAPITAN J2
+    const [lineupCaptain, setLineupCaptain] = useState<number | null>(null);
     const [isLineupEditing, setIsLineupEditing] = useState(false); 
     const [quinielaSelections, setQuinielaSelections] = useState<Record<string, string[]>>({});
     const [quinielaLocked, setQuinielaLocked] = useState(false);
@@ -829,7 +829,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [extrasFilter, setExtrasFilter] = useState("TODOS");
     const [sortPrice, setSortPrice] = useState<'desc' | 'asc'>('desc');
     const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
-    const [showExitModal, setShowExitModal] = useState(false); // MODAL DE SALIDA
+    const [showExitModal, setShowExitModal] = useState(false);
   
     const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
     const budgetSpent = allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0);
@@ -854,6 +854,24 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   
     useEffect(() => { const c = async () => { const { data: { session } } = await supabase.auth.getSession(); if (session) loadUserData(session.user); }; c(); }, []);
     
+    // INTERCEPCIÓN DEL BOTÓN ATRÁS EN MÓVIL
+    useEffect(() => {
+        if (user) {
+            // Inyectamos estado al historial para "atrapar" el back
+            window.history.pushState(null, document.title, window.location.href);
+  
+            const handlePopState = (event: PopStateEvent) => {
+                // Bloqueamos la navegación hacia atrás
+                window.history.pushState(null, document.title, window.location.href);
+                // Mostramos el modal de salida
+                setShowExitModal(true);
+            };
+  
+            window.addEventListener('popstate', handlePopState);
+            return () => { window.removeEventListener('popstate', handlePopState); };
+        }
+    }, [user]);
+  
     useEffect(() => {
        if (lineupViewJornada === CURRENT_REAL_MATCHDAY) {
            setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras); setLineupCaptain(captain);
@@ -875,12 +893,9 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
             if (myData) {
                 let s = myData.squad;
                 if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
-                
-                // Cargar J1 (Plantilla Base)
                 setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {});
                 setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
                 
-                // Cargar J2 (Alineación Específica) - SI EXISTE en la DB
                 if (s?.j2) {
                     setLineupSelected(s.j2.selected || {});
                     setLineupBench(s.j2.bench || {});
@@ -932,12 +947,10 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         const cleanedExt = cleanState(sourceExtras);
   
         setTimeout(() => {
-            // 2. INSERTAR EN DESTINO
             if (slotType === 'selected') cleanedSel[slotId] = player;
             else if (slotType === 'bench') cleanedBen[slotId] = player;
             else cleanedExt[slotId] = player;
   
-            // 3. ACTUALIZAR ESTADOS
             if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
             else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
         }, 0);
@@ -968,41 +981,27 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const handleValidateSquad = async () => { 
         if(!isValidTactic) return alert("⚠️ Táctica inválida."); 
         if(Object.keys(selected).length!==11) return alert("⚠️ Faltan titulares."); 
-        if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); // VALIDACIÓN CAPITÁN
+        if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
         if(budgetSpent > MAX_BUDGET) return alert("⚠️ Presupuesto excedido.");
-        
         setSquadValidated(true); 
         if(user && user.id) {
-            // Guardamos J1 en la raíz
-            await supabase.from('teams').update({ 
-                team_name: currentTeamName, 
-                is_validated: true, 
-                squad: { selected, bench, extras, captain } // Guardamos J1
-            }).eq('id', user.id);
+            await supabase.from('teams').update({ team_name: currentTeamName, is_validated: true, squad: { selected, bench, extras, captain } }).eq('id', user.id);
             loadUserData(user);
         }
     };
   
-    // --- NUEVA FUNCIÓN PARA GUARDAR ALINEACIÓN J2 ---
     const handleSaveLineupJ2 = async () => {
         if(!isValidLineupTactic) return alert("⚠️ Táctica inválida para esta jornada.");
-        if(!lineupCaptain) return alert("⚠️ ¡Debes elegir un CAPITÁN para esta jornada!"); // VALIDACIÓN CAPITÁN J2
+        if(!lineupCaptain) return alert("⚠️ ¡Debes elegir un CAPITÁN para esta jornada!"); 
         
         setIsLineupEditing(false);
         if(user && user.id) {
-            // Guardamos J1 (base) + J2 (específica)
             const newSquadData = {
-                selected, bench, extras, captain, // Mantenemos J1 intacta
-                j2: { // Añadimos J2
-                    selected: lineupSelected,
-                    bench: lineupBench,
-                    extras: lineupExtras,
-                    captain: lineupCaptain
-                }
+                selected, bench, extras, captain, 
+                j2: { selected: lineupSelected, bench: lineupBench, extras: lineupExtras, captain: lineupCaptain }
             };
-            
             await supabase.from('teams').update({ squad: newSquadData }).eq('id', user.id);
-            loadUserData(user); // Recargar para confirmar
+            loadUserData(user); 
         }
     };
     
@@ -1019,9 +1018,10 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         try { await supabase.from('teams').update({ hasPaidBet: status }).eq('id', teamId); } catch (err) {}
     };
   
-    // Lógica de Salida Segura
-    const requestLogout = () => { setShowExitModal(true); };
-    const confirmLogout = () => { setShowExitModal(false); setUser(null); };
+    const confirmLogout = () => { 
+        setUser(null); 
+        setShowExitModal(false); 
+    };
   
     const getAssistantText = () => {
         if (view === 'squad') return !squadValidated ? `PASO ${step} DE 6: ${step===1?"Elige tu 11 titular":step===2?"Elige capitán":step===3?"Elige banquillo":"Elige no convocados"}` : "¡PLANTILLA LISTA! Ve a Alineaciones.";
@@ -1042,7 +1042,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     return (
       <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
         <MusicPlayer />
-        <NavBar view={view} setView={setView} onLogout={requestLogout} squadCompleted={squadValidated} />
+        <NavBar view={view} setView={setView} onLogout={() => setShowExitModal(true)} squadCompleted={squadValidated} />
         
         {/* MODAL DE SALIDA SEGURA */}
         {showExitModal && (
@@ -1138,7 +1138,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
                
                {isJornadaEditable(lineupViewJornada) && (
                    <div className="mb-6 flex flex-col gap-2">
-                       {/* BOTÓN GUARDAR ALINEACIÓN J2 */}
                        <button onClick={isLineupEditing ? handleSaveLineupJ2 : ()=>setIsLineupEditing(true)} className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${isLineupEditing?'bg-[#22c55e] text-black shadow-[0_0_20px_rgba(34,197,94,0.6)] scale-105':'bg-[#facc15] text-black shadow-lg'}`}>
                            {isLineupEditing ? <><IconCheck/> GUARDAR ALINEACIÓN</> : <><IconEdit/> EDITAR ALINEACIÓN</>}
                        </button>
@@ -1153,8 +1152,8 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
                   step={2} 
                   canInteractField={isJornadaEditable(lineupViewJornada) && isLineupEditing} 
                   setActiveSlot={isLineupEditing ? setActiveSlot : undefined} 
-                  captain={isLineupEditing ? lineupCaptain : (lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain)} // CAPITÁN DINÁMICO
-                  setCaptain={isLineupEditing ? setLineupCaptain : () => {}} // SET CAPITÁN J2
+                  captain={isLineupEditing ? lineupCaptain : (lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain)} 
+                  setCaptain={isLineupEditing ? setLineupCaptain : () => {}} 
                />
                
                {isJornadaEditable(lineupViewJornada) ? (
