@@ -730,8 +730,11 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
       if (mode === 'lineup' && lineupTopology) {
           const { selected, bench, extras } = lineupTopology;
           const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)];
-          if (activeSlot.type === 'titular') { result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); } 
-          else { result = allMyPlayers; }
+          if (activeSlot.type === 'titular') { 
+              result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); 
+          } else { 
+              result = allMyPlayers; 
+          }
       } else {
           result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id));
       }
@@ -857,16 +860,11 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     // INTERCEPCIÓN DEL BOTÓN ATRÁS EN MÓVIL
     useEffect(() => {
         if (user) {
-            // Inyectamos estado al historial para "atrapar" el back
             window.history.pushState(null, document.title, window.location.href);
-  
             const handlePopState = (event: PopStateEvent) => {
-                // Bloqueamos la navegación hacia atrás
                 window.history.pushState(null, document.title, window.location.href);
-                // Mostramos el modal de salida
                 setShowExitModal(true);
             };
-  
             window.addEventListener('popstate', handlePopState);
             return () => { window.removeEventListener('popstate', handlePopState); };
         }
@@ -931,46 +929,93 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         }
     };
   
+    // --- SWAP PERFECTO: SIN DUPLICADOS NI LIMBO ---
     const handleLineupSwap = (slotId: string, player: any, slotType: 'selected' | 'bench' | 'extras') => {
-        const sourceSelected = view === 'lineups' ? lineupSelected : selected;
-        const sourceBench = view === 'lineups' ? lineupBench : bench;
-        const sourceExtras = view === 'lineups' ? lineupExtras : extras;
+        const isLineup = view === 'lineups';
+        const currentSelected = isLineup ? lineupSelected : selected;
+        const currentBench = isLineup ? lineupBench : bench;
+        const currentExtras = isLineup ? lineupExtras : extras;
   
-        const cleanState = (obj: any) => {
-            const newObj = { ...obj };
-            Object.keys(newObj).forEach(key => { if (newObj[key].id === player.id) delete newObj[key]; });
-            return newObj;
-        };
+        // 1. Clonar estados
+        const newSel = { ...currentSelected };
+        const newBen = { ...currentBench };
+        const newExt = { ...currentExtras };
   
-        const cleanedSel = cleanState(sourceSelected);
-        const cleanedBen = cleanState(sourceBench);
-        const cleanedExt = cleanState(sourceExtras);
+        // 2. Buscar origen del jugador entrante (si ya existe en alguna lista)
+        let sourceKey = null;
+        let sourceList = null;
   
-        setTimeout(() => {
-            if (slotType === 'selected') cleanedSel[slotId] = player;
-            else if (slotType === 'bench') cleanedBen[slotId] = player;
-            else cleanedExt[slotId] = player;
+        Object.entries(newSel).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'selected'; } });
+        if (!sourceKey) Object.entries(newBen).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'bench'; } });
+        if (!sourceKey) Object.entries(newExt).forEach(([k, p]: any) => { if (p.id === player.id) { sourceKey = k; sourceList = 'extras'; } });
   
-            if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
-            else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
-        }, 0);
+        // 3. Ver quién ocupa el destino
+        let targetPlayer = null;
+        if (slotType === 'selected') targetPlayer = newSel[slotId];
+        else if (slotType === 'bench') targetPlayer = newBen[slotId];
+        else targetPlayer = newExt[slotId];
+  
+        // 4. Ejecutar el SWAP (Intercambio atómico)
+        
+        // A) Poner el nuevo jugador en el destino
+        if (slotType === 'selected') newSel[slotId] = player;
+        else if (slotType === 'bench') newBen[slotId] = player;
+        else newExt[slotId] = player;
+  
+        // B) Si el nuevo jugador venía de algún sitio...
+        if (sourceKey && sourceList) {
+            if (targetPlayer) {
+                // ...ponemos al jugador que estaba en el destino en el origen (INTERCAMBIO)
+                if (sourceList === 'selected') newSel[sourceKey] = targetPlayer;
+                else if (sourceList === 'bench') newBen[sourceKey] = targetPlayer;
+                else newExt[sourceKey] = targetPlayer;
+            } else {
+                // ...si el destino estaba vacío, dejamos el origen vacío
+                if (sourceList === 'selected') delete newSel[sourceKey];
+                else if (sourceList === 'bench') delete newBen[sourceKey];
+                else delete newExt[sourceKey];
+            }
+        }
+        // Si el nuevo jugador NO venía de ningún sitio (fichaje de mercado), targetPlayer se pierde (se vende/despide), que es el comportamiento correcto en mercado.
+  
+        // 5. Guardar estados
+        if (isLineup) {
+            setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
+        } else {
+            setSelected(newSel); setBench(newBen); setExtras(newExt);
+        }
     };
   
     const handleLineupToExtras = () => {
         if (!activeSlot) return;
-        const playerToRemove = view === 'lineups' 
-            ? (activeSlot.type === 'titular' ? lineupSelected[activeSlot.id] : lineupBench[activeSlot.id]) 
-            : (activeSlot.type === 'titular' ? selected[activeSlot.id] : bench[activeSlot.id]);
-        if (!playerToRemove) return;
+        const isLineup = view === 'lineups';
+        const currentSelected = isLineup ? lineupSelected : selected;
+        const currentBench = isLineup ? lineupBench : bench;
+        const currentExtras = isLineup ? lineupExtras : extras;
   
-        if (view === 'lineups') {
+        // Buscar al jugador a mover
+        let playerToMove = null;
+        if (activeSlot.type === 'titular') playerToMove = currentSelected[activeSlot.id];
+        else if (activeSlot.type === 'bench') playerToMove = currentBench[activeSlot.id];
+        else playerToMove = currentExtras[activeSlot.id];
+  
+        if (!playerToMove) return;
+  
+        if (isLineup) {
+            // En Alineaciones: Mover a Grada (Añadir a extras, quitar de origen)
             const newKey = `NC-${Date.now()}`;
-            const newExtras = { ...lineupExtras, [newKey]: playerToRemove };
-            let newSelected = { ...lineupSelected };
-            let newBench = { ...lineupBench };
-            if (activeSlot.type === 'titular') delete newSelected[activeSlot.id]; else delete newBench[activeSlot.id];
-            setLineupSelected(newSelected); setLineupBench(newBench); setLineupExtras(newExtras);
+            const newExt = { ...currentExtras, [newKey]: playerToMove };
+            
+            let newSel = { ...currentSelected };
+            let newBen = { ...currentBench };
+            
+            if (activeSlot.type === 'titular') delete newSel[activeSlot.id];
+            else if (activeSlot.type === 'bench') delete newBen[activeSlot.id];
+            // Si ya estaba en extras, no hacemos nada (o podríamos borrarlo si quisiéramos una papelera)
+  
+            setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
         } else {
+            // En Plantilla: Eliminar del equipo (Venta)
             const n = {...selected}; delete n[activeSlot.id]; setSelected(n);
             const b = {...bench}; delete b[activeSlot.id]; setBench(b);
             const e = {...extras}; delete e[activeSlot.id]; setExtras(e);
@@ -1190,6 +1235,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
               mode={view === 'lineups' ? 'lineup' : 'market'} 
               lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
               sortPrice={sortPrice} setSortPrice={setSortPrice} activeSort={activeSort} setActiveSort={setActiveSort}
+              allPlayersSelected={allSquadPlayers} 
               onSelect={(p: any) => {
                   if (view === 'lineups') { handleLineupSwap(activeSlot.id, p, activeSlot.type === 'titular' ? 'selected' : activeSlot.type); }
                   else { if (activeSlot.type === 'titular') setSelected({...selected, [activeSlot.id]: p}); else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p}); else setExtras({...extras, [activeSlot.id]: p}); }
