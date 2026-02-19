@@ -13,6 +13,7 @@ const VALID_FORMATIONS = ["3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", 
 const CHART_COLORS = ["#22d3ee", "#f472b6", "#a78bfa", "#34d399", "#fbbf24", "#f87171"];
 const LINEUP_MATCHDAYS = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"];
 const MAX_BUDGET = 400; 
+const GAME_START_DATE = "2024-06-14T21:00:00";
 
 // --- SIMULACIÓN TEMPORAL ---
 // Forzamos fecha al PASADO (-24h) para que la J1 esté CERRADA y muestre puntos.
