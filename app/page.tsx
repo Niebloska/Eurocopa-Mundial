@@ -901,6 +901,9 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc'); 
     const [showExitModal, setShowExitModal] = useState(false);
   
+    // NUEVO: Candado maestro temporal
+    const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
+  
     const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
     const budgetSpent = allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0);
     const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(`${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}`), [selected]);
@@ -945,7 +948,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
        }
     }, [selected, bench, extras, captain, lineupViewJornada, lineupSelected]); 
   
-    // --- MOTOR DE CÁLCULO DE PUNTOS (CON BUSCADOR INTELIGENTE) ---
+    // --- MOTOR DE CÁLCULO DE PUNTOS ---
     const calculateSimulatedPoints = (squad: any) => {
         if (!squad || !squad.titulares) return 0;
         let total = 0;
@@ -957,7 +960,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         (squad.titulares || []).forEach((p: any) => {
             let score = getPlayerPointsRow(p.nombre);
             
-            // Auto-substitución
             if (score === null || score === undefined) { 
                 const sub = benchByPos[p.posicion].shift(); 
                 if (sub) {
@@ -1044,29 +1046,52 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         }
     };
   
-    const handleLineupSwap = (slotId: string, player: any, slotType: 'selected' | 'bench' | 'extras') => {
+    // --- MOTOR DE INTERCAMBIO (SWAP) ARREGLADO ---
+    const handleLineupSwap = (slotId: string, incomingPlayer: any, targetSlotType: 'selected' | 'bench' | 'extras') => {
         const isLineup = view === 'lineups';
-        const sourceSelected = isLineup ? lineupSelected : selected;
-        const sourceBench = isLineup ? lineupBench : bench;
-        const sourceExtras = isLineup ? lineupExtras : extras;
+        let newSel = { ...(isLineup ? lineupSelected : selected) };
+        let newBen = { ...(isLineup ? lineupBench : bench) };
+        let newExt = { ...(isLineup ? lineupExtras : extras) };
   
-        const cleanState = (obj: any) => {
-            const newObj = { ...obj };
-            Object.keys(newObj).forEach(key => { if (newObj[key].id === player.id) delete newObj[key]; });
-            return newObj;
-        };
+        // 1. Ver dónde estaba el jugador que acabamos de elegir (incomingPlayer)
+        let incomingOldKey: string | null = null;
+        let incomingOldSection: 'selected' | 'bench' | 'extras' | null = null;
+        
+        for (const [k, p] of Object.entries(newSel)) { if ((p as any).id === incomingPlayer.id) { incomingOldKey = k; incomingOldSection = 'selected'; break; } }
+        if (!incomingOldSection) {
+            for (const [k, p] of Object.entries(newBen)) { if ((p as any).id === incomingPlayer.id) { incomingOldKey = k; incomingOldSection = 'bench'; break; } }
+        }
+        if (!incomingOldSection) {
+            for (const [k, p] of Object.entries(newExt)) { if ((p as any).id === incomingPlayer.id) { incomingOldKey = k; incomingOldSection = 'extras'; break; } }
+        }
   
-        const cleanedSel = cleanState(sourceSelected);
-        const cleanedBen = cleanState(sourceBench);
-        const cleanedExt = cleanState(sourceExtras);
+        // 2. Ver quién ocupaba el destino al que va el nuevo jugador (el jugador desplazado)
+        let playerToDisplace = null;
+        if (targetSlotType === 'selected') playerToDisplace = newSel[slotId];
+        else if (targetSlotType === 'bench') playerToDisplace = newBen[slotId];
+        else if (targetSlotType === 'extras') playerToDisplace = newExt[slotId];
+  
+        // 3. Ejecutar el intercambio (Swap)
+        // A) Ponemos al nuevo en su sitio
+        if (targetSlotType === 'selected') newSel[slotId] = incomingPlayer;
+        else if (targetSlotType === 'bench') newBen[slotId] = incomingPlayer;
+        else if (targetSlotType === 'extras') newExt[slotId] = incomingPlayer;
+  
+        // B) Ponemos al desplazado en el hueco que dejó vacío el nuevo (si venía de un hueco)
+        if (playerToDisplace && incomingOldKey && incomingOldSection) {
+            if (incomingOldSection === 'selected') newSel[incomingOldKey] = playerToDisplace;
+            else if (incomingOldSection === 'bench') newBen[incomingOldKey] = playerToDisplace;
+            else if (incomingOldSection === 'extras') newExt[incomingOldKey] = playerToDisplace;
+        } else if (incomingOldKey && incomingOldSection) {
+            // Si no había nadie a quien desplazar, borramos al nuevo de su hueco antiguo
+            if (incomingOldSection === 'selected') delete newSel[incomingOldKey];
+            else if (incomingOldSection === 'bench') delete newBen[incomingOldKey];
+            else if (incomingOldSection === 'extras') delete newExt[incomingOldKey];
+        }
   
         setTimeout(() => {
-            if (slotType === 'selected') cleanedSel[slotId] = player;
-            else if (slotType === 'bench') cleanedBen[slotId] = player;
-            else cleanedExt[slotId] = player;
-  
-            if (view === 'lineups') { setLineupSelected(cleanedSel); setLineupBench(cleanedBen); setLineupExtras(cleanedExt); } 
-            else { setSelected(cleanedSel); setBench(cleanedBen); setExtras(cleanedExt); }
+            if (isLineup) { setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt); } 
+            else { setSelected(newSel); setBench(newBen); setExtras(newExt); }
         }, 0);
     };
   
@@ -1146,7 +1171,10 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     };
   
     const getAssistantText = () => {
-        if (view === 'squad') return !squadValidated ? `PASO ${step} DE 6: ${step===1?"Elige tu 11 titular":step===2?"Elige capitán":step===3?"Elige banquillo":"Elige no convocados"}` : "¡PLANTILLA LISTA! Ve a Alineaciones.";
+        if (view === 'squad') {
+            if (hasTournamentStarted) return "EL TORNEO HA COMENZADO. El mercado de fichajes está cerrado.";
+            return !squadValidated ? `PASO ${step} DE 6: ${step===1?"Elige tu 11 titular":step===2?"Elige capitán":step===3?"Elige banquillo":"Elige no convocados"}` : "¡PLANTILLA LISTA! Ve a Alineaciones.";
+        }
         if (view === 'quiniela') return "Predice los 2 clasificados de cada grupo. ¡Acierta y gana presupuesto!";
         if (view === 'lineups') {
             if (lineupViewJornada === CURRENT_REAL_MATCHDAY) return `VISUALIZANDO ${lineupViewJornada}: JORNADA FINALIZADA. Puntos actualizados.`;
@@ -1162,7 +1190,6 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   
     if (!user) return <AuthScreen onLogin={handleLogin} />;
   
-    // --- RENDERIZADO DE PUNTOS EN EL CAMPO (CON BUSCADOR INTELIGENTE) ---
     const renderPointsBadge = (player: any) => {
         if (!player) return null;
         const pts = getPlayerPointsRow(player.nombre);
@@ -1207,7 +1234,9 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
               
               {view === 'squad' && (
                   <div className="mt-2 flex gap-2">
-                      {squadValidated ? (
+                      {hasTournamentStarted ? (
+                          <div className="w-full bg-red-900/40 text-red-500 px-3 py-2 rounded-lg font-black text-[10px] uppercase border border-red-500/50 flex items-center justify-center gap-2 shadow-lg"><IconLock size={14}/> MERCADO CERRADO</div>
+                      ) : squadValidated ? (
                           <button onClick={handleUnlockSquad} className="flex-1 bg-[#facc15] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"><IconEdit size={14}/> EDITAR PLANTILLA</button>
                       ) : (
                           <div className="flex gap-2 w-full">
@@ -1224,7 +1253,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
         {view === 'calendar' && <CalendarView />}
         {view === 'scores' && <ScoresView teams={allTeams} myTeamId={user.id} isAdmin={isAdmin} />}
         {view === 'classification' && ( <div className="max-w-md mx-auto px-4 mt-20 pb-32"> <div className="mb-8 mt-4"><h3 className="text-[#facc15] font-black uppercase text-lg mb-4 flex gap-2"><IconTrophy/> CLASIFICACIÓN GENERAL</h3>{allTeams.sort((a,b)=>b.points-a.points).map((t,i) => (<TeamCard key={t.id} team={t} rank={i+1} isMyTeam={t.id === user.id} isAdmin={isAdmin} onToggleBet={handleToggleBet} />))}</div><EvolutionChart teams={allTeams} myTeamId={user.id}/> <MatchdayStandings teams={allTeams} /> </div> )}
-        {view === 'quiniela' && <QuinielaView selections={quinielaSelections} onToggle={toggleQuiniela} locked={quinielaLocked} onEdit={() => setQuinielaLocked(!quinielaLocked)} canEdit={new Date() < new Date(SIMULATED_GAME_START)} />}
+        {view === 'quiniela' && <QuinielaView selections={quinielaSelections} onToggle={toggleQuiniela} locked={quinielaLocked} onEdit={() => setQuinielaLocked(!quinielaLocked)} canEdit={!hasTournamentStarted} />}
   
         {view === 'squad' && (
            <div className="max-w-md mx-auto px-4 mt-40"> 
@@ -1252,16 +1281,17 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   
                <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1 mb-2">TÁCTICA: <span className="text-[#22c55e] ml-2 text-xl drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]">{Object.keys(selected).length === 11 ? `${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}` : '--'}</span></div>
                
-               <Field selected={selected} step={step} canInteractField={!squadValidated} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
+               {/* CAMPO DE FÚTBOL (Bloqueado si empezó el torneo) */}
+               <Field selected={selected} step={step} canInteractField={!squadValidated && !hasTournamentStarted} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
                
                <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 3 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                   <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
-                  <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => !squadValidated && setActiveSlot({id, type:'bench', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1"><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} /></div>)}</div>
+                  <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => !squadValidated && !hasTournamentStarted && setActiveSlot({id, type:'bench', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated ? 'cursor-pointer' : ''}`}><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} /></div>)}</div>
                </div>
   
                <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 4 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                    <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
-                   <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => !squadValidated && setActiveSlot({id, type:'extras', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1"><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} /></div>)}</div>
+                   <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => !squadValidated && !hasTournamentStarted && setActiveSlot({id, type:'extras', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated ? 'cursor-pointer' : ''}`}><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} /></div>)}</div>
                </div>
            </div>
         )}
