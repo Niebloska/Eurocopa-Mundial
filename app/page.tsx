@@ -108,6 +108,7 @@ const formatTeamData = (team: any, index: number) => {
     return {
         ...team,
         squad: { titulares, banquillo, extras, captain: parsedSquad?.captain },
+        rawSquad: parsedSquad, // <-- NUEVO: Guardamos la caja fuerte con el historial de jornadas
         points: team.points || 0, 
         matchdayPoints: team.matchdayPoints || { "J1": 0, "J2": 0, "J3": 0 },
         hasPaidBet: team.hasPaidBet || false,
@@ -957,15 +958,42 @@ const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: stri
 const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
     const [isOpen, setIsOpen] = useState(isMyTeam);
     const positionOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
-    const safeSquad = team.squad || {};
     
-    // Aquí nos aseguramos de que lee los titulares, sea lista u objeto
-    const allPlayers = [...safeArray(safeSquad.titulares), ...safeArray(safeSquad.banquillo), ...safeArray(safeSquad.extras)]
-        .filter(Boolean)
-        .sort((a: any, b: any) => { 
-            const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; 
-            if (posDiff !== 0) return posDiff; return a.nombre.localeCompare(b.nombre); 
+    // 1. RECOPILACIÓN HISTÓRICA DE JUGADORES
+    const allUniquePlayers = new Map();
+
+    // A. Jugadores Actuales (Plantilla viva)
+    const safeSquad = team.squad || {};
+    const currentPlayers = [...safeArray(safeSquad.titulares), ...safeArray(safeSquad.banquillo), ...safeArray(safeSquad.extras)].filter(Boolean);
+    currentPlayers.forEach((p: any) => {
+        allUniquePlayers.set(p.id, { ...p, isSold: false });
+    });
+
+    // B. Jugadores Históricos (Viaje al pasado)
+    const checkHistory = (phaseObj: any) => {
+        if (!phaseObj) return;
+        const pastPlayers = [...safeArray(phaseObj.selected || phaseObj.titulares), ...safeArray(phaseObj.bench || phaseObj.banquillo), ...safeArray(phaseObj.extras)].filter(Boolean);
+        pastPlayers.forEach((p: any) => {
+            if (!allUniquePlayers.has(p.id)) {
+                // Si el jugador está en el pasado pero NO en el presente, está VENDIDO
+                allUniquePlayers.set(p.id, { ...p, isSold: true }); 
+            }
         });
+    };
+
+    const raw = team.rawSquad || {};
+    checkHistory(raw); // Historial de J1
+    checkHistory(raw.j2); // Historial de J2
+    checkHistory(raw.j3); // Historial de J3
+
+    // Ordenamos la tabla final
+    const allPlayers = Array.from(allUniquePlayers.values()).sort((a: any, b: any) => {
+        if (a.isSold && !b.isSold) return 1; // Los vendidos van abajo del todo
+        if (!a.isSold && b.isSold) return -1;
+        const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; 
+        if (posDiff !== 0) return posDiff; 
+        return a.nombre.localeCompare(b.nombre); 
+    });
         
     const canView = isMyTeam || isAdmin;
     useEffect(() => { if (isMyTeam) setIsOpen(true); }, [isMyTeam]);
@@ -984,9 +1012,35 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
                         <tbody className="text-xs font-bold text-white divide-y divide-white/5">
                             <tr className="bg-blue-600/20 text-xs font-black text-cyan-400 border-b-2 border-white/10"><td colSpan={3} className="p-3 text-right uppercase tracking-widest">PUNTOS JORNADA</td><td className="p-3 text-center text-white bg-blue-600/40 border-x border-white/10 text-sm">{team.points}</td><td className="p-3 text-center">{team.matchdayPoints?.J1 || 0}</td><td className="p-3 text-center">{team.matchdayPoints?.J2 || 0}</td><td className="p-3 text-center">{team.matchdayPoints?.J3 || 0}</td></tr>
                             {allPlayers.length > 0 ? allPlayers.map((p: any) => {
-                                const ptsJ1 = getPlayerPointsRow(p.nombre, "J1"); const ptsJ2 = getPlayerPointsRow(p.nombre, "J2"); const ptsJ3 = getPlayerPointsRow(p.nombre, "J3"); const isCaptain = team.squad.captain === p.id;
-                                const totalPts = (typeof ptsJ1 === 'number' ? (isCaptain ? ptsJ1*2 : ptsJ1) : 0) + (typeof ptsJ2 === 'number' ? (isCaptain ? ptsJ2*2 : ptsJ2) : 0) + (typeof ptsJ3 === 'number' ? (isCaptain ? ptsJ3*2 : ptsJ3) : 0);
-                                return ( <tr key={p.id} className="hover:bg-white/5 transition-colors group"><td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${posColors[p.posicion]}`}>{p.posicion}</span></td><td className="p-3 text-center text-lg">{getFlag(p.seleccion)}</td><td className="p-3 truncate max-w-[120px] font-medium text-white/90 group-hover:text-white flex items-center gap-1">{p.nombre} {isCaptain && <IconCaptain className="scale-75"/>}</td><td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">{totalPts > 0 ? totalPts : "-"}</td><td className="p-3 text-center text-white/50">{ptsJ1 ?? (ptsJ1 === null ? "X" : "-")}</td><td className="p-3 text-center text-white/50">{ptsJ2 ?? (ptsJ2 === null ? "X" : "-")}</td><td className="p-3 text-center text-white/50">{ptsJ3 ?? (ptsJ3 === null ? "X" : "-")}</td></tr> );
+                                const ptsJ1 = getPlayerPointsRow(p.nombre, "J1"); const ptsJ2 = getPlayerPointsRow(p.nombre, "J2"); const ptsJ3 = getPlayerPointsRow(p.nombre, "J3"); 
+                                
+                                // Comprobamos si fue capitán en alguna de esas jornadas concretas
+                                const capJ1 = raw.captain === p.id;
+                                const capJ2 = raw.j2?.captain === p.id || (!raw.j2 && capJ1);
+                                const capJ3 = raw.j3?.captain === p.id || (!raw.j3 && capJ2);
+
+                                const totalPts = (typeof ptsJ1 === 'number' ? (capJ1 ? ptsJ1*2 : ptsJ1) : 0) + (typeof ptsJ2 === 'number' ? (capJ2 ? ptsJ2*2 : ptsJ2) : 0) + (typeof ptsJ3 === 'number' ? (capJ3 ? ptsJ3*2 : ptsJ3) : 0);
+                                
+                                return ( 
+                                    <tr key={p.id} className={`hover:bg-white/5 transition-colors group ${p.isSold ? 'bg-red-900/10' : ''}`}>
+                                        <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${p.isSold ? 'bg-gray-700 text-gray-400 opacity-60' : posColors[p.posicion]}`}>{p.posicion}</span></td>
+                                        <td className="p-3 text-center text-lg">{p.isSold ? <span className="grayscale opacity-40">{getFlag(p.seleccion)}</span> : getFlag(p.seleccion)}</td>
+                                        <td className="p-3 truncate max-w-[120px] font-medium text-white/90 flex items-center gap-2">
+                                            <span className={p.isSold ? 'text-white/40' : 'group-hover:text-white'}>{p.nombre}</span>
+                                            {/* ETIQUETA ROJA DE VENDIDO */}
+                                            {p.isSold ? (
+                                                <span className="bg-red-900/80 text-red-400 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-red-500/50">VENDIDO</span>
+                                            ) : (
+                                                // Si no está vendido, puede ser capitán
+                                                (capJ3 || capJ2 || capJ1) && <IconCaptain className="scale-75"/>
+                                            )}
+                                        </td>
+                                        <td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">{totalPts > 0 ? totalPts : "-"}</td>
+                                        <td className="p-3 text-center text-white/50">{ptsJ1 ?? (ptsJ1 === null ? "X" : "-")}</td>
+                                        <td className="p-3 text-center text-white/50">{ptsJ2 ?? (ptsJ2 === null ? "X" : "-")}</td>
+                                        <td className="p-3 text-center text-white/50">{ptsJ3 ?? (ptsJ3 === null ? "X" : "-")}</td>
+                                    </tr> 
+                                );
                             }) : ( <tr><td colSpan={7} className="p-6 text-center text-white/30 italic">Sin jugadores alineados</td></tr> )}
                         </tbody>
                     </table>
@@ -1174,17 +1228,42 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
     const [searchTerm, setSearchTerm] = useState("");
 
     const isMatchdayClosed = GLOBAL_CLOSED_MATCHDAYS[adminMatchday] || false;
+    const isMarketOpen = GLOBAL_MATCHES['MARKET_OPEN'] === 'true'; // NUEVO
 
     const handleToggleClose = async () => {
         const newVal = !isMatchdayClosed;
         const matchId = `CLOSED_${adminMatchday}`;
         const { error } = await supabase.from('match_results').upsert({ match_id: matchId, result: newVal ? 'true' : 'false' });
-        if (!error) {
-            GLOBAL_CLOSED_MATCHDAYS[adminMatchday] = newVal;
-            onRefresh();
-        } else {
-            alert("Error al guardar estado: " + error.message);
+        if (!error) { GLOBAL_CLOSED_MATCHDAYS[adminMatchday] = newVal; onRefresh(); } else alert("Error: " + error.message);
+    };
+
+    // NUEVO: LA LLAVE DEL MERCADO DE FICHAJES
+    const handleToggleMarket = async () => {
+        if (!confirm(isMarketOpen ? "¿CERRAR el Mercado de Fichajes?" : "⚠️ ¿ABRIR MERCADO? Esto guardará la 'Caja Fuerte' con la plantilla de Fase de Grupos de TODOS los jugadores.")) return;
+        
+        const newVal = !isMarketOpen;
+        const { error } = await supabase.from('match_results').upsert({ match_id: 'MARKET_OPEN', result: newVal ? 'true' : 'false' });
+        
+        if (newVal) {
+            // Guardamos el snapshot de J1 para todos los equipos si no lo tienen
+            for (const t of allTeams) {
+                const squadData = t.rawSquad || {};
+                if (!squadData.j1_snapshot) {
+                    const snap = { 
+                        selected: squadData.selected || squadData.titulares || {}, 
+                        bench: squadData.bench || squadData.banquillo || {}, 
+                        extras: squadData.extras || {}, 
+                        captain: squadData.captain 
+                    };
+                    await supabase.from('teams').update({ squad: { ...squadData, j1_snapshot: snap } }).eq('id', t.id);
+                }
+            }
         }
+        
+        if (!error) {
+            GLOBAL_MATCHES['MARKET_OPEN'] = newVal ? 'true' : 'false';
+            onRefresh();
+        } else alert("Error: " + error.message);
     };
 
     const filteredPlayers = useMemo(() => {
@@ -1212,20 +1291,28 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
             
             {adminTab === 'puntos' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                    {/* BOTÓN CERRAR JORNADA */}
-                    <div className="flex justify-between items-center bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
-                        <div>
-                            <h3 className="text-sm font-black text-blue-400 uppercase">Estado Jornada</h3>
-                            <p className="text-[9px] text-white/50">Cerrar para aplicar el -1 a los huecos vacíos</p>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* BOTÓN CERRAR JORNADA */}
+                        <div className="flex flex-col justify-center bg-blue-900/20 p-3 rounded-xl border border-blue-500/30">
+                            <h3 className="text-[10px] font-black text-blue-400 uppercase mb-2">Estado Jornada</h3>
+                            <button onClick={handleToggleClose} className={`w-full py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center justify-center gap-1 ${isMatchdayClosed ? 'bg-red-600 text-white border border-red-500' : 'bg-[#22c55e] text-black border border-green-500'}`}>
+                                {isMatchdayClosed ? <><IconLock size={12}/> CERRADA</> : <><IconCheck size={12}/> ABIERTA</>}
+                            </button>
                         </div>
-                        <button onClick={handleToggleClose} className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center gap-2 ${isMatchdayClosed ? 'bg-red-600 text-white border border-red-500' : 'bg-[#22c55e] text-black border border-green-500'}`}>
-                            {isMatchdayClosed ? <><IconLock size={14}/> CERRADA</> : <><IconCheck size={14}/> ABIERTA</>}
-                        </button>
+                        
+                        {/* NUEVO BOTÓN MERCADO */}
+                        <div className="flex flex-col justify-center bg-purple-900/20 p-3 rounded-xl border border-purple-500/30">
+                            <h3 className="text-[10px] font-black text-purple-400 uppercase mb-2">Mercado Octavos</h3>
+                            <button onClick={handleToggleMarket} className={`w-full py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center justify-center gap-1 ${isMarketOpen ? 'bg-purple-500 text-white border border-purple-400 animate-pulse' : 'bg-gray-700 text-gray-400 border border-gray-600'}`}>
+                                {isMarketOpen ? <><IconRefresh size={12}/> ABIERTO</> : <><IconLock size={12}/> CERRADO</>}
+                            </button>
+                        </div>
                     </div>
 
                     <input type="text" placeholder={`🔍 Buscar para sumar a ${adminMatchday}`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-[#1c2a45] border border-white/10 p-4 rounded-xl text-white font-bold outline-none focus:border-red-500 transition-colors shadow-inner" />
                     <div className="space-y-2">
-                    {searchTerm.length >= 3 ? ( filteredPlayers.length > 0 ? filteredPlayers.map(p => ( <PlayerAdminRow key={p.id} p={p} onRefresh={onRefresh} adminMatchday={adminMatchday} isMatchdayClosed={isMatchdayClosed} /> )) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Ningún resultado encontrado.</div> ) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Escribe al menos 3 letras. (Ej: Alemania)</div>}
+                        {searchTerm.length >= 3 ? ( filteredPlayers.length > 0 ? filteredPlayers.map(p => ( <PlayerAdminRow key={p.id} p={p} onRefresh={onRefresh} adminMatchday={adminMatchday} isMatchdayClosed={isMatchdayClosed} /> )) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Ningún resultado encontrado.</div> ) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Escribe al menos 3 letras. (Ej: Alemania)</div>}
                     </div>
                 </div>
             )}
@@ -1312,39 +1399,45 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   };
 
 
-const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected, sortAlpha, setSortAlpha }: any) => {
-  const [filterPos, setFilterPos] = useState((mode === 'lineup' && activeSlot.type === 'titular') ? activeSlot.pos : "TODOS"); const [filterCountry, setFilterCountry] = useState("TODOS"); const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
-  const getCountryCount = React.useCallback((country: string) => { if (!allPlayersSelected) return 0; return allPlayersSelected.filter((p: any) => p.seleccion === country).length; }, [allPlayersSelected]);
-  const getPlayerStatus = React.useCallback((playerId: number) => { if (!lineupTopology) return "NONE"; const { selected, bench, extras } = lineupTopology; if (Object.values(selected).find((p:any) => p.id === playerId)) return "TITULAR"; if (Object.values(bench).find((p:any) => p.id === playerId)) return "BANQUILLO"; if (Object.values(extras).find((p:any) => p.id === playerId)) return "NO CONVOCADO"; return "NONE"; }, [lineupTopology]);
-
-  const filteredPlayers = useMemo(() => {
-    let result: any[] = [];
-    if (mode === 'lineup' && lineupTopology) { const { selected, bench, extras } = lineupTopology; const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)]; if (activeSlot.type === 'titular') { result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); } else { result = allMyPlayers; } } else { result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id)); }
-    if (filterCountry !== "TODOS") result = result.filter((p:any) => p.seleccion === filterCountry);
-    if (filterPos !== "TODOS") result = result.filter((p:any) => p.posicion === filterPos);
-    if (mode === 'lineup') { result.sort((a:any, b:any) => { const statusOrder: any = { "TITULAR": 1, "BANQUILLO": 2, "NO CONVOCADO": 3, "NONE": 4 }; return statusOrder[getPlayerStatus(a.id)] - statusOrder[getPlayerStatus(b.id)]; }); } else { if (activeSort === 'price') { result.sort((a:any, b:any) => sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio); } else { result.sort((a:any, b:any) => sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre)); } }
-    return result;
-  }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus, sortAlpha]);
-
-  const getStatusBg = (id: number) => { const s = getPlayerStatus(id); if (s === "TITULAR") return "bg-green-900/30 border-green-500/50"; if (s === "BANQUILLO") return "bg-yellow-400/20 border-yellow-400/60"; if (s === "NO CONVOCADO") return "bg-red-900/40 border-red-500/50"; return "bg-[#162136] border-white/10"; };
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom">
-      <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black italic uppercase text-white">ELEGIR</h2><button onClick={onClose}><IconX/></button></div>
-      {onRemove && ( <button onClick={onRemove} className="mb-4 w-full bg-red-600/20 border border-red-500 text-red-500 p-4 rounded-xl font-black text-xs uppercase hover:bg-red-600 hover:text-white transition-colors flex justify-center items-center gap-2">{mode === 'lineup' ? 'ENVIAR A LA GRADA' : 'ELIMINAR JUGADOR'} <IconTrash2 size={16} /></button> )}
-      <div className="flex gap-2 mb-4">{["POR", "DEF", "MED", "DEL"].map(pos => (<button key={pos} disabled={mode === 'lineup' && activeSlot.type === 'titular'} onClick={() => setFilterPos(pos)} className={`flex-1 py-2 rounded-xl font-black text-[10px] border ${filterPos === pos ? 'bg-white text-black' : 'text-white border-white/20'} ${mode === 'lineup' && activeSlot.type === 'titular' && activeSlot.pos !== pos ? 'opacity-20 cursor-not-allowed' : ''}`}>{pos}</button>))}</div>
-      {mode === 'market' && ( <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">{uniqueCountries.map(c => { const count = getCountryCount(c); const isMaxed = count >= 7; return ( <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>{c !== "TODOS" && <span>{getFlag(c)}</span>} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/7)</span>}</button> ); })}</div> )}
-      {mode === 'market' && ( <div className="grid grid-cols-2 gap-3 mb-4"><button onClick={() => { setSortPrice((prev: any) => prev === 'desc' ? 'asc' : 'desc'); setActiveSort('price'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'price' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowUpDown size={14}/> {sortPrice === 'desc' ? 'PRECIO MÁX' : 'PRECIO MÍN'}</button><button onClick={() => { setSortAlpha((prev: any) => prev === 'asc' ? 'desc' : 'asc'); setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A - Z' : 'Z - A'}</button></div> )}
-      <div className="space-y-3 overflow-y-auto flex-1 pb-10">
-          {filteredPlayers.length === 0 ? <p className="text-center text-white/30 italic mt-10">No hay jugadores disponibles.</p> : filteredPlayers.map((p: any) => (
-              <div key={p.id} onClick={() => onSelect(p)} className={`p-4 rounded-xl border flex justify-between items-center active:scale-95 transition-transform ${mode === 'lineup' ? getStatusBg(p.id) : 'bg-[#162136] border-white/10'}`}>
-                  <div className="flex items-center gap-3"><span className="text-2xl">{getFlag(p.seleccion)}</span><div className="flex flex-col"><span className="text-sm font-bold text-white">{p.nombre}</span><div className="flex items-center gap-2"><span className="text-[10px] text-white/50">{p.posicion}</span>{mode === 'lineup' && <span className="text-[9px] font-black uppercase tracking-wide opacity-70">{getPlayerStatus(p.id)}</span>}</div></div></div><span className="text-[#22c55e] font-black">{p.precio}M</span>
-              </div>
-          ))}
+  const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected, sortAlpha, setSortAlpha, isMarketOpen }: any) => {
+    const [filterPos, setFilterPos] = useState((mode === 'lineup' && activeSlot.type === 'titular') ? activeSlot.pos : "TODOS"); const [filterCountry, setFilterCountry] = useState("TODOS"); const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map(p => p.seleccion))).sort()], []);
+    const getCountryCount = React.useCallback((country: string) => { if (!allPlayersSelected) return 0; return allPlayersSelected.filter((p: any) => p.seleccion === country).length; }, [allPlayersSelected]);
+    const getPlayerStatus = React.useCallback((playerId: number) => { if (!lineupTopology) return "NONE"; const { selected, bench, extras } = lineupTopology; if (Object.values(selected).find((p:any) => p.id === playerId)) return "TITULAR"; if (Object.values(bench).find((p:any) => p.id === playerId)) return "BANQUILLO"; if (Object.values(extras).find((p:any) => p.id === playerId)) return "NO CONVOCADO"; return "NONE"; }, [lineupTopology]);
+  
+    const filteredPlayers = useMemo(() => {
+      let result: any[] = [];
+      if (mode === 'lineup' && lineupTopology) { const { selected, bench, extras } = lineupTopology; const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)]; if (activeSlot.type === 'titular') { result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); } else { result = allMyPlayers; } } else { result = PLAYERS_DB.filter(p => !selectedIds.includes(p.id)); }
+      if (filterCountry !== "TODOS") result = result.filter((p:any) => p.seleccion === filterCountry);
+      if (filterPos !== "TODOS") result = result.filter((p:any) => p.posicion === filterPos);
+      if (mode === 'lineup') { result.sort((a:any, b:any) => { const statusOrder: any = { "TITULAR": 1, "BANQUILLO": 2, "NO CONVOCADO": 3, "NONE": 4 }; return statusOrder[getPlayerStatus(a.id)] - statusOrder[getPlayerStatus(b.id)]; }); } else { if (activeSort === 'price') { result.sort((a:any, b:any) => sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio); } else { result.sort((a:any, b:any) => sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre)); } }
+      return result;
+    }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus, sortAlpha]);
+  
+    const getStatusBg = (id: number) => { const s = getPlayerStatus(id); if (s === "TITULAR") return "bg-green-900/30 border-green-500/50"; if (s === "BANQUILLO") return "bg-yellow-400/20 border-yellow-400/60"; if (s === "NO CONVOCADO") return "bg-red-900/40 border-red-500/50"; return "bg-[#162136] border-white/10"; };
+  
+    // ¡LA MAGIA DEL LÍMITE!
+    const maxCountryLimit = isMarketOpen ? 8 : 7; 
+  
+    return (
+      <div className="fixed inset-0 z-[200] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom">
+        <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black italic uppercase text-white">ELEGIR</h2><button onClick={onClose}><IconX/></button></div>
+        {onRemove && ( <button onClick={onRemove} className="mb-4 w-full bg-red-600/20 border border-red-500 text-red-500 p-4 rounded-xl font-black text-xs uppercase hover:bg-red-600 hover:text-white transition-colors flex justify-center items-center gap-2">{mode === 'lineup' ? 'ENVIAR A LA GRADA' : 'ELIMINAR JUGADOR'} <IconTrash2 size={16} /></button> )}
+        <div className="flex gap-2 mb-4">{["POR", "DEF", "MED", "DEL"].map(pos => (<button key={pos} disabled={mode === 'lineup' && activeSlot.type === 'titular'} onClick={() => setFilterPos(pos)} className={`flex-1 py-2 rounded-xl font-black text-[10px] border ${filterPos === pos ? 'bg-white text-black' : 'text-white border-white/20'} ${mode === 'lineup' && activeSlot.type === 'titular' && activeSlot.pos !== pos ? 'opacity-20 cursor-not-allowed' : ''}`}>{pos}</button>))}</div>
+        
+        {/* RENDERIZADO DEL LÍMITE (7 u 8) */}
+        {mode === 'market' && ( <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">{uniqueCountries.map(c => { const count = getCountryCount(c); const isMaxed = count >= maxCountryLimit; return ( <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>{c !== "TODOS" && <span>{getFlag(c)}</span>} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/{maxCountryLimit})</span>}</button> ); })}</div> )}
+        
+        {mode === 'market' && ( <div className="grid grid-cols-2 gap-3 mb-4"><button onClick={() => { setSortPrice((prev: any) => prev === 'desc' ? 'asc' : 'desc'); setActiveSort('price'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'price' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowUpDown size={14}/> {sortPrice === 'desc' ? 'PRECIO MÁX' : 'PRECIO MÍN'}</button><button onClick={() => { setSortAlpha((prev: any) => prev === 'asc' ? 'desc' : 'asc'); setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A - Z' : 'Z - A'}</button></div> )}
+        <div className="space-y-3 overflow-y-auto flex-1 pb-10">
+            {filteredPlayers.length === 0 ? <p className="text-center text-white/30 italic mt-10">No hay jugadores disponibles.</p> : filteredPlayers.map((p: any) => (
+                <div key={p.id} onClick={() => onSelect(p)} className={`p-4 rounded-xl border flex justify-between items-center active:scale-95 transition-transform ${mode === 'lineup' ? getStatusBg(p.id) : 'bg-[#162136] border-white/10'}`}>
+                    <div className="flex items-center gap-3"><span className="text-2xl">{getFlag(p.seleccion)}</span><div className="flex flex-col"><span className="text-sm font-bold text-white">{p.nombre}</span><div className="flex items-center gap-2"><span className="text-[10px] text-white/50">{p.posicion}</span>{mode === 'lineup' && <span className="text-[9px] font-black uppercase tracking-wide opacity-70">{getPlayerStatus(p.id)}</span>}</div></div></div><span className="text-[#22c55e] font-black">{p.precio}M</span>
+                </div>
+            ))}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 // ==========================================
 // 12. APP PRINCIPAL (EuroApp)
@@ -1389,6 +1482,69 @@ export default function EuroApp() {
   const myExtraBudget = calculateQuinielaPrize(quinielaSelections, currentStandings);
   const dynamicMaxBudget = MAX_BUDGET + myExtraBudget;
   
+// --- LÓGICA DEL MERCADO DE FICHAJES (CONTADOR DE CAMBIOS) ---
+
+const myTeamData = allTeams.find((t:any) => t.id === user?.id);
+const snapshot = myTeamData?.rawSquad?.j1_snapshot;
+let marketChangesCount = 0;
+
+if (isMarketOpen && snapshot) {
+    // 1. Sacamos los IDs de todos los jugadores que tenías en la Fase de Grupos
+    const oldIds = new Set([
+        ...Object.values(snapshot.selected || {}).map((p:any)=>p?.id),
+        ...(Array.isArray(snapshot.bench) ? snapshot.bench : Object.values(snapshot.bench || {})).map((p:any)=>p?.id),
+        ...(Array.isArray(snapshot.extras) ? snapshot.extras : Object.values(snapshot.extras || {})).map((p:any)=>p?.id)
+    ].filter(Boolean));
+    
+    // 2. Sacamos los IDs de tu equipo actual
+    const currentIds = [
+        ...Object.values(selected).map((p:any)=>p?.id),
+        ...Object.values(bench).map((p:any)=>p?.id),
+        ...Object.values(extras).map((p:any)=>p?.id)
+    ].filter(Boolean);
+    
+    // 3. Por cada jugador nuevo que no estuviera antes, sumamos 1 al contador
+    currentIds.forEach(id => {
+        if (!oldIds.has(id)) marketChangesCount++;
+    });
+}
+
+const handleSaveSquad = async () => {
+    if (allSquadPlayers.length < 20) {
+        alert("Faltan jugadores para completar la plantilla de 20.");
+        return;
+    }
+    if (budgetSpent > dynamicMaxBudget) {
+        alert("Has excedido el presupuesto máximo.");
+        return;
+    }
+    if (isMarketOpen && marketChangesCount > 7) {
+        alert("Has superado el límite de 7 fichajes.");
+        return;
+    }
+
+    // Recuperamos tu equipo y su "caja fuerte" para no borrar el historial
+    const myTeam = allTeams.find((t:any) => t.id === user?.id);
+    const raw = myTeam?.rawSquad || {};
+
+    const newSquad = {
+        ...raw,
+        selected,
+        bench,
+        extras,
+        captain
+    };
+
+    const { error } = await supabase.from('teams').update({ squad: newSquad, is_validated: true }).eq('id', user?.id);
+    
+    if (!error) {
+        setSquadValidated(true);
+        alert("¡Plantilla guardada y validada con éxito!");
+    } else {
+        alert("Error al guardar: " + error.message);
+    }
+};
+
   const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(`${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}`), [selected]);
   
   const currentLineupTactic = useMemo(() => {
@@ -1415,63 +1571,73 @@ export default function EuroApp() {
     return processSubstitutions(selectedObj, banquilloArr, cap, lineupViewJornada, isClosed);
 }, [selected, bench, captain, lineupSelected, lineupBench, lineupCaptain, lineupViewJornada]);
 
-const loadUserData = async (u: any) => { 
-    try {
-        const { data: scoresData } = await supabase.from('player_scores').select('*');
-        if (scoresData) { scoresData.forEach((row: any) => { GLOBAL_SCORES[row.player_name] = row.scores || {}; }); }
+const [isMarketOpen, setIsMarketOpen] = useState(false);
 
-        const { data: matchesData } = await supabase.from('match_results').select('*');
-        if (matchesData) { 
-            matchesData.forEach((row: any) => { 
-                if (row.match_id.startsWith('CLOSED_')) {
-                    GLOBAL_CLOSED_MATCHDAYS[row.match_id.replace('CLOSED_', '')] = (row.result === 'true');
-                } else {
-                    GLOBAL_MATCHES[row.match_id] = row.result; 
-                }
-            }); 
-        }
+  const loadUserData = async (u: any) => { 
+      try {
+          const { data: scoresData } = await supabase.from('player_scores').select('*');
+          if (scoresData) { scoresData.forEach((row: any) => { GLOBAL_SCORES[row.player_name] = row.scores || {}; }); }
 
-        const { data: dbTeams } = await supabase.from('teams').select('*');
-        const myData = dbTeams?.find((d:any) => d.id === u.id);
-        const tName = myData?.team_name || u.user_metadata?.team_name || "Mi Equipo";
-        
-        let myParsedSquad: any = { titulares: {}, banquillo: [], extras: [], captain: null };
-        if (myData) {
-            let s = myData.squad;
-            if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
-            setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {}); setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
-            if (s?.j2) { setLineupSelected(s.j2.selected || {}); setLineupBench(s.j2.bench || {}); setLineupExtras(s.j2.extras || {}); setLineupCaptain(s.j2.captain || null); }
-            const benchArray = s?.bench ? ["S1","S2","S3","S4","S5","S6"].map(k=>s.bench[k]).filter(Boolean) : [];
-            myParsedSquad = { titulares: s?.selected || {}, banquillo: benchArray, extras: s?.extras ? Object.values(s.extras) : [], captain: s?.captain };
-            let q = myData.quiniela; if (typeof q === 'string') { try { q = JSON.parse(q); } catch (e) { q = {}; } }
-            setQuinielaSelections(q?.selections || {}); setQuinielaLocked(q?.locked || false);
-        }
+          let marketStatus = false;
+          const { data: matchesData } = await supabase.from('match_results').select('*');
+          if (matchesData) { 
+              matchesData.forEach((row: any) => { 
+                  if (row.match_id === 'MARKET_OPEN') {
+                      marketStatus = (row.result === 'true');
+                  } else if (row.match_id.startsWith('CLOSED_')) {
+                      GLOBAL_CLOSED_MATCHDAYS[row.match_id.replace('CLOSED_', '')] = (row.result === 'true');
+                  } else {
+                      GLOBAL_MATCHES[row.match_id] = row.result; 
+                  }
+              }); 
+          }
+          setIsMarketOpen(marketStatus);
+          GLOBAL_MATCHES['MARKET_OPEN'] = marketStatus ? 'true' : 'false';
 
-        let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, id: t.id, name: t.team_name, user: t.username}, i));
-        
-        combinedTeams = combinedTeams.map(t => {
-            const j1Squad = t.squad;
-            const j2Squad = t.squad?.j2 ? { titulares: t.squad.j2.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j2.bench?.[k]).filter(Boolean), captain: t.squad.j2.captain } : { titulares: j1Squad.selectedObj || j1Squad.titulares, banquillo: j1Squad.banquillo, captain: j1Squad.captain };
-            const j3Squad = t.squad?.j3 ? { titulares: t.squad.j3.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j3.bench?.[k]).filter(Boolean), captain: t.squad.j3.captain } : j2Squad;
+          const { data: dbTeams } = await supabase.from('teams').select('*');
+          const myData = dbTeams?.find((d:any) => d.id === u.id);
+          const tName = myData?.team_name || u.user_metadata?.team_name || "Mi Equipo";
+          
+          let myParsedSquad: any = { titulares: {}, banquillo: [], extras: [], captain: null };
+          if (myData) {
+              let s = myData.squad;
+              if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
+              setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {}); setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
+              if (s?.j2) { setLineupSelected(s.j2.selected || {}); setLineupBench(s.j2.bench || {}); setLineupExtras(s.j2.extras || {}); setLineupCaptain(s.j2.captain || null); }
+              const benchArray = s?.bench ? ["S1","S2","S3","S4","S5","S6"].map(k=>s.bench[k]).filter(Boolean) : [];
+              myParsedSquad = { titulares: s?.selected || {}, banquillo: benchArray, extras: s?.extras ? Object.values(s.extras) : [], captain: s?.captain };
+              let q = myData.quiniela; if (typeof q === 'string') { try { q = JSON.parse(q); } catch (e) { q = {}; } }
+              setQuinielaSelections(q?.selections || {}); setQuinielaLocked(q?.locked || false);
+          }
 
-            const ptsJ1 = processSubstitutions(j1Squad.selectedObj || j1Squad.titulares || {}, j1Squad.banquillo || [], j1Squad.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
-            const ptsJ2 = processSubstitutions(j2Squad.titulares || {}, j2Squad.banquillo || [], j2Squad.captain, "J2", GLOBAL_CLOSED_MATCHDAYS["J2"] || false).total;
-            const ptsJ3 = processSubstitutions(j3Squad.titulares || {}, j3Squad.banquillo || [], j3Squad.captain, "J3", GLOBAL_CLOSED_MATCHDAYS["J3"] || false).total;
-            
-            const total = ptsJ1 + ptsJ2 + ptsJ3;
-            return { ...t, points: total, matchdayPoints: { "J1": ptsJ1, "J2": ptsJ2, "J3": ptsJ3 } };
-        });
+          let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, id: t.id, name: t.team_name, user: t.username}, i));
+          
+          combinedTeams = combinedTeams.map(t => {
+              // LA CAJA FUERTE: Si hay un snapshot de la J1, lo usamos. Si no, usamos el equipo base.
+              const j1Source = t.squad?.j1_snapshot || t.squad;
+              const j2Squad = t.squad?.j2 ? { titulares: t.squad.j2.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j2.bench?.[k]).filter(Boolean), captain: t.squad.j2.captain } : { titulares: j1Source.selected || j1Source.titulares, banquillo: j1Source.bench || j1Source.banquillo, captain: j1Source.captain };
+              const j3Squad = t.squad?.j3 ? { titulares: t.squad.j3.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j3.bench?.[k]).filter(Boolean), captain: t.squad.j3.captain } : j2Squad;
 
-        const myIndex = combinedTeams.findIndex((t:any) => t.id === u.id);
-        const ptsMyJ1 = processSubstitutions(myParsedSquad.titulares, myParsedSquad.banquillo, myParsedSquad.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
-        const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: ptsMyJ1, matchdayPoints: { "J1": ptsMyJ1 }, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
+              const ptsJ1 = processSubstitutions(j1Source.selected || j1Source.titulares || {}, j1Source.bench || j1Source.banquillo || [], j1Source.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
+              const ptsJ2 = processSubstitutions(j2Squad.titulares || {}, j2Squad.banquillo || [], j2Squad.captain, "J2", GLOBAL_CLOSED_MATCHDAYS["J2"] || false).total;
+              const ptsJ3 = processSubstitutions(j3Squad.titulares || {}, j3Squad.banquillo || [], j3Squad.captain, "J3", GLOBAL_CLOSED_MATCHDAYS["J3"] || false).total;
+              
+              const total = ptsJ1 + ptsJ2 + ptsJ3;
+              return { ...t, points: total, matchdayPoints: { "J1": ptsJ1, "J2": ptsJ2, "J3": ptsJ3 } };
+          });
 
-        if (myIndex === -1) combinedTeams.push(formatTeamData(myLiveData, 0));
-        else combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
+          const myIndex = combinedTeams.findIndex((t:any) => t.id === u.id);
+          const myJ1Source = myData?.squad?.j1_snapshot || myParsedSquad;
+          const ptsMyJ1 = processSubstitutions(myJ1Source.selected || myJ1Source.titulares || {}, myJ1Source.bench || myJ1Source.banquillo || [], myJ1Source.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
+          
+          const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: ptsMyJ1, matchdayPoints: { "J1": ptsMyJ1 }, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
 
-        setAllTeams(combinedTeams);
-    } catch(e) { console.error("Error cargando datos:", e); }
-};
+          if (myIndex === -1) combinedTeams.push(formatTeamData(myLiveData, 0));
+          else combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
+
+          setAllTeams(combinedTeams);
+      } catch(e) { console.error("Error cargando datos:", e); }
+  };
 
   const handleLogin = async (e: string, u: string, t?: string) => {
     // 1. Forzamos el Modo Dios si es tu email
@@ -1624,8 +1790,15 @@ const loadUserData = async (u: any) => {
       {view === 'admin' && isAdmin && <AdminView onRefresh={() => loadUserData(user)} allTeams={allTeams} onToggleBet={handleToggleBet} />}
 
       {view === 'squad' && (
-         <div className="max-w-md mx-auto px-4 mt-40"> 
-             <div className="bg-[#162136] p-4 rounded-2xl border border-white/10 mb-4 shadow-lg mt-2">
+         <div className="max-w-md mx-auto px-4 mt-36 pb-10"> 
+             
+             {/* BARRA DE PRESUPUESTO */}
+             <div className="bg-[#162136] p-4 rounded-2xl border border-white/10 mb-4 shadow-lg mt-2 relative">
+                 {isMarketOpen && (
+                     <div className="absolute -top-3 right-4 bg-purple-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded shadow-lg border border-purple-400 animate-pulse">
+                         MERCADO ABIERTO
+                     </div>
+                 )}
                  <div className="flex justify-between items-center text-xs font-black uppercase mb-2">
                      <div className="flex items-center gap-2">
                          <span className="text-white/50">PRESUPUESTO</span>
@@ -1638,6 +1811,18 @@ const loadUserData = async (u: any) => {
                  </div>
              </div>
 
+             {/* CONTADOR DE CAMBIOS (SOLO VISIBLE EN MERCADO) */}
+             {isMarketOpen && (
+                 <div className={`flex justify-between items-center p-3 rounded-xl border mb-4 transition-colors ${marketChangesCount > 7 ? 'bg-red-900/20 border-red-500/50' : 'bg-purple-900/20 border-purple-500/30'}`}>
+                     <span className={`text-[10px] font-black uppercase ${marketChangesCount > 7 ? 'text-red-400' : 'text-purple-400'}`}>
+                         Fichajes Realizados
+                     </span>
+                     <span className={`text-lg font-black ${marketChangesCount > 7 ? 'text-red-500 animate-pulse' : 'text-purple-300'}`}>
+                         {marketChangesCount} / 7
+                     </span>
+                 </div>
+             )}
+
              <div className="mb-6 bg-[#1c2a45] p-3 rounded-2xl border border-white/10 flex items-center gap-3">
                  <div className="bg-[#22c55e] p-2 rounded-lg text-black"><IconShield size={20}/></div>
                  <div className="flex-1">
@@ -1648,17 +1833,36 @@ const loadUserData = async (u: any) => {
              </div>
 
              <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1 mb-2">TÁCTICA: <span className="text-[#22c55e] ml-2 text-xl drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]">{Object.keys(selected).length === 11 ? `${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}` : '--'}</span></div>
-             <Field selected={selected} step={step} canInteractField={!squadValidated && !hasTournamentStarted} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
+             <Field selected={selected} step={step} canInteractField={!squadValidated && !hasTournamentStarted || isMarketOpen} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
              
              <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 3 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                 <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
-                <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => !squadValidated && !hasTournamentStarted && setActiveSlot({id, type:'bench', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated ? 'cursor-pointer' : ''}`}><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} /></div>)}</div>
+                <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => (!squadValidated && !hasTournamentStarted || isMarketOpen) && setActiveSlot({id, type:'bench', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated || isMarketOpen ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} /></div>)}</div>
              </div>
 
              <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 4 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                  <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
-                 <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => !squadValidated && !hasTournamentStarted && setActiveSlot({id, type:'extras', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated ? 'cursor-pointer' : ''}`}><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} /></div>)}</div>
+                 <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => (!squadValidated && !hasTournamentStarted || isMarketOpen) && setActiveSlot({id, type:'extras', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated || isMarketOpen ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} /></div>)}</div>
              </div>
+
+             {/* BOTÓN GUARDAR (CON BLOQUEO DE LÍMITES) */}
+             {squadValidated && !isMarketOpen ? (
+                 <div className="mt-8 mb-8 p-4 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-2xl text-center">
+                     <p className="text-[#22c55e] font-black text-sm uppercase flex items-center justify-center gap-2"><IconCheck size={20} /> Plantilla Validada</p>
+                     <p className="text-[10px] text-white/50 mt-1 uppercase">Lista para competir</p>
+                 </div>
+             ) : (
+                 <button 
+                     disabled={allSquadPlayers.length < 20 || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)}
+                     onClick={handleSaveSquad} 
+                     className={`mt-8 mb-8 w-full p-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex justify-center items-center gap-2 ${(allSquadPlayers.length < 20 || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)) ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed' : 'bg-gradient-to-r from-[#22c55e] to-green-600 text-black hover:scale-105 border border-green-400'}`}
+                 >
+                     <IconCheck size={20} /> 
+                     {allSquadPlayers.length < 20 ? `Faltan ${20 - allSquadPlayers.length} Jugadores` : 
+                     (budgetSpent > dynamicMaxBudget ? 'Presupuesto Excedido' : 
+                     ((isMarketOpen && marketChangesCount > 7) ? 'Límite de Fichajes Superado' : 'Guardar Plantilla'))}
+                 </button>
+             )}
          </div>
       )}
 
@@ -1737,7 +1941,8 @@ const loadUserData = async (u: any) => {
                 else { if (activeSlot.type === 'titular') setSelected({...selected, [activeSlot.id]: p}); else if (activeSlot.type === 'bench') setBench({...bench, [activeSlot.id]: p}); else setExtras({...extras, [activeSlot.id]: p}); }
                 setActiveSlot(null);
             }}
-            onRemove={handleLineupToExtras} 
+            onRemove={handleLineupToExtras}
+            isMarketOpen={isMarketOpen} 
         />
       )}
     </div>
