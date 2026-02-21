@@ -455,68 +455,279 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
       );
   };
   
-  const CalendarView = () => (
-    <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
-       <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-6 flex items-center gap-2"><IconCalendar /> CALENDARIO</h1>
-       <div className="space-y-6">
-          {generateFixture().map((g) => (
-            <div key={g.n} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5">
-               <div className="bg-[#22c55e] p-2 text-center"><h3 className="font-black italic text-black uppercase">{g.n}</h3></div>
-               <div className="divide-y divide-white/5">
-                   {g.m.map((m, i) => {
-                     const matchId = `${m.t1}-${m.t2}`;
-                     const result = GLOBAL_MATCHES[matchId] || m.result; 
-                     return (
-                     <div key={i} className="flex flex-col relative">
-                        {i % 2 === 0 && <div className="bg-blue-600 w-full text-center text-[10px] font-black text-white uppercase tracking-widest py-1">JORNADA {Math.floor(i/2) + 1}</div>}
-                        <div className="p-4 pt-6 flex items-center justify-between">
-                            <div className="w-[40%] flex items-center justify-end gap-2 text-right">
-                                <span className="text-xs font-black uppercase text-white leading-tight">{m.t1}</span><span className="text-3xl">{getFlag(m.t1)}</span>
+  const CalendarView = () => {
+    const [phase, setPhase] = useState<'grupos'|'eliminatorias'>('grupos');
+    const { standings, thirdGroups } = getTournamentStandings();
+
+    // MATRIZ OFICIAL UEFA PARA LOS TERCEROS CLASIFICADOS
+    const thirdMappings: any = {
+        'ABCD': { '1B': '3A', '1C': '3D', '1E': '3B', '1F': '3C' },
+        'ABCE': { '1B': '3A', '1C': '3E', '1E': '3B', '1F': '3C' },
+        'ABCF': { '1B': '3A', '1C': '3F', '1E': '3B', '1F': '3C' },
+        'ABDE': { '1B': '3D', '1C': '3E', '1E': '3A', '1F': '3B' },
+        'ABDF': { '1B': '3D', '1C': '3F', '1E': '3A', '1F': '3B' },
+        'ABEF': { '1B': '3E', '1C': '3F', '1E': '3B', '1F': '3A' },
+        'ACDE': { '1B': '3E', '1C': '3D', '1E': '3C', '1F': '3A' },
+        'ACDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3A' },
+        'ACEF': { '1B': '3E', '1C': '3F', '1E': '3C', '1F': '3A' },
+        'ADEF': { '1B': '3E', '1C': '3F', '1E': '3D', '1F': '3A' },
+        'BCDE': { '1B': '3E', '1C': '3D', '1E': '3B', '1F': '3C' },
+        'BCDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3B' },
+        'BCEF': { '1B': '3F', '1C': '3E', '1E': '3C', '1F': '3B' },
+        'BDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3B' },
+        'CDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3C' }
+    };
+
+    const getTeam = (posCode: string) => {
+        if (!posCode) return { name: '???', isKnown: false };
+        if (posCode.length === 2) {
+            const rank = parseInt(posCode.charAt(0)) - 1; 
+            const group = posCode.charAt(1);
+            const team = standings[`GRUPO ${group}`]?.[rank];
+            // Solo lo damos por definitivo si ese grupo ya ha jugado sus 3 partidos (ej: 6 partidos totales en el grupo = 2 por equipo)
+            const isGroupFinished = standings[`GRUPO ${group}`]?.every(t => t.played === 3);
+            return team && isGroupFinished ? { name: team.name, isKnown: true } : { name: posCode, isKnown: false };
+        }
+        return { name: posCode, isKnown: false }; // Para los "3A/D/E/F"
+    };
+
+    const map = thirdMappings[thirdGroups] || { '1B': '3A/D/E/F', '1C': '3D/E/F', '1E': '3A/B/C/D', '1F': '3A/B/C' };
+
+    // Definición estricta de cruces
+    const octavos = [
+        { id: 'O1', t1: getTeam('1B'), t2: getTeam(map['1B']) },
+        { id: 'O2', t1: getTeam('1A'), t2: getTeam('2C') },
+        { id: 'O3', t1: getTeam('1F'), t2: getTeam(map['1F']) },
+        { id: 'O4', t1: getTeam('2D'), t2: getTeam('2E') },
+        { id: 'O5', t1: getTeam('1E'), t2: getTeam(map['1E']) },
+        { id: 'O6', t1: getTeam('1D'), t2: getTeam('2F') },
+        { id: 'O7', t1: getTeam('1C'), t2: getTeam(map['1C']) },
+        { id: 'O8', t1: getTeam('2A'), t2: getTeam('2B') }
+    ];
+
+    const MatchBox = ({ match }: any) => (
+        <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full">
+            <div className={`flex items-center justify-between py-1 border-b border-white/5 ${match.t1.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
+                <div className="flex items-center gap-2"><span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span></div>
+            </div>
+            <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
+                <div className="flex items-center gap-2"><span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span></div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-[#22c55e] uppercase tracking-tighter mb-4 flex items-center gap-2"><IconCalendar /> CALENDARIO</h1>
+            
+            <div className="flex gap-2 bg-black/40 p-2 rounded-xl border border-white/5 mb-6">
+                <button onClick={() => setPhase('grupos')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${phase === 'grupos' ? 'bg-[#22c55e] text-black shadow-lg' : 'text-white/40 hover:bg-white/5'}`}>FASE INICIAL</button>
+                <button onClick={() => setPhase('eliminatorias')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${phase === 'eliminatorias' ? 'bg-cyan-400 text-black shadow-lg' : 'text-white/40 hover:bg-white/5'}`}>ELIMINATORIAS</button>
+            </div>
+
+            {phase === 'grupos' && (
+                <div className="space-y-8">
+                    {generateFixture().map((g) => (
+                        <div key={g.n} className="bg-[#1c2a45] rounded-2xl overflow-hidden border border-white/5 shadow-xl">
+                            <div className="bg-gradient-to-r from-[#22c55e] to-green-700 p-2 text-center shadow-md">
+                                <h3 className="font-black italic text-black uppercase">{g.n}</h3>
                             </div>
-                            <div className="w-[20%] text-center">
-                                {result ? ( <span className="text-2xl font-black text-white tracking-widest drop-shadow-lg">{result}</span>
-                                ) : ( <><span className="text-[9px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span><span className="text-[9px] text-white/40 block mb-1">{m.d.split(' ')[2]}</span></> )}
-                                {!result && <span className="text-white/20 font-black text-xl tracking-widest">-:-</span>}
+                            
+                            {/* TABLA DE CLASIFICACIÓN DEL GRUPO EN TIEMPO REAL */}
+                            <div className="bg-[#0d1526] p-2 border-b border-white/10">
+                                <table className="w-full text-left text-[9px] uppercase font-black text-white/70">
+                                    <thead><tr className="border-b border-white/10"><th className="pb-1 pl-1 w-6">#</th><th className="pb-1">Equipo</th><th className="pb-1 text-center">PJ</th><th className="pb-1 text-center">GF</th><th className="pb-1 text-center">GC</th><th className="pb-1 text-center text-[#22c55e]">PTS</th></tr></thead>
+                                    <tbody>
+                                        {standings[g.n]?.map((t, idx) => (
+                                            <tr key={t.name} className={`border-b border-white/5 last:border-0 ${idx < 2 ? 'bg-green-900/10 text-white' : idx === 2 ? 'bg-yellow-900/10 text-yellow-100' : 'text-white/40'}`}>
+                                                <td className="py-1.5 pl-1">{idx+1}</td>
+                                                <td className="py-1.5 flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span> <span className="truncate max-w-[70px]">{t.name}</span></td>
+                                                <td className="py-1.5 text-center">{t.played}</td>
+                                                <td className="py-1.5 text-center">{t.gf}</td>
+                                                <td className="py-1.5 text-center">{t.gc}</td>
+                                                <td className="py-1.5 text-center text-[#22c55e]">{t.pts}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div className="w-[40%] flex items-center justify-start gap-2 text-left">
-                                <span className="text-3xl">{getFlag(m.t2)}</span><span className="text-xs font-black uppercase text-white leading-tight">{m.t2}</span>
+
+                            <div className="divide-y divide-white/5">
+                                {g.m.map((m, i) => {
+                                    const matchId = `${m.t1}-${m.t2}`;
+                                    const result = GLOBAL_MATCHES[matchId] || m.result; 
+                                    return (
+                                        <div key={i} className="flex flex-col relative bg-[#1c2a45] hover:bg-white/5 transition-colors">
+                                            {i % 2 === 0 && <div className="bg-white/5 w-full text-center text-[8px] font-black text-white/50 uppercase tracking-widest py-0.5 border-y border-white/5">JORNADA {Math.floor(i/2) + 1}</div>}
+                                            <div className="p-3 flex items-center justify-between">
+                                                <div className="w-[40%] flex items-center justify-end gap-2 text-right"><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t1}</span><span className="text-2xl">{getFlag(m.t1)}</span></div>
+                                                <div className="w-[20%] text-center">
+                                                    {result ? ( <span className="text-lg font-black text-[#22c55e] tracking-widest drop-shadow-md bg-black/40 px-2 py-1 rounded">{result}</span>
+                                                    ) : ( <><span className="text-[8px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span><span className="text-[8px] text-white/40 block">{m.d.split(' ')[2]}</span></> )}
+                                                </div>
+                                                <div className="w-[40%] flex items-center justify-start gap-2 text-left"><span className="text-2xl">{getFlag(m.t2)}</span><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t2}</span></div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
-                     </div>
-                   )})}
-               </div>
-            </div>
-          ))}
-       </div>
-    </div>
-  );
+                    ))}
+                </div>
+            )}
+
+            {phase === 'eliminatorias' && (
+                <div className="space-y-6">
+                    <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-center shadow-lg">
+                        <h2 className="text-cyan-400 font-black italic uppercase text-lg mb-1">El Camino a Berlín</h2>
+                        <p className="text-[9px] text-white/60 font-bold uppercase tracking-widest">Los cruces se completan automáticamente al terminar la fase de grupos</p>
+                    </div>
+
+                    <div className="flex justify-between gap-2 overflow-hidden">
+                        {/* LADO IZQUIERDO DEL CUADRO */}
+                        <div className="flex-1 flex flex-col gap-4">
+                            <div className="text-center font-black text-[9px] text-white/40 uppercase mb-2">Lado Izquierdo</div>
+                            {octavos.slice(0, 4).map((m, i) => <MatchBox key={i} match={m} />)}
+                        </div>
+
+                        {/* FINAL AL CENTRO (DECORATIVA) */}
+                        <div className="w-16 flex flex-col items-center justify-center relative">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-30">
+                                <IconTrophy size={48} className="text-[#ffd700]" />
+                                <span className="text-[8px] font-black text-white mt-2 tracking-widest">FINAL</span>
+                            </div>
+                        </div>
+
+                        {/* LADO DERECHO DEL CUADRO */}
+                        <div className="flex-1 flex flex-col gap-4">
+                            <div className="text-center font-black text-[9px] text-white/40 uppercase mb-2">Lado Derecho</div>
+                            {octavos.slice(4, 8).map((m, i) => <MatchBox key={i} match={m} />)}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
   
-  const QuinielaView = ({ selections, onToggle, locked, onEdit, canEdit }: any) => {
-      const isLocked = locked || !canEdit; 
-      return (
-          <div className="max-w-md mx-auto px-4 mt-24 pb-32 animate-in fade-in">
-              <div className="flex justify-between items-center mb-6">
-                  <h1 className="text-2xl font-black italic text-purple-400 uppercase tracking-tighter flex items-center gap-2"><IconTrophy /> EUROQUINIELA</h1>
-                  {canEdit ? ( locked ? ( <button onClick={onEdit} className="bg-[#facc15] text-black px-3 py-1.5 rounded-lg font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:scale-105 transition-transform border border-yellow-600"><IconEdit size={14}/> EDITAR</button> ) : ( <button onClick={onEdit} className="bg-[#22c55e] text-black px-3 py-1.5 rounded-lg font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:scale-105 transition-transform border border-green-600"><IconCheck size={14}/> GUARDAR</button> )
-                  ) : ( <div className="bg-red-900/40 text-red-500 px-3 py-1.5 rounded-lg font-black text-[10px] uppercase border border-red-500/50 flex items-center gap-1 shadow-lg"><IconLock size={12}/> CERRADO</div> )}
-              </div>
-              <p className="text-white/60 text-xs mb-4">Selecciona los 2 equipos que pasarán de grupo. (12 aciertos = 25M extra).</p>
-              <div className="space-y-4">
-                  {EURO_GROUPS_DATA.map((group) => (
-                      <div key={group.name} className="bg-[#1c2a45] p-4 rounded-2xl border border-white/10">
-                          <div className="flex justify-between items-center mb-3"><h3 className="text-[#facc15] font-black uppercase text-sm">{group.name}</h3><span className="text-[9px] text-white/40 font-bold uppercase">{selections[group.name]?.length || 0}/2 SELECCIONADOS</span></div>
-                          <div className="grid grid-cols-2 gap-2">
-                              {group.teams.map((team) => {
-                                  const isSelected = selections[group.name]?.includes(team);
-                                  return ( <button key={team} disabled={isLocked} onClick={() => onToggle(group.name, team)} className={`p-3 rounded-xl border flex items-center gap-3 transition-all ${isSelected ? 'bg-[#22c55e] text-black border-white shadow-lg' : 'bg-[#0d1526] text-white/50 border-white/5 hover:bg-white/5'} ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-95'}`}><span className="text-xl">{getFlag(team)}</span><span className="text-[10px] font-black uppercase">{team}</span></button> );
-                              })}
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      );
-  };
+const QuinielaView = ({ selections, onToggle, locked, onEdit, canEdit }: any) => {
+    const isLocked = locked || !canEdit; 
+    const { standings } = getTournamentStandings();
+    
+    let aciertos = 0;
+    let fallos = 0;
+    let evaluados = 0;
+
+     EURO_GROUPS_DATA.forEach(group => {
+        const groupStandings = standings[group.name];
+        const isGroupFinished = groupStandings?.every((t: any) => t.played === 3);
+        const userPicks = selections[group.name] || [];
+        
+        if (isGroupFinished) {
+            const top2 = [groupStandings[0]?.name, groupStandings[1]?.name];
+            userPicks.forEach((team: string) => {
+                evaluados++;
+                if (top2.includes(team)) aciertos++;
+                else fallos++;
+            });
+        }
+    });
+
+    const pendientes = 12 - evaluados; 
+
+    // Definimos los estilos de los premios según la escala de "temperatura"
+    const prizeStyles = [
+        { hits: 5, prize: '5M', style: 'bg-gray-800/80 text-gray-400 border-gray-700' }, // Gris
+        { hits: 6, prize: '6M', style: 'bg-blue-900/50 text-blue-300 border-blue-800' }, // Frío inicio
+        { hits: 7, prize: '8M', style: 'bg-cyan-900/50 text-cyan-300 border-cyan-800' },
+        { hits: 8, prize: '10M', style: 'bg-emerald-900/50 text-emerald-300 border-emerald-800' },
+        { hits: 9, prize: '12M', style: 'bg-green-900/50 text-green-300 border-green-800' }, // Frío final
+        { hits: 10, prize: '15M', style: 'bg-yellow-900/50 text-yellow-300 border-yellow-800' }, // Cálido inicio
+        { hits: 11, prize: '20M', style: 'bg-orange-900/50 text-orange-300 border-orange-800' }, // Cálido final
+        { hits: 12, prize: '25M', style: 'bg-red-600 text-white border-red-400 shadow-[0_0_10px_rgba(220,38,38,0.5)]' } // ¡ROJO ARDIENTE!
+    ];
+
+    return (
+        <div className="max-w-md mx-auto px-4 mt-24 pb-32 animate-in fade-in">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-black italic text-purple-400 uppercase tracking-tighter flex items-center gap-2"><IconTrophy /> EUROQUINIELA</h1>
+                {canEdit ? ( locked ? ( <button onClick={onEdit} className="bg-[#facc15] text-black px-3 py-1.5 rounded-lg font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:scale-105 transition-transform border border-yellow-600"><IconEdit size={14}/> EDITAR</button> ) : ( <button onClick={onEdit} className="bg-[#22c55e] text-black px-3 py-1.5 rounded-lg font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:scale-105 transition-transform border border-green-600"><IconCheck size={14}/> GUARDAR</button> )
+                ) : ( <div className="bg-red-900/40 text-red-500 px-3 py-1.5 rounded-lg font-black text-[10px] uppercase border border-red-500/50 flex items-center gap-1 shadow-lg"><IconLock size={12}/> CERRADO</div> )}
+            </div>
+
+            {/* MARCADOR DE ACIERTOS */}
+            <div className="bg-[#1c2a45] rounded-2xl border border-white/10 p-4 mb-6 shadow-xl flex justify-around text-center divide-x divide-white/10">
+                <div className="flex flex-col px-2 w-1/3">
+                    <span className="text-3xl font-black text-[#22c55e] drop-shadow-md">{aciertos}</span>
+                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-1">Aciertos</span>
+                </div>
+                <div className="flex flex-col px-2 w-1/3">
+                    <span className="text-3xl font-black text-red-500 drop-shadow-md">{fallos}</span>
+                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-1">Fallos</span>
+                </div>
+                <div className="flex flex-col px-2 w-1/3">
+                    <span className="text-3xl font-black text-white/80">{pendientes}</span>
+                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-1">Pendientes</span>
+                </div>
+            </div>
+
+            {/* RECORDATORIO DE PREMIOS (CON ESCALA DE COLOR) */}
+            <div className="mb-6 rounded-xl p-3 border border-white/10 bg-[#0d1526]">
+                <p className="text-[10px] font-black uppercase text-white/50 mb-2 flex items-center gap-1"><IconAward size={12}/> Premios para Fichajes</p>
+                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-black">
+                    {prizeStyles.map(p => (
+                        <div key={p.hits} className={`rounded p-1 border ${p.style} flex flex-col justify-center`}>
+                            <span className="opacity-80">{p.hits} ac:</span>
+                            <span className="text-sm leading-none mt-0.5">{p.prize}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {EURO_GROUPS_DATA.map((group) => {
+                    const groupStandings = standings[group.name];
+                    const isGroupFinished = groupStandings?.every((t: any) => t.played === 3);
+                    
+                    return (
+                        <div key={group.name} className="bg-[#1c2a45] p-4 rounded-2xl border border-white/10 shadow-lg">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-[#facc15] font-black uppercase text-sm">{group.name}</h3>
+                                <span className="text-[9px] text-white/40 font-bold uppercase">{selections[group.name]?.length || 0}/2 SELECCIONADOS</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {group.teams.map((team) => {
+                                    const isSelected = selections[group.name]?.includes(team);
+                                    let btnStyle = 'bg-[#0d1526] text-white/50 border-white/5 hover:bg-white/5';
+                                    let iconContent = null;
+
+                                    if (isSelected) {
+                                        btnStyle = 'bg-[#22c55e] text-black border-white shadow-lg';
+                                        if (isGroupFinished) {
+                                            const top2 = [groupStandings[0]?.name, groupStandings[1]?.name];
+                                            if (top2.includes(team)) {
+                                                btnStyle = 'bg-green-500 text-black border-2 border-white shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse-slow';
+                                                iconContent = <IconCheck size={16} className="text-black drop-shadow-md" />;
+                                            } else {
+                                                btnStyle = 'bg-red-900/80 text-red-400 border-red-500 line-through grayscale opacity-80';
+                                                iconContent = <IconX size={16} className="text-red-500" />;
+                                            }
+                                        }
+                                    }
+                                    return ( 
+                                        <button key={team} disabled={isLocked} onClick={() => onToggle(group.name, team)} className={`p-3 rounded-xl border flex items-center justify-between transition-all ${btnStyle} ${isLocked ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:scale-95'}`}>
+                                            <div className="flex items-center gap-2"><span className="text-2xl">{getFlag(team)}</span><span className="text-[10px] font-black uppercase">{team}</span></div>{iconContent}
+                                        </button> 
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
   
   // ==========================================
   // 6. REGLAS Y PUNTUACIONES
@@ -565,6 +776,82 @@ const getPlayerPointsRow = (playerName: string, matchday: string) => {
         if (lastName && normalizedKey.includes(lastName)) return value[matchday];
     }
     return undefined;
+};
+
+// --- LÓGICA DE CLASIFICACIÓN Y CUADRO DE ELIMINATORIAS ---
+export const getTournamentStandings = () => {
+    const standings: Record<string, any[]> = {};
+    let allThirds: any[] = [];
+    const advancedTeams = new Set<string>();
+
+    EURO_GROUPS_DATA.forEach(g => {
+        let teams = g.teams.map(t => ({ name: t, pts: 0, gf: 0, gc: 0, gd: 0, played: 0, w: 0, d: 0, l: 0 }));
+        const groupMatches = generateFixture().find(x => x.n === g.name)?.m || [];
+        
+        groupMatches.forEach(m => {
+            const matchId = `${m.t1}-${m.t2}`;
+            const res = GLOBAL_MATCHES[matchId] || m.result;
+            if (res && res.includes('-')) {
+                const [g1, g2] = res.split('-').map(x => parseInt(x.trim()));
+                const t1 = teams.find(x => x.name === m.t1);
+                const t2 = teams.find(x => x.name === m.t2);
+                if (t1 && t2 && !isNaN(g1) && !isNaN(g2)) {
+                    t1.played++; t2.played++;
+                    t1.gf += g1; t1.gc += g2; t1.gd = t1.gf - t1.gc;
+                    t2.gf += g2; t2.gc += g1; t2.gd = t2.gf - t2.gc;
+                    if (g1 > g2) { t1.pts += 3; t1.w++; t2.l++; }
+                    else if (g1 < g2) { t2.pts += 3; t2.w++; t1.l++; }
+                    else { t1.pts += 1; t2.pts += 1; t1.d++; t2.d++; }
+                }
+            }
+        });
+
+        teams.sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+        standings[g.name] = teams;
+        
+        // Top 2 clasificados directamente si han jugado todo
+        if (teams[0].played === 3) advancedTeams.add(teams[0].name);
+        if (teams[1]?.played === 3) advancedTeams.add(teams[1].name);
+        
+        // Recogemos a los 3º para la tabla global de mejores terceros
+        if (teams[2]?.played === 3) allThirds.push({ ...teams[2], group: g.name.replace('GRUPO ', '') });
+    });
+
+    // Ordenamos los 3º y sacamos los 4 mejores
+    allThirds.sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+    const bestThirds = allThirds.slice(0, 4);
+    const thirdGroups = bestThirds.map(t => t.group).sort().join('');
+    
+    bestThirds.forEach(t => advancedTeams.add(t.name));
+
+    return { standings, advancedTeams, bestThirds, thirdGroups };
+};
+
+// --- CALCULADORA DE PREMIOS EUROQUINIELA ---
+export const calculateQuinielaPrize = (selections: any, standings: any) => {
+    let aciertos = 0;
+    EURO_GROUPS_DATA.forEach(group => {
+        const groupStandings = standings[group.name];
+        const isGroupFinished = groupStandings?.every((t: any) => t.played === 3);
+        
+        if (isGroupFinished) {
+            const top2 = [groupStandings[0]?.name, groupStandings[1]?.name];
+            const userPicks = selections[group.name] || [];
+            userPicks.forEach((team: string) => {
+                if (top2.includes(team)) aciertos++;
+            });
+        }
+    });
+
+    if (aciertos >= 12) return 25;
+    if (aciertos === 11) return 20;
+    if (aciertos === 10) return 15;
+    if (aciertos === 9) return 12;
+    if (aciertos === 8) return 10;
+    if (aciertos === 7) return 8;
+    if (aciertos === 6) return 6;
+    if (aciertos === 5) return 5;
+    return 0; // Menos de 5 aciertos no da premio
 };
 
 // --- MOTOR INTELIGENTE DE SUSTITUCIONES ---
@@ -1096,6 +1383,12 @@ export default function EuroApp() {
 
   const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
   const budgetSpent = allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0);
+  
+  // Calculamos en tiempo real si el jugador ha ganado premio en la quiniela
+  const { standings: currentStandings } = getTournamentStandings();
+  const myExtraBudget = calculateQuinielaPrize(quinielaSelections, currentStandings);
+  const dynamicMaxBudget = MAX_BUDGET + myExtraBudget;
+  
   const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(`${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}`), [selected]);
   
   const currentLineupTactic = useMemo(() => {
@@ -1333,8 +1626,16 @@ const loadUserData = async (u: any) => {
       {view === 'squad' && (
          <div className="max-w-md mx-auto px-4 mt-40"> 
              <div className="bg-[#162136] p-4 rounded-2xl border border-white/10 mb-4 shadow-lg mt-2">
-                 <div className="flex justify-between text-xs font-black uppercase mb-2"><span className="text-white/50">PRESUPUESTO</span><span className={budgetSpent > MAX_BUDGET ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / {MAX_BUDGET}M</span></div>
-                 <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10"><div className={`h-full shadow-[0_0_15px_rgba(34,197,94,0.6)] transition-all duration-500 ${budgetSpent > MAX_BUDGET ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-green-600 to-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent/MAX_BUDGET)*100, 100)}%`}}></div></div>
+                 <div className="flex justify-between items-center text-xs font-black uppercase mb-2">
+                     <div className="flex items-center gap-2">
+                         <span className="text-white/50">PRESUPUESTO</span>
+                         {myExtraBudget > 0 && <span className="bg-[#22c55e]/20 text-[#22c55e] px-2 py-0.5 rounded text-[8px] animate-pulse">+{myExtraBudget}M PREMIO</span>}
+                     </div>
+                     <span className={budgetSpent > dynamicMaxBudget ? "text-red-500" : "text-[#22c55e]"}>{budgetSpent}M / {dynamicMaxBudget}M</span>
+                 </div>
+                 <div className="w-full h-4 bg-black/50 rounded-full overflow-hidden border border-white/10">
+                     <div className={`h-full shadow-[0_0_15px_rgba(34,197,94,0.6)] transition-all duration-500 ${budgetSpent > dynamicMaxBudget ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-green-600 to-[#22c55e]'}`} style={{ width: `${Math.min((budgetSpent/dynamicMaxBudget)*100, 100)}%`}}></div>
+                 </div>
              </div>
 
              <div className="mb-6 bg-[#1c2a45] p-3 rounded-2xl border border-white/10 flex items-center gap-3">
