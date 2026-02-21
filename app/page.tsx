@@ -779,7 +779,7 @@ const getPlayerPointsRow = (playerName: string, matchday: string) => {
 };
 
 // --- LÓGICA DE CLASIFICACIÓN Y CUADRO DE ELIMINATORIAS ---
-export const getTournamentStandings = () => {
+const getTournamentStandings = () => {
     const standings: Record<string, any[]> = {};
     let allThirds: any[] = [];
     const advancedTeams = new Set<string>();
@@ -828,7 +828,7 @@ export const getTournamentStandings = () => {
 };
 
 // --- CALCULADORA DE PREMIOS EUROQUINIELA ---
-export const calculateQuinielaPrize = (selections: any, standings: any) => {
+const calculateQuinielaPrize = (selections: any, standings: any) => {
     let aciertos = 0;
     EURO_GROUPS_DATA.forEach(group => {
         const groupStandings = standings[group.name];
