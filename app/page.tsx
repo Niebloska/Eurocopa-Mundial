@@ -1142,7 +1142,7 @@ const loadUserData = async (u: any) => {
         const myData = dbTeams?.find((d:any) => d.id === u.id);
         const tName = myData?.team_name || u.user_metadata?.team_name || "Mi Equipo";
         
-        let myParsedSquad = { titulares: {}, banquillo: [], extras: [], captain: null };
+        let myParsedSquad: any = { titulares: {}, banquillo: [], extras: [], captain: null };
         if (myData) {
             let s = myData.squad;
             if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
