@@ -230,61 +230,66 @@ const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: st
     </div>
   );
   
-  // TEAM CARD 
-  const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
-    const [expanded, setExpanded] = useState(false);
-    const canView = isMyTeam || isAdmin;
-    
-    useEffect(() => { if (isMyTeam) setExpanded(true); }, [isMyTeam]);
+  // Función de apoyo para evitar que los datos se líen
+const safeArray = (data: any) => { if (!data) return []; return Array.isArray(data) ? data : Object.values(data); };
+
+// TEAM CARD 
+const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
+  const [expanded, setExpanded] = useState(false);
+  const canView = isMyTeam || isAdmin;
   
-    const squadData = team.squad || {};
-    
-    const filterByPos = (pos: string) => (Array.isArray(squadData.titulares) ? squadData.titulares : []).filter((p:any) => p.posicion === pos);
-    const trophies = team.trophies || [];
-    const getRankColor = (r: number) => { if (r === 1) return "text-[#ffd700] drop-shadow-md"; if (r === 2) return "text-[#c0c0c0]"; if (r === 3) return "text-[#cd7f32]"; return "text-white/30"; };
+  useEffect(() => { if (isMyTeam) setExpanded(true); }, [isMyTeam]);
+
+  const squadData = team.squad || {};
+  const filterByPos = (pos: string) => safeArray(squadData.titulares).filter((p:any) => p && p.posicion === pos);
   
-    return (
-      <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e] animate-pulse-slow shadow-[0_0_10px_rgba(34,197,94,0.3)] ring-1 ring-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
-         <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
-            <div className="flex items-center gap-4">
-                <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
-                <div>
-                    <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
-                    <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>{team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}</div>
-                    {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
-                </div>
+  const trophies = team.trophies || [];
+  const getRankColor = (r: number) => { if (r === 1) return "text-[#ffd700] drop-shadow-md"; if (r === 2) return "text-[#c0c0c0]"; if (r === 3) return "text-[#cd7f32]"; return "text-white/30"; };
+
+  return (
+    <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e] animate-pulse-slow shadow-[0_0_10px_rgba(34,197,94,0.3)] ring-1 ring-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
+       <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
+          <div className="flex items-center gap-4">
+              <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
+              <div>
+                  <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
+                  <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>{team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}</div>
+                  {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
+              </div>
+          </div>
+          <div className="flex items-center gap-4">
+              <div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
+              {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
+          </div>
+       </div>
+       {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
+       {expanded && canView && (
+         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
+            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
+              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+              <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
-                {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
+            <div className="grid grid-cols-2 gap-3">
+               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo && squadData.banquillo.length > 0 ? squadData.banquillo.map((p:any) => <BenchCard key={p.id} player={p} id="S" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
+               <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-2 gap-2">{squadData.extras && squadData.extras.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
             </div>
          </div>
-         {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
-         {expanded && canView && (
-           <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
-              <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
-                <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                 <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo && squadData.banquillo.length > 0 ? squadData.banquillo.map((p:any) => <BenchCard key={p.id} player={p} id="S" posColor={posColors[p.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
-                 <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-2 gap-2">{squadData.extras && squadData.extras.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" posColor={posColors[p.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
-              </div>
-           </div>
-         )}
-      </div>
-    );
-  };
-  // ==========================================
+       )}
+    </div>
+  );
+};
+
+// ==========================================
 // 4. CAMPO DE FÚTBOL Y BANQUILLO
 // ==========================================
 
-const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain, substitutions, matchday }: any) => {
-    const { subbedOutIds } = substitutions || { subbedOutIds: new Set() };
+const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain, substitutions, matchday, renderPointsBadge }: any) => {
+    const { subbedOutIds, penalizedSlots } = substitutions || { subbedOutIds: new Set(), penalizedSlots: new Set() };
     const isEditable = !matchday || (Date.now() >= new Date(SIMULATED_GAME_START).getTime() && LINEUP_MATCHDAYS.indexOf(CURRENT_REAL_MATCHDAY) + 1 === LINEUP_MATCHDAYS.indexOf(matchday));
+    const isMatchdayClosed = GLOBAL_CLOSED_MATCHDAYS[matchday] || false;
   
     return (
       <div className="mt-6 relative w-full aspect-[4/5] bg-gradient-to-b from-green-600 to-green-700 rounded-[2.5rem] border-[4px] border-white/20 overflow-hidden shadow-2xl">
@@ -298,8 +303,6 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
           <div className="absolute bottom-4 left-1/2 w-48 h-24 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
           <div className="absolute bottom-4 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-lg pointer-events-none"></div>
           <div className="absolute bottom-28 left-1/2 w-20 h-10 border-2 border-b-0 border-white/40 -translate-x-1/2 rounded-t-full pointer-events-none"></div>
-          <div className="absolute top-[29%] left-4 right-4 border-t border-dashed border-white/20 pointer-events-none"></div>
-          <div className="absolute top-[54%] left-4 right-4 border-t border-dashed border-white/20 pointer-events-none"></div>
           
           <div className="absolute top-[8%] left-0 -translate-y-1/2 bg-[#ef4444] py-1.5 px-3 rounded-r-lg shadow-xl text-white text-[10px] font-black italic z-20 border-r border-y border-white/20">DEL</div>
           <div className="absolute top-[33%] left-0 -translate-y-1/2 bg-[#10b981] py-1.5 px-3 rounded-r-lg shadow-xl text-white text-[10px] font-black italic z-20 border-r border-y border-white/20">MED</div>
@@ -310,22 +313,37 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
               <div key={row.pos} className={`absolute w-full -translate-y-1/2 flex justify-${row.slots.length===1?'center':'between'} gap-1 px-6 z-30`} style={{top: row.top}}>
                   {row.slots.map(i => {
                       const id = `${row.pos}-${i}`; const p = selected[id];
-                      const isSubbedOut = p && !isEditable && subbedOutIds.has(p.id);
-                      const bgClass = isSubbedOut ? 'bg-gray-500 border-gray-400' : (p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20');
-                      const textClass = isSubbedOut ? 'text-white' : 'text-black';
+                      
+                      const isPenalized = isMatchdayClosed && penalizedSlots.has(id);
+                      const isSubbedOut = p && !isEditable && subbedOutIds.has(p.id) && !isPenalized;
+                      
+                      const bgClass = isPenalized ? 'bg-red-900/90 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : (isSubbedOut ? 'bg-gray-500 border-gray-400' : (p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'));
+                      const textClass = (isSubbedOut || isPenalized) ? 'text-white' : 'text-black';
   
                       return (
                           <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
-                              <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] cursor-pointer' : ''}`}>
-                                  {p ? <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span> : <IconPlus size={18} />}
-                                  {p && step >= 2 && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
-                                  {p && !isEditable && isSubbedOut && (
+                              <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
+                                  
+                                  {isPenalized ? (
+                                      <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] z-50 animate-pulse">-1</span>
+                                  ) : p ? (
+                                      <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span>
+                                  ) : (
+                                      <IconPlus size={18} />
+                                  )}
+  
+                                  {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
+                                  
+                                  {/* AQUÍ VUELVEN LAS BURBUJAS DE PUNTOS */}
+                                  {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, captain === p.id)}
+  
+                                  {isSubbedOut && (
                                       <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
                                           <IconSub size={16} className="text-white" />
                                       </div>
                                   )}
                               </div>
-                              {p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
+                              {p && !isPenalized && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
                           </div>
                       );
                   })}
@@ -335,6 +353,9 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
     );
   };
   
+  // ==========================================
+  // 5. VISTAS DE DATOS: GRÁFICAS Y CALENDARIO
+  // ==========================================
   const BenchCard = ({ player, id, posColor, onClick, isSubbedIn, matchday }: any) => {
     if (!player) return (
         <div onClick={onClick} className="h-full flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-white/20 cursor-pointer hover:bg-white/5 transition-colors p-4">
@@ -377,11 +398,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
       </div>
     );
   };
-  
-  // ==========================================
-  // 5. VISTAS DE DATOS: GRÁFICAS Y CALENDARIO
-  // ==========================================
-  
+
   const EvolutionChart = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
       const height = 220; const width = 350; const padding = 30;
       const matchdays = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"]; 
@@ -527,17 +544,15 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
       </div>
     );
   };
-  // ==========================================
+// ==========================================
 // 8. BUSCADOR INTELIGENTE Y MOTOR DE SUSTITUCIONES
 // ==========================================
 
+const GLOBAL_CLOSED_MATCHDAYS: Record<string, boolean> = {};
+
 const getPlayerPointsRow = (playerName: string, matchday: string) => {
     if (!playerName) return undefined;
-    
-    // Comprobamos la tabla MOCK_SCORES (Para que funcione el test local de sustituciones)
-    if (matchday === CURRENT_REAL_MATCHDAY && MOCK_SCORES[playerName] !== undefined) {
-        return MOCK_SCORES[playerName];
-    }
+    if (matchday === CURRENT_REAL_MATCHDAY && MOCK_SCORES[playerName] !== undefined) return MOCK_SCORES[playerName];
     
     const scores = GLOBAL_SCORES[playerName];
     if (scores && scores[matchday] !== undefined) return scores[matchday];
@@ -553,26 +568,27 @@ const getPlayerPointsRow = (playerName: string, matchday: string) => {
 };
 
 // --- MOTOR INTELIGENTE DE SUSTITUCIONES ---
-const processSubstitutions = (titularesArr: any[], banquilloArr: any[], captainId: number | null, matchday: string) => {
-    let currentDefs = titularesArr.filter(p => p.posicion === 'DEF').length;
-    let currentMeds = titularesArr.filter(p => p.posicion === 'MED').length;
-    let currentDels = titularesArr.filter(p => p.posicion === 'DEL').length;
-    let currentPor = titularesArr.filter(p => p.posicion === 'POR').length;
+const processSubstitutions = (titularesObj: Record<string, any>, banquilloArr: any[], captainId: number | null, matchday: string, isClosed: boolean) => {
+    const titularesArr = Object.values(titularesObj).filter(Boolean);
+    let currentDefs = titularesArr.filter((p:any) => p?.posicion === 'DEF').length;
+    let currentMeds = titularesArr.filter((p:any) => p?.posicion === 'MED').length;
+    let currentDels = titularesArr.filter((p:any) => p?.posicion === 'DEL').length;
+    let currentPor = titularesArr.filter((p:any) => p?.posicion === 'POR').length;
 
     const subbedOutIds = new Set<number>();
     const subbedInIds = new Set<number>();
     const benchUsed = new Set<number>();
+    const penalizedSlots = new Set<string>(); // Casillas que recibirán el -1 rojo
     
     let total = 0;
-    let emptySlots = Math.max(0, 11 - titularesArr.length); 
+    const dnpSlots: string[] = [];
 
-    const dnpStarters: any[] = [];
-
-    titularesArr.forEach(p => {
+    // 1. Evaluar Titulares
+    Object.entries(titularesObj).forEach(([slotId, p]) => {
+        if (!p) return;
         const pts = getPlayerPointsRow(p.nombre, matchday);
-        // Si el valor es estrictamente NULL, significa NO JUEGA
         if (pts === null) {
-            dnpStarters.push(p);
+            dnpSlots.push(slotId); // NO JUEGA (DNP)
             subbedOutIds.add(p.id);
         } else {
             let score = pts || 0;
@@ -581,12 +597,15 @@ const processSubstitutions = (titularesArr: any[], banquilloArr: any[], captainI
         }
     });
 
-    dnpStarters.forEach(p => {
+    let unfilledDnpCount = 0;
+
+    // 2. Intentar sustituciones respetando la táctica y el orden
+    dnpSlots.forEach(slotId => {
+        const p = titularesObj[slotId];
         let replaced = false;
         for (let i = 0; i < banquilloArr.length; i++) {
             const subPlayer = banquilloArr[i];
-            if (!subPlayer) continue;
-            if (benchUsed.has(subPlayer.id)) continue;
+            if (!subPlayer || benchUsed.has(subPlayer.id)) continue;
             
             let newDefs = currentDefs + (subPlayer.posicion === 'DEF' ? 1 : 0) - (p.posicion === 'DEF' ? 1 : 0);
             let newMeds = currentMeds + (subPlayer.posicion === 'MED' ? 1 : 0) - (p.posicion === 'MED' ? 1 : 0);
@@ -597,29 +616,53 @@ const processSubstitutions = (titularesArr: any[], banquilloArr: any[], captainI
                 benchUsed.add(subPlayer.id);
                 subbedInIds.add(subPlayer.id);
                 replaced = true;
-                
-                currentDefs = newDefs;
-                currentMeds = newMeds;
-                currentDels = newDels;
-                currentPor = newPor;
+                currentDefs = newDefs; currentMeds = newMeds; currentDels = newDels; currentPor = newPor;
                 
                 const subPts = getPlayerPointsRow(subPlayer.nombre, matchday);
                 let score = subPts || 0;
                 if (subPlayer.id === captainId) score *= 2; 
-                
                 total += score;
                 break;
             }
         }
-        if (!replaced) emptySlots += 1;
+        if (!replaced) {
+            unfilledDnpCount++;
+            if (isClosed) penalizedSlots.add(slotId); // Solo penaliza si la jornada está cerrada
+        }
     });
 
-    total -= emptySlots; // Penalización por hueco vacío (-1)
+    // 3. Huecos vacíos desde el principio (El usuario mandó menos de 11 jugadores)
+    const naturallyEmptyCount = Math.max(0, 11 - titularesArr.length);
+    if (isClosed) {
+        total -= (unfilledDnpCount + naturallyEmptyCount); // Aplica -1 por cada fallo
+        
+        if (naturallyEmptyCount > 0) {
+            const allPossibleSlots = ["POR-1", "DEF-1", "DEF-2", "DEF-3", "DEF-4", "DEF-5", "MED-1", "MED-2", "MED-3", "MED-4", "MED-5", "DEL-1", "DEL-2", "DEL-3"];
+            let penalizedEmpty = 0;
+            for (const slot of allPossibleSlots) {
+                if (!titularesObj[slot] && penalizedEmpty < naturallyEmptyCount) {
+                    penalizedSlots.add(slot);
+                    penalizedEmpty++;
+                }
+            }
+        }
+    }
 
-    return { total, subbedOutIds, subbedInIds };
+    return { total, subbedOutIds, subbedInIds, penalizedSlots };
 };
 
 
+
+
+const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: string | undefined, isAdmin: boolean }) => {
+    const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => b.points - a.points); }, [teams]); 
+    return (
+        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
+            <div className="space-y-4">{sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} isAdmin={isAdmin} />)}</div>
+        </div>
+    );
+};
 // ==========================================
 // 9. TABLAS DE PUNTUACIONES (VISTAS)
 // ==========================================
@@ -628,7 +671,15 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
     const [isOpen, setIsOpen] = useState(isMyTeam);
     const positionOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
     const safeSquad = team.squad || {};
-    const allPlayers = [...(Array.isArray(safeSquad.titulares) ? safeSquad.titulares : []), ...(Array.isArray(safeSquad.banquillo) ? safeSquad.banquillo : []), ...(Array.isArray(safeSquad.extras) ? safeSquad.extras : [])].sort((a: any, b: any) => { const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; if (posDiff !== 0) return posDiff; return a.nombre.localeCompare(b.nombre); });
+    
+    // Aquí nos aseguramos de que lee los titulares, sea lista u objeto
+    const allPlayers = [...safeArray(safeSquad.titulares), ...safeArray(safeSquad.banquillo), ...safeArray(safeSquad.extras)]
+        .filter(Boolean)
+        .sort((a: any, b: any) => { 
+            const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; 
+            if (posDiff !== 0) return posDiff; return a.nombre.localeCompare(b.nombre); 
+        });
+        
     const canView = isMyTeam || isAdmin;
     useEffect(() => { if (isMyTeam) setIsOpen(true); }, [isMyTeam]);
 
@@ -657,22 +708,11 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
         </div>
     );
 };
-
-const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: string | undefined, isAdmin: boolean }) => {
-    const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => b.points - a.points); }, [teams]); 
-    return (
-        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
-            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
-            <div className="space-y-4">{sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} isAdmin={isAdmin} />)}</div>
-        </div>
-    );
-};
-
 // ==========================================
 // 10. PANTALLA VIP: PANEL DE ADMINISTRACIÓN
 // ==========================================
 
-const PlayerAdminRow = ({ p, onRefresh, adminMatchday }: { p: any, onRefresh: () => void, adminMatchday: string }) => {
+const PlayerAdminRow = ({ p, onRefresh, adminMatchday, isMatchdayClosed }: any) => {
     const [manualPts, setManualPts] = useState(0); 
     const [played, setPlayed] = useState(false); 
     const [starter, setStarter] = useState(false); 
@@ -683,19 +723,26 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday }: { p: any, onRefresh: ()
     const [doubleYellow, setDoubleYellow] = useState(false); 
     const [red, setRed] = useState(false); 
     const [isSaving, setIsSaving] = useState(false); 
-    const [saved, setSaved] = useState(false);
     
-    // ESTADO PARA MARCAR AL JUGADOR COMO "NO JUEGA"
     const [dnp, setDnp] = useState(false); 
+    const [isLocked, setIsLocked] = useState(false); // NUEVO: Controla si ya se ha guardado
 
+    // Comprueba si el jugador ya tiene puntuación guardada al cargar
     useEffect(() => {
         const savedValue = GLOBAL_SCORES[p.nombre]?.[adminMatchday];
-        if (savedValue === null) {
-            setDnp(true);
-            setManualPts(0);
+        if (savedValue !== undefined) {
+            setIsLocked(true); // Bloquea la edición por defecto
+            if (savedValue === null) {
+                setDnp(true);
+                setManualPts(0);
+            } else {
+                setDnp(false);
+                setManualPts(savedValue);
+            }
         } else {
+            setIsLocked(false);
             setDnp(false);
-            setManualPts(savedValue || 0);
+            setManualPts(0);
         }
         setPlayed(false); setStarter(false); setMatchRes(null); setSofa(''); setCleanSheet(false); setGkGoals(''); setDoubleYellow(false); setRed(false);
     }, [p.nombre, adminMatchday]);
@@ -712,15 +759,24 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday }: { p: any, onRefresh: ()
         const newScores = { ...currentScores, [adminMatchday]: finalValue };
         
         const { error } = await supabase.from('player_scores').upsert({ player_name: p.nombre, scores: newScores });
-        if (!error) { GLOBAL_SCORES[p.nombre] = newScores; setSaved(true); onRefresh(); setTimeout(() => setSaved(false), 2500); } else alert("Error al guardar: " + error.message);
+        if (!error) { 
+            GLOBAL_SCORES[p.nombre] = newScores; 
+            setIsLocked(true); // Bloquea la fila tras guardar con éxito
+            onRefresh(); 
+        } else {
+            alert("Error al guardar: " + error.message);
+        }
         setIsSaving(false);
     };
 
     const sofascoreOptions = [ { label: "9.5 - 10 (+14)", val: 14 }, { label: "9.0 - 9.4 (+13)", val: 13 }, { label: "8.6 - 8.9 (+12)", val: 12 }, { label: "8.2 - 8.5 (+11)", val: 11 }, { label: "8.0 - 8.1 (+10)", val: 10 }, { label: "7.8 - 7.9 (+9)", val: 9 }, { label: "7.6 - 7.7 (+8)", val: 8 }, { label: "7.4 - 7.5 (+7)", val: 7 }, { label: "7.2 - 7.3 (+6)", val: 6 }, { label: "7.0 - 7.1 (+5)", val: 5 }, { label: "6.8 - 6.9 (+4)", val: 4 }, { label: "6.6 - 6.7 (+3)", val: 3 }, { label: "6.4 - 6.5 (+2)", val: 2 }, { label: "6.2 - 6.3 (+1)", val: 1 }, { label: "6.0 - 6.1 (0)", val: 0 }, { label: "5.8 - 5.9 (-1)", val: -1 }, { label: "5.6 - 5.7 (-2)", val: -2 }, { label: "5.4 - 5.5 (-3)", val: -3 }, { label: "5.2 - 5.3 (-4)", val: -4 }, { label: "5.0 - 5.1 (-5)", val: -5 }, { label: "0.0 - 4.9 (-6)", val: -6 } ];
     const gkGoalsOptions = [ { label: "0 Goles (+4)", val: 0 }, { label: "1 Gol (0)", val: 1 }, { label: "2 Goles (-2)", val: 2 }, { label: "3 Goles (-3)", val: 3 }, { label: "4 Goles (-4)", val: 4 }, { label: "5 Goles (-5)", val: 5 }, { label: "6 Goles (-6)", val: 6 }, { label: "7 Goles (-7)", val: 7 }, { label: "8 Goles (-8)", val: 8 }, { label: "9 Goles (-9)", val: 9 }, { label: "10 Goles (-10)", val: 10 } ];
 
+    // Si está cerrado globalmente o bloqueado por guardado, deshabilitamos
+    const isFormDisabled = isLocked || isMatchdayClosed;
+
     return (
-        <div className={`bg-[#1c2a45] border border-white/5 rounded-xl p-3 flex flex-col gap-3 transition-all ${dnp ? 'bg-[#0d1526] border-red-900/50' : 'hover:bg-white/5'}`}>
+        <div className={`bg-[#1c2a45] border rounded-xl p-3 flex flex-col gap-3 transition-all ${isLocked ? 'border-yellow-500/30 bg-yellow-900/10' : (dnp ? 'bg-[#0d1526] border-red-900/50' : 'border-white/5 hover:bg-white/5')}`}>
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                     <span className={`text-2xl ${dnp ? 'grayscale opacity-50' : ''}`}>{getFlag(p.seleccion)}</span>
@@ -730,19 +786,33 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday }: { p: any, onRefresh: ()
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setDnp(!dnp)} className={`px-2 py-1.5 rounded text-[9px] font-black transition-all border ${dnp ? 'bg-red-600 text-white border-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)] scale-105' : 'bg-black/40 text-white/40 border-white/10 hover:text-white'}`}>
+                    <button disabled={isFormDisabled} onClick={() => setDnp(!dnp)} className={`px-2 py-1.5 rounded text-[9px] font-black transition-all border ${dnp ? 'bg-red-600 text-white border-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)] scale-105' : 'bg-black/40 text-white/40 border-white/10 hover:text-white'} ${isFormDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         NO JUEGA
                     </button>
+                    
                     <div className={`w-10 h-8 rounded flex items-center justify-center font-black text-sm border ${dnp ? 'bg-red-900/40 text-red-500 border-red-500/50' : 'bg-black text-white border-white/10'}`}>
                         {dnp ? 'X' : totalPts}
                     </div>
-                    <button onClick={handleSave} disabled={isSaving} className={`text-white px-3 py-2 rounded font-black text-[10px] uppercase active:scale-95 transition-all shadow-lg ${saved ? 'bg-green-500 text-black' : 'bg-[#22c55e] hover:bg-green-600'}`}>
-                        {isSaving ? '...' : saved ? '¡GUARDADO!' : 'GUARDAR'}
-                    </button>
+                    
+                    {/* LÓGICA DE BOTONES: CERRADO / EDITAR / GUARDAR */}
+                    {isMatchdayClosed ? (
+                        <div className="bg-red-900/50 text-red-400 px-3 py-2 rounded font-black text-[10px] uppercase border border-red-500/50 cursor-not-allowed">
+                            CERRADO
+                        </div>
+                    ) : isLocked ? (
+                        <button onClick={() => setIsLocked(false)} className="bg-[#facc15] text-black px-3 py-2 rounded font-black text-[10px] uppercase active:scale-95 transition-all shadow-lg border border-yellow-600 hover:bg-yellow-400">
+                            EDITAR
+                        </button>
+                    ) : (
+                        <button onClick={handleSave} disabled={isSaving} className={`text-white px-3 py-2 rounded font-black text-[10px] uppercase active:scale-95 transition-all shadow-lg ${isSaving ? 'bg-gray-500' : 'bg-[#22c55e] hover:bg-green-600'}`}>
+                            {isSaving ? '...' : 'GUARDAR'}
+                        </button>
+                    )}
                 </div>
             </div>
             
-            <div className={`flex flex-col gap-2 transition-all duration-300 ${dnp ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+            {/* BLOQUEO DE BOTONES SI ESTÁ GUARDADO (isFormDisabled) O NO JUEGA (dnp) */}
+            <div className={`flex flex-col gap-2 transition-all duration-300 ${isFormDisabled ? 'opacity-40 pointer-events-none grayscale' : (dnp ? 'opacity-30 pointer-events-none grayscale' : '')}`}>
                 <div className="flex flex-wrap gap-1 items-center">
                     <button onClick={() => setPlayed(!played)} className={`px-2 py-1 rounded text-[9px] font-black transition-colors ${played ? 'bg-blue-600 text-white' : 'bg-blue-900/30 text-blue-400 border border-blue-500/30'}`}>+1 Juega</button>
                     <button onClick={() => setStarter(!starter)} className={`px-2 py-1 rounded text-[9px] font-black transition-colors ${starter ? 'bg-blue-600 text-white' : 'bg-blue-900/30 text-blue-400 border border-blue-500/30'}`}>+1 Titular</button>
@@ -771,6 +841,8 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday }: { p: any, onRefresh: ()
                     <button onClick={() => setRed(!red)} className={`px-2 py-1 rounded text-[9px] font-black transition-colors ${red ? 'bg-red-600 text-white shadow-lg' : 'bg-red-900/30 text-red-500 border border-red-500/30'}`}>-5 Roja</button>
                     <button onClick={() => setManualPts(p => p - 3)} className="px-2 py-1 bg-orange-900/30 text-orange-500 border border-orange-500/30 rounded text-[9px] font-black active:bg-orange-900/50">-3 Fall. Pen.</button>
                     <button onClick={() => setManualPts(p => p - 1)} className="px-2 py-1 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[9px] font-black active:bg-red-900/50">-1 Prop. Meta</button>
+                    
+                    {/* El botón Reset lo dejamos libre por si te equivocas tras darle a EDITAR */}
                     <button onClick={handleReset} className="px-2 py-1 bg-black text-white/50 border border-white/20 rounded text-[9px] font-black hover:text-white ml-auto pointer-events-auto">Reset</button>
                 </div>
             </div>
@@ -814,6 +886,20 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
     const [adminMatchday, setAdminMatchday] = useState("J1");
     const [searchTerm, setSearchTerm] = useState("");
 
+    const isMatchdayClosed = GLOBAL_CLOSED_MATCHDAYS[adminMatchday] || false;
+
+    const handleToggleClose = async () => {
+        const newVal = !isMatchdayClosed;
+        const matchId = `CLOSED_${adminMatchday}`;
+        const { error } = await supabase.from('match_results').upsert({ match_id: matchId, result: newVal ? 'true' : 'false' });
+        if (!error) {
+            GLOBAL_CLOSED_MATCHDAYS[adminMatchday] = newVal;
+            onRefresh();
+        } else {
+            alert("Error al guardar estado: " + error.message);
+        }
+    };
+
     const filteredPlayers = useMemo(() => {
         if (searchTerm.length < 3) return [];
         const posOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
@@ -827,9 +913,10 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
     return (
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
             <div className="flex justify-between items-center bg-red-600/10 border-2 border-red-500/50 rounded-2xl p-4 mb-6 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                <div><h1 className="text-2xl font-black italic text-red-500 uppercase tracking-tighter flex items-center gap-2"><IconSettings size={28} className="animate-spin-slow" /> MODO DIOS</h1><p className="text-red-400/60 text-[9px] font-bold uppercase tracking-widest">Panel de Control General</p></div>
+                <div><h1 className="text-2xl font-black italic text-red-500 uppercase tracking-tighter flex items-center gap-2"><IconSettings size={28} className="animate-spin-slow" /> MODO DIOS</h1><p className="text-red-400/60 text-[9px] font-bold uppercase tracking-widest">Panel de Control</p></div>
                 {adminTab === 'puntos' && ( <select value={adminMatchday} onChange={e => setAdminMatchday(e.target.value)} className="bg-red-600 text-white font-black p-2 rounded-xl outline-none shadow-lg border border-red-500 text-sm cursor-pointer">{LINEUP_MATCHDAYS.map(j => <option key={j} value={j} className="bg-[#1c2a45] text-white">Editando {j}</option>)}</select> )}
             </div>
+            
             <div className="flex gap-2 bg-black/40 p-2 rounded-xl border border-white/5 mb-6 overflow-x-auto">
                 <button onClick={()=>setAdminTab('puntos')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${adminTab==='puntos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Puntos</button>
                 <button onClick={()=>setAdminTab('partidos')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${adminTab==='partidos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Partidos</button>
@@ -838,9 +925,20 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
             
             {adminTab === 'puntos' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                    {/* BOTÓN CERRAR JORNADA */}
+                    <div className="flex justify-between items-center bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
+                        <div>
+                            <h3 className="text-sm font-black text-blue-400 uppercase">Estado Jornada</h3>
+                            <p className="text-[9px] text-white/50">Cerrar para aplicar el -1 a los huecos vacíos</p>
+                        </div>
+                        <button onClick={handleToggleClose} className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center gap-2 ${isMatchdayClosed ? 'bg-red-600 text-white border border-red-500' : 'bg-[#22c55e] text-black border border-green-500'}`}>
+                            {isMatchdayClosed ? <><IconLock size={14}/> CERRADA</> : <><IconCheck size={14}/> ABIERTA</>}
+                        </button>
+                    </div>
+
                     <input type="text" placeholder={`🔍 Buscar para sumar a ${adminMatchday}`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-[#1c2a45] border border-white/10 p-4 rounded-xl text-white font-bold outline-none focus:border-red-500 transition-colors shadow-inner" />
                     <div className="space-y-2">
-                        {searchTerm.length >= 3 ? ( filteredPlayers.length > 0 ? filteredPlayers.map(p => ( <PlayerAdminRow key={p.id} p={p} onRefresh={onRefresh} adminMatchday={adminMatchday} /> )) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Ningún resultado encontrado.</div> ) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Escribe al menos 3 letras. (Ej: Alemania)</div>}
+                    {searchTerm.length >= 3 ? ( filteredPlayers.length > 0 ? filteredPlayers.map(p => ( <PlayerAdminRow key={p.id} p={p} onRefresh={onRefresh} adminMatchday={adminMatchday} isMatchdayClosed={isMatchdayClosed} /> )) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Ningún resultado encontrado.</div> ) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Escribe al menos 3 letras. (Ej: Alemania)</div>}
                     </div>
                 </div>
             )}
@@ -1013,64 +1111,74 @@ export default function EuroApp() {
   const isJornadaEditable = (j: string) => { if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return false; const activeIndex = LINEUP_MATCHDAYS.indexOf(CURRENT_REAL_MATCHDAY); const targetIndex = LINEUP_MATCHDAYS.indexOf(j); return targetIndex === activeIndex + 1; };
 
   // --- SUSTITUCIONES EN TIEMPO REAL ---
+  // --- SUSTITUCIONES EN TIEMPO REAL ---
   const currentViewSubstitutions = useMemo(() => {
-      const titularesArr = Object.values(lineupViewJornada === CURRENT_REAL_MATCHDAY ? selected : lineupSelected);
-      const benchObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? bench : lineupBench;
-      const banquilloArr = ["S1","S2","S3","S4","S5","S6"].map(k => benchObj[k]).filter(Boolean);
-      const cap = lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain;
-      
-      return processSubstitutions(titularesArr, banquilloArr, cap, lineupViewJornada);
-  }, [selected, bench, captain, lineupSelected, lineupBench, lineupCaptain, lineupViewJornada]);
+    const selectedObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? selected : lineupSelected;
+    const benchObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? bench : lineupBench;
+    const banquilloArr = ["S1","S2","S3","S4","S5","S6"].map(k => benchObj[k]).filter(Boolean);
+    const cap = lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain;
+    const isClosed = GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada] || false;
+    
+    return processSubstitutions(selectedObj, banquilloArr, cap, lineupViewJornada, isClosed);
+}, [selected, bench, captain, lineupSelected, lineupBench, lineupCaptain, lineupViewJornada]);
 
-  const loadUserData = async (u: any) => { 
-      try {
-          const { data: scoresData } = await supabase.from('player_scores').select('*');
-          if (scoresData) { scoresData.forEach((row: any) => { GLOBAL_SCORES[row.player_name] = row.scores || {}; }); }
+const loadUserData = async (u: any) => { 
+    try {
+        const { data: scoresData } = await supabase.from('player_scores').select('*');
+        if (scoresData) { scoresData.forEach((row: any) => { GLOBAL_SCORES[row.player_name] = row.scores || {}; }); }
 
-          const { data: matchesData } = await supabase.from('match_results').select('*');
-          if (matchesData) { matchesData.forEach((row: any) => { GLOBAL_MATCHES[row.match_id] = row.result; }); }
+        const { data: matchesData } = await supabase.from('match_results').select('*');
+        if (matchesData) { 
+            matchesData.forEach((row: any) => { 
+                if (row.match_id.startsWith('CLOSED_')) {
+                    GLOBAL_CLOSED_MATCHDAYS[row.match_id.replace('CLOSED_', '')] = (row.result === 'true');
+                } else {
+                    GLOBAL_MATCHES[row.match_id] = row.result; 
+                }
+            }); 
+        }
 
-          const { data: dbTeams } = await supabase.from('teams').select('*');
-          const myData = dbTeams?.find((d:any) => d.id === u.id);
-          const tName = myData?.team_name || u.user_metadata?.team_name || "Mi Equipo";
-          
-          let myParsedSquad = { titulares: [], banquillo: [], extras: [], captain: null };
-          if (myData) {
-              let s = myData.squad;
-              if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
-              setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {}); setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
-              if (s?.j2) { setLineupSelected(s.j2.selected || {}); setLineupBench(s.j2.bench || {}); setLineupExtras(s.j2.extras || {}); setLineupCaptain(s.j2.captain || null); }
-              const benchArray = s?.bench ? ["S1","S2","S3","S4","S5","S6"].map(k=>s.bench[k]).filter(Boolean) : [];
-              myParsedSquad = { titulares: s?.selected ? Object.values(s.selected) : [], banquillo: benchArray, extras: s?.extras ? Object.values(s.extras) : [], captain: s?.captain };
-              let q = myData.quiniela; if (typeof q === 'string') { try { q = JSON.parse(q); } catch (e) { q = {}; } }
-              setQuinielaSelections(q?.selections || {}); setQuinielaLocked(q?.locked || false);
-          }
+        const { data: dbTeams } = await supabase.from('teams').select('*');
+        const myData = dbTeams?.find((d:any) => d.id === u.id);
+        const tName = myData?.team_name || u.user_metadata?.team_name || "Mi Equipo";
+        
+        let myParsedSquad = { titulares: {}, banquillo: [], extras: [], captain: null };
+        if (myData) {
+            let s = myData.squad;
+            if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
+            setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {}); setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
+            if (s?.j2) { setLineupSelected(s.j2.selected || {}); setLineupBench(s.j2.bench || {}); setLineupExtras(s.j2.extras || {}); setLineupCaptain(s.j2.captain || null); }
+            const benchArray = s?.bench ? ["S1","S2","S3","S4","S5","S6"].map(k=>s.bench[k]).filter(Boolean) : [];
+            myParsedSquad = { titulares: s?.selected || {}, banquillo: benchArray, extras: s?.extras ? Object.values(s.extras) : [], captain: s?.captain };
+            let q = myData.quiniela; if (typeof q === 'string') { try { q = JSON.parse(q); } catch (e) { q = {}; } }
+            setQuinielaSelections(q?.selections || {}); setQuinielaLocked(q?.locked || false);
+        }
 
-          let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, id: t.id, name: t.team_name, user: t.username}, i));
-          
-          combinedTeams = combinedTeams.map(t => {
-              const j1Squad = t.squad;
-              const j2Squad = t.squad?.j2 ? { titulares: Object.values(t.squad.j2.selected||{}), banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j2.bench?.[k]).filter(Boolean), captain: t.squad.j2.captain } : j1Squad;
-              const j3Squad = t.squad?.j3 ? { titulares: Object.values(t.squad.j3.selected||{}), banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j3.bench?.[k]).filter(Boolean), captain: t.squad.j3.captain } : j2Squad;
+        let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, id: t.id, name: t.team_name, user: t.username}, i));
+        
+        combinedTeams = combinedTeams.map(t => {
+            const j1Squad = t.squad;
+            const j2Squad = t.squad?.j2 ? { titulares: t.squad.j2.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j2.bench?.[k]).filter(Boolean), captain: t.squad.j2.captain } : { titulares: j1Squad.selectedObj || j1Squad.titulares, banquillo: j1Squad.banquillo, captain: j1Squad.captain };
+            const j3Squad = t.squad?.j3 ? { titulares: t.squad.j3.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j3.bench?.[k]).filter(Boolean), captain: t.squad.j3.captain } : j2Squad;
 
-              const ptsJ1 = processSubstitutions(j1Squad.titulares || [], j1Squad.banquillo || [], j1Squad.captain, "J1").total;
-              const ptsJ2 = processSubstitutions(j2Squad.titulares || [], j2Squad.banquillo || [], j2Squad.captain, "J2").total;
-              const ptsJ3 = processSubstitutions(j3Squad.titulares || [], j3Squad.banquillo || [], j3Squad.captain, "J3").total;
-              
-              const total = ptsJ1 + ptsJ2 + ptsJ3;
-              return { ...t, points: total, matchdayPoints: { "J1": ptsJ1, "J2": ptsJ2, "J3": ptsJ3 } };
-          });
+            const ptsJ1 = processSubstitutions(j1Squad.selectedObj || j1Squad.titulares || {}, j1Squad.banquillo || [], j1Squad.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
+            const ptsJ2 = processSubstitutions(j2Squad.titulares || {}, j2Squad.banquillo || [], j2Squad.captain, "J2", GLOBAL_CLOSED_MATCHDAYS["J2"] || false).total;
+            const ptsJ3 = processSubstitutions(j3Squad.titulares || {}, j3Squad.banquillo || [], j3Squad.captain, "J3", GLOBAL_CLOSED_MATCHDAYS["J3"] || false).total;
+            
+            const total = ptsJ1 + ptsJ2 + ptsJ3;
+            return { ...t, points: total, matchdayPoints: { "J1": ptsJ1, "J2": ptsJ2, "J3": ptsJ3 } };
+        });
 
-          const myIndex = combinedTeams.findIndex((t:any) => t.id === u.id);
-          const ptsMyJ1 = processSubstitutions(myParsedSquad.titulares, myParsedSquad.banquillo, myParsedSquad.captain, "J1").total;
-          const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: ptsMyJ1, matchdayPoints: { "J1": ptsMyJ1 }, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
+        const myIndex = combinedTeams.findIndex((t:any) => t.id === u.id);
+        const ptsMyJ1 = processSubstitutions(myParsedSquad.titulares, myParsedSquad.banquillo, myParsedSquad.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
+        const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: ptsMyJ1, matchdayPoints: { "J1": ptsMyJ1 }, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
 
-          if (myIndex === -1) combinedTeams.push(formatTeamData(myLiveData, 0));
-          else combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
+        if (myIndex === -1) combinedTeams.push(formatTeamData(myLiveData, 0));
+        else combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
 
-          setAllTeams(combinedTeams);
-      } catch(e) { console.error("Error cargando datos:", e); }
-  };
+        setAllTeams(combinedTeams);
+    } catch(e) { console.error("Error cargando datos:", e); }
+};
 
   const handleLogin = async (e: string, u: string, t?: string) => {
     // 1. Forzamos el Modo Dios si es tu email
@@ -1274,7 +1382,8 @@ export default function EuroApp() {
                  </div>
              )}
 
-             <Field selected={lineupViewJornada===CURRENT_REAL_MATCHDAY ? selected : lineupSelected} step={2} canInteractField={false} setActiveSlot={setActiveSlot} captain={displayCaptain} setCaptain={setLineupCaptain} substitutions={currentViewSubstitutions} matchday={lineupViewJornada} />
+<Field selected={lineupViewJornada===CURRENT_REAL_MATCHDAY ? selected : lineupSelected} step={2} canInteractField={false} setActiveSlot={setActiveSlot} captain={displayCaptain} setCaptain={setLineupCaptain} substitutions={currentViewSubstitutions} matchday={lineupViewJornada} renderPointsBadge={renderPointsBadge} />
+
              
              <div className="mt-8 transition-all duration-300">
                  <div className="p-4 rounded-[2.5rem] bg-[#1c2a45]/50 border border-white/5 mb-4 shadow-xl">
