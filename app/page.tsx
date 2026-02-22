@@ -895,7 +895,7 @@ const processSubstitutions = (starters: any, bench: any[], captain: number, matc
         return { total, subbedInIds, subbedOutIds, penalizedSlots };
     }
 
-    const formation = { POR: 0, DEF: 0, MED: 0, DEL: 0 };
+    const formation: Record<string, number> = { POR: 0, DEF: 0, MED: 0, DEL: 0 };
     const missingStarters: any[] = [];
     const activeStarters: any[] = [];
 
