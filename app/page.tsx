@@ -108,10 +108,10 @@ const formatTeamData = (team: any, index: number) => {
     return {
         ...team,
         squad: { titulares, banquillo, extras, captain: parsedSquad?.captain },
-        rawSquad: parsedSquad, // <-- NUEVO: Guardamos la caja fuerte con el historial de jornadas
+        rawSquad: parsedSquad, 
         points: team.points || 0, 
         matchdayPoints: team.matchdayPoints || { "J1": 0, "J2": 0, "J3": 0 },
-        hasPaidBet: team.hasPaidBet || false,
+        hasPaidBet: team.has_paid_bet || team.hasPaidBet || false, // <-- MAGIA AQUÍ
         evolution: team.evolution || [index+1]
     };
 };
@@ -142,8 +142,6 @@ const IconChevronUp = ({ size=18, className="" }: any) => <SvgBase size={size} c
 const IconChevronDown = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m6 9 6 6 6-6"/></SvgBase>;
 const IconUser = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SvgBase>;
 const IconBan = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></SvgBase>;
-const IconArrowUpDown = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m7 15 5 5 5-5"/><path d="M7 9l5-5 5 5"/></SvgBase>;
-const IconArrowDownUp = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></SvgBase>;
 const IconTrash2 = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgBase>;
 const IconRefresh = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></SvgBase>;
 const IconClipboard = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></SvgBase>;
@@ -161,6 +159,10 @@ const IconTshirt = ({ size=18, className="" }: any) => <SvgBase size={size} clas
 const IconSettings = ({ size=18, className="" }: any) => <SvgBase size={size} className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></SvgBase>;
 const IconAlertTriangle = ({size=16}:any) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 const IconSearch = ({size=24}:any) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const IconArrowUp = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>;
+const IconArrowDown = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
+const IconSave = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+
 const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: string, isError?: boolean }) => {
     const [displayedText, setDisplayedText] = useState("");
     useEffect(() => {
@@ -336,7 +338,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                   {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
                                   
                                   {/* AQUÍ VUELVEN LAS BURBUJAS DE PUNTOS */}
-                                  {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, captain === p.id)}
+                                  {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
   
                                   {isSubbedOut && (
                                       <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
@@ -856,88 +858,7 @@ const calculateQuinielaPrize = (selections: any, standings: any) => {
 };
 
 // --- MOTOR INTELIGENTE DE SUSTITUCIONES ---
-const processSubstitutions = (titularesObj: Record<string, any>, banquilloArr: any[], captainId: number | null, matchday: string, isClosed: boolean) => {
-    const titularesArr = Object.values(titularesObj).filter(Boolean);
-    let currentDefs = titularesArr.filter((p:any) => p?.posicion === 'DEF').length;
-    let currentMeds = titularesArr.filter((p:any) => p?.posicion === 'MED').length;
-    let currentDels = titularesArr.filter((p:any) => p?.posicion === 'DEL').length;
-    let currentPor = titularesArr.filter((p:any) => p?.posicion === 'POR').length;
 
-    const subbedOutIds = new Set<number>();
-    const subbedInIds = new Set<number>();
-    const benchUsed = new Set<number>();
-    const penalizedSlots = new Set<string>(); // Casillas que recibirán el -1 rojo
-    
-    let total = 0;
-    const dnpSlots: string[] = [];
-
-    // 1. Evaluar Titulares
-    Object.entries(titularesObj).forEach(([slotId, p]) => {
-        if (!p) return;
-        const pts = getPlayerPointsRow(p.nombre, matchday);
-        if (pts === null) {
-            dnpSlots.push(slotId); // NO JUEGA (DNP)
-            subbedOutIds.add(p.id);
-        } else {
-            let score = pts || 0;
-            if (p.id === captainId) score *= 2;
-            total += score;
-        }
-    });
-
-    let unfilledDnpCount = 0;
-
-    // 2. Intentar sustituciones respetando la táctica y el orden
-    dnpSlots.forEach(slotId => {
-        const p = titularesObj[slotId];
-        let replaced = false;
-        for (let i = 0; i < banquilloArr.length; i++) {
-            const subPlayer = banquilloArr[i];
-            if (!subPlayer || benchUsed.has(subPlayer.id)) continue;
-            
-            let newDefs = currentDefs + (subPlayer.posicion === 'DEF' ? 1 : 0) - (p.posicion === 'DEF' ? 1 : 0);
-            let newMeds = currentMeds + (subPlayer.posicion === 'MED' ? 1 : 0) - (p.posicion === 'MED' ? 1 : 0);
-            let newDels = currentDels + (subPlayer.posicion === 'DEL' ? 1 : 0) - (p.posicion === 'DEL' ? 1 : 0);
-            let newPor = currentPor + (subPlayer.posicion === 'POR' ? 1 : 0) - (p.posicion === 'POR' ? 1 : 0);
-
-            if (newPor === 1 && VALID_FORMATIONS.includes(`${newDefs}-${newMeds}-${newDels}`)) {
-                benchUsed.add(subPlayer.id);
-                subbedInIds.add(subPlayer.id);
-                replaced = true;
-                currentDefs = newDefs; currentMeds = newMeds; currentDels = newDels; currentPor = newPor;
-                
-                const subPts = getPlayerPointsRow(subPlayer.nombre, matchday);
-                let score = subPts || 0;
-                if (subPlayer.id === captainId) score *= 2; 
-                total += score;
-                break;
-            }
-        }
-        if (!replaced) {
-            unfilledDnpCount++;
-            if (isClosed) penalizedSlots.add(slotId); // Solo penaliza si la jornada está cerrada
-        }
-    });
-
-    // 3. Huecos vacíos desde el principio (El usuario mandó menos de 11 jugadores)
-    const naturallyEmptyCount = Math.max(0, 11 - titularesArr.length);
-    if (isClosed) {
-        total -= (unfilledDnpCount + naturallyEmptyCount); // Aplica -1 por cada fallo
-        
-        if (naturallyEmptyCount > 0) {
-            const allPossibleSlots = ["POR-1", "DEF-1", "DEF-2", "DEF-3", "DEF-4", "DEF-5", "MED-1", "MED-2", "MED-3", "MED-4", "MED-5", "DEL-1", "DEL-2", "DEL-3"];
-            let penalizedEmpty = 0;
-            for (const slot of allPossibleSlots) {
-                if (!titularesObj[slot] && penalizedEmpty < naturallyEmptyCount) {
-                    penalizedSlots.add(slot);
-                    penalizedEmpty++;
-                }
-            }
-        }
-    }
-
-    return { total, subbedOutIds, subbedInIds, penalizedSlots };
-};
 
 
 
@@ -954,49 +875,141 @@ const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: stri
 // ==========================================
 // 9. TABLAS DE PUNTUACIONES (VISTAS)
 // ==========================================
+const processSubstitutions = (starters: any, bench: any[], captain: number, matchday: string, isClosed: boolean) => {
+    let total = 0;
+    const subbedInIds = new Set();
+    const subbedOutIds = new Set();
+    const penalizedSlots = new Set();
+
+    if (!isClosed) {
+        Object.values(starters).forEach((p: any) => {
+            let pts = getPlayerPointsRow(p.nombre, matchday);
+            // Blindaje contra el NaN: solo sumamos si es un número válido
+            if (typeof pts === 'number') {
+                if (p.id === captain) pts *= 2;
+                total += pts;
+            }
+        });
+        return { total, subbedInIds, subbedOutIds, penalizedSlots };
+    }
+
+    const formation = { POR: 0, DEF: 0, MED: 0, DEL: 0 };
+    const missingStarters: any[] = [];
+    const activeStarters: any[] = [];
+
+    Object.entries(starters).forEach(([slot, p]: [string, any]) => {
+        const pts = getPlayerPointsRow(p.nombre, matchday);
+        if (typeof pts !== 'number') {
+            missingStarters.push({ slot, p });
+            subbedOutIds.add(p.id);
+        } else {
+            activeStarters.push(p);
+            formation[p.posicion] = (formation[p.posicion] || 0) + 1;
+            let pPts = pts;
+            if (p.id === captain) pPts *= 2;
+            total += pPts;
+        }
+    });
+
+    let subsUsed = 0;
+    const replacedSlots = new Set();
+
+    if (missingStarters.length > 0) {
+        bench.forEach((sub: any) => {
+            if (!sub || subsUsed >= missingStarters.length) return;
+            const subPts = getPlayerPointsRow(sub.nombre, matchday);
+            if (typeof subPts !== 'number') return; 
+
+            const neededPos = sub.posicion;
+            if (activeStarters.length < 11) {
+                const tempFormation = { ...formation };
+                tempFormation[neededPos]++;
+                
+                const isValid = 
+                    tempFormation.POR <= 1 &&
+                    tempFormation.DEF >= 3 && tempFormation.DEF <= 5 &&
+                    tempFormation.MED >= 2 && tempFormation.MED <= 5 &&
+                    tempFormation.DEL >= 1 && tempFormation.DEL <= 3;
+
+                if (isValid) {
+                    formation[neededPos]++;
+                    activeStarters.push(sub);
+                    subbedInIds.add(sub.id);
+                    subsUsed++;
+                    
+                    const matchIdx = missingStarters.findIndex(m => !replacedSlots.has(m.slot) && m.p.posicion === neededPos);
+                    if (matchIdx !== -1) replacedSlots.add(missingStarters[matchIdx].slot);
+                    else {
+                        const anyIdx = missingStarters.findIndex(m => !replacedSlots.has(m.slot));
+                        if (anyIdx !== -1) replacedSlots.add(missingStarters[anyIdx].slot);
+                    }
+
+                    let pts = subPts;
+                    if (sub.id === captain) pts *= 2;
+                    total += pts;
+                }
+            }
+        });
+    }
+
+    missingStarters.forEach(m => {
+        if (!replacedSlots.has(m.slot)) {
+            penalizedSlots.add(m.slot);
+            total -= 1; 
+        }
+    });
+
+    return { total, subbedInIds, subbedOutIds, penalizedSlots };
+};
 
 const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
     const [isOpen, setIsOpen] = useState(isMyTeam);
     const positionOrder: Record<string, number> = { "POR": 1, "DEF": 2, "MED": 3, "DEL": 4 };
     
-    // 1. RECOPILACIÓN HISTÓRICA DE JUGADORES
     const allUniquePlayers = new Map();
-
-    // A. Jugadores Actuales (Plantilla viva)
     const safeSquad = team.squad || {};
     const currentPlayers = [...safeArray(safeSquad.titulares), ...safeArray(safeSquad.banquillo), ...safeArray(safeSquad.extras)].filter(Boolean);
-    currentPlayers.forEach((p: any) => {
-        allUniquePlayers.set(p.id, { ...p, isSold: false });
-    });
+    currentPlayers.forEach((p: any) => allUniquePlayers.set(p.id, { ...p, isSold: false }));
 
-    // B. Jugadores Históricos (Viaje al pasado)
     const checkHistory = (phaseObj: any) => {
         if (!phaseObj) return;
         const pastPlayers = [...safeArray(phaseObj.selected || phaseObj.titulares), ...safeArray(phaseObj.bench || phaseObj.banquillo), ...safeArray(phaseObj.extras)].filter(Boolean);
         pastPlayers.forEach((p: any) => {
-            if (!allUniquePlayers.has(p.id)) {
-                // Si el jugador está en el pasado pero NO en el presente, está VENDIDO
-                allUniquePlayers.set(p.id, { ...p, isSold: true }); 
-            }
+            if (!allUniquePlayers.has(p.id)) allUniquePlayers.set(p.id, { ...p, isSold: true }); 
         });
     };
 
     const raw = team.rawSquad || {};
-    checkHistory(raw); // Historial de J1
-    checkHistory(raw.j2); // Historial de J2
-    checkHistory(raw.j3); // Historial de J3
+    checkHistory(raw); checkHistory(raw.j2); checkHistory(raw.j3); 
+    checkHistory(raw.oct); checkHistory(raw.cua); checkHistory(raw.sem); checkHistory(raw.fin);
 
-    // Ordenamos la tabla final
     const allPlayers = Array.from(allUniquePlayers.values()).sort((a: any, b: any) => {
-        if (a.isSold && !b.isSold) return 1; // Los vendidos van abajo del todo
-        if (!a.isSold && b.isSold) return -1;
+        if (a.isSold && !b.isSold) return 1; if (!a.isSold && b.isSold) return -1;
         const posDiff = positionOrder[a.posicion] - positionOrder[b.posicion]; 
-        if (posDiff !== 0) return posDiff; 
-        return a.nombre.localeCompare(b.nombre); 
+        if (posDiff !== 0) return posDiff; return a.nombre.localeCompare(b.nombre); 
     });
         
     const canView = isMyTeam || isAdmin;
     useEffect(() => { if (isMyTeam) setIsOpen(true); }, [isMyTeam]);
+
+    const getPhaseObj = (j: string) => {
+        if (j === 'J2') return raw.j2 || raw;
+        if (j === 'J3') return raw.j3 || raw.j2 || raw;
+        if (j === 'OCT') return raw.oct || raw.j3 || raw.j2 || raw;
+        if (j === 'CUA') return raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+        if (j === 'SEM') return raw.sem || raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+        if (j === 'FIN') return raw.fin || raw.sem || raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+        return raw;
+    };
+
+    const matchdaySubs: Record<string, any> = {};
+    LINEUP_MATCHDAYS.forEach(j => {
+        const phaseObj = getPhaseObj(j);
+        const starters = phaseObj.selected || phaseObj.titulares || {};
+        const benchRaw = phaseObj.bench || phaseObj.banquillo || [];
+        const benchArr = Array.isArray(benchRaw) ? benchRaw : ["S1","S2","S3","S4","S5","S6"].map(k => benchRaw[k]).filter(Boolean);
+        matchdaySubs[j] = processSubstitutions(starters, benchArr, phaseObj.captain, j, GLOBAL_CLOSED_MATCHDAYS[j] || false);
+    });
 
     return (
         <div className={`rounded-2xl overflow-hidden shadow-xl transition-all mb-4 ${isMyTeam ? 'border-2 border-[#facc15] shadow-[#facc15]/20 bg-[#facc15]/10' : 'border border-white/5 bg-[#1c2a45]'}`}>
@@ -1008,40 +1021,91 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
             {isOpen && canView && (
                 <div className="overflow-x-auto custom-scrollbar animate-in slide-in-from-top duration-300">
                     <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead><tr className="bg-white/5 text-[10px] font-black uppercase text-white tracking-widest border-b-2 border-cyan-500/50"><th className="p-3">Pos</th><th className="p-3 text-center">SEL</th><th className="p-3 w-1/3">Nombre</th><th className="p-3 text-center bg-blue-900/30 text-cyan-400 border-x border-white/5">Total</th><th className="p-3 text-center">J1</th><th className="p-3 text-center">J2</th><th className="p-3 text-center">J3</th></tr></thead>
+                        <thead>
+                            <tr className="bg-white/5 text-[10px] font-black uppercase text-white tracking-widest border-b-2 border-cyan-500/50">
+                                <th className="p-3">Pos</th><th className="p-3 text-center">SEL</th><th className="p-3 w-1/3">Nombre</th><th className="p-3 text-center bg-blue-900/30 text-cyan-400 border-x border-white/5">Total</th>
+                                {LINEUP_MATCHDAYS.map(j => <th key={j} className="p-3 text-center">{j}</th>)}
+                            </tr>
+                        </thead>
                         <tbody className="text-xs font-bold text-white divide-y divide-white/5">
-                            <tr className="bg-blue-600/20 text-xs font-black text-cyan-400 border-b-2 border-white/10"><td colSpan={3} className="p-3 text-right uppercase tracking-widest">PUNTOS JORNADA</td><td className="p-3 text-center text-white bg-blue-600/40 border-x border-white/10 text-sm">{team.points}</td><td className="p-3 text-center">{team.matchdayPoints?.J1 || 0}</td><td className="p-3 text-center">{team.matchdayPoints?.J2 || 0}</td><td className="p-3 text-center">{team.matchdayPoints?.J3 || 0}</td></tr>
+                            <tr className="bg-blue-600/20 text-xs font-black text-cyan-400 border-b-2 border-white/10">
+                                <td colSpan={3} className="p-3 text-right uppercase tracking-widest">PUNTOS JORNADA</td>
+                                <td className="p-3 text-center text-white bg-blue-600/40 border-x border-white/10 text-sm">{team.points}</td>
+                                {LINEUP_MATCHDAYS.map(j => {
+                                    const pen = matchdaySubs[j]?.penalizedSlots?.size || 0;
+                                    return (
+                                        <td key={j} className="p-3 text-center">
+                                            <span className="block text-sm">{team.matchdayPoints?.[j] || 0}</span>
+                                            {pen > 0 && <span className="text-[8px] text-red-400 block mt-0.5" title="Hueco vacío">- {pen} hueco</span>}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
                             {allPlayers.length > 0 ? allPlayers.map((p: any) => {
-                                const ptsJ1 = getPlayerPointsRow(p.nombre, "J1"); const ptsJ2 = getPlayerPointsRow(p.nombre, "J2"); const ptsJ3 = getPlayerPointsRow(p.nombre, "J3"); 
-                                
-                                // Comprobamos si fue capitán en alguna de esas jornadas concretas
-                                const capJ1 = raw.captain === p.id;
-                                const capJ2 = raw.j2?.captain === p.id || (!raw.j2 && capJ1);
-                                const capJ3 = raw.j3?.captain === p.id || (!raw.j3 && capJ2);
+                                let totalPts = 0;
+                                let isCapInSomePhase = false;
 
-                                const totalPts = (typeof ptsJ1 === 'number' ? (capJ1 ? ptsJ1*2 : ptsJ1) : 0) + (typeof ptsJ2 === 'number' ? (capJ2 ? ptsJ2*2 : ptsJ2) : 0) + (typeof ptsJ3 === 'number' ? (capJ3 ? ptsJ3*2 : ptsJ3) : 0);
-                                
+                                const cells = LINEUP_MATCHDAYS.map(j => {
+                                    const phaseObj = getPhaseObj(j);
+                                    const starters = phaseObj.selected || phaseObj.titulares || {};
+                                    const benchRaw = phaseObj.bench || phaseObj.banquillo || [];
+                                    const benchArr = Array.isArray(benchRaw) ? benchRaw : ["S1","S2","S3","S4","S5","S6"].map(k => benchRaw[k]).filter(Boolean);
+                                    
+                                    const isStarter = Object.values(starters).some((s:any) => s && s.id === p.id);
+                                    const isBench = benchArr.some((s:any) => s && s.id === p.id);
+                                    const capForThisMatchday = phaseObj.captain === p.id;
+                                    if (capForThisMatchday) isCapInSomePhase = true;
+
+                                    const pts = getPlayerPointsRow(p.nombre, j);
+                                    const subs = matchdaySubs[j];
+                                    const isClosed = GLOBAL_CLOSED_MATCHDAYS[j] || false;
+
+                                    let displayPts: any = "-";
+                                    let actualPtsAdded = 0;
+
+                                    if (typeof pts === 'number') {
+                                        if (isStarter) {
+                                            if (isClosed && subs.subbedOutIds.has(p.id)) {
+                                                displayPts = <span className="text-red-500 line-through opacity-70" title="Sustituido">{pts}</span>; 
+                                            } else {
+                                                actualPtsAdded = capForThisMatchday ? pts * 2 : pts;
+                                                displayPts = <span className="text-[#22c55e] font-bold">{actualPtsAdded}</span>;
+                                            }
+                                        } else if (isBench) {
+                                            if (isClosed && subs.subbedInIds.has(p.id)) {
+                                                actualPtsAdded = capForThisMatchday ? pts * 2 : pts;
+                                                displayPts = <span className="text-[#22c55e] font-black" title="Entró de suplente">+{actualPtsAdded}</span>;
+                                            } else {
+                                                displayPts = <span className="text-white/30" title="Suplente sin jugar">({pts})</span>; 
+                                            }
+                                        } else {
+                                            displayPts = <span className="text-white/20">-</span>;
+                                        }
+                                    } else if (pts === null) {
+                                        if (isStarter) {
+                                            displayPts = <span className="text-red-500 font-bold" title="No jugó">X</span>;
+                                        } else {
+                                            displayPts = <span className="text-white/30">-</span>;
+                                        }
+                                    }
+
+                                    totalPts += actualPtsAdded;
+                                    return <td key={j} className="p-3 text-center">{displayPts}</td>;
+                                });
+
                                 return ( 
                                     <tr key={p.id} className={`hover:bg-white/5 transition-colors group ${p.isSold ? 'bg-red-900/10' : ''}`}>
                                         <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${p.isSold ? 'bg-gray-700 text-gray-400 opacity-60' : posColors[p.posicion]}`}>{p.posicion}</span></td>
                                         <td className="p-3 text-center text-lg">{p.isSold ? <span className="grayscale opacity-40">{getFlag(p.seleccion)}</span> : getFlag(p.seleccion)}</td>
                                         <td className="p-3 truncate max-w-[120px] font-medium text-white/90 flex items-center gap-2">
                                             <span className={p.isSold ? 'text-white/40' : 'group-hover:text-white'}>{p.nombre}</span>
-                                            {/* ETIQUETA ROJA DE VENDIDO */}
-                                            {p.isSold ? (
-                                                <span className="bg-red-900/80 text-red-400 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-red-500/50">VENDIDO</span>
-                                            ) : (
-                                                // Si no está vendido, puede ser capitán
-                                                (capJ3 || capJ2 || capJ1) && <IconCaptain className="scale-75"/>
-                                            )}
+                                            {p.isSold ? <span className="bg-red-900/80 text-red-400 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-red-500/50">VENDIDO</span> : (isCapInSomePhase && <IconCaptain className="scale-75"/>)}
                                         </td>
                                         <td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">{totalPts > 0 ? totalPts : "-"}</td>
-                                        <td className="p-3 text-center text-white/50">{ptsJ1 ?? (ptsJ1 === null ? "X" : "-")}</td>
-                                        <td className="p-3 text-center text-white/50">{ptsJ2 ?? (ptsJ2 === null ? "X" : "-")}</td>
-                                        <td className="p-3 text-center text-white/50">{ptsJ3 ?? (ptsJ3 === null ? "X" : "-")}</td>
+                                        {cells}
                                     </tr> 
                                 );
-                            }) : ( <tr><td colSpan={7} className="p-6 text-center text-white/30 italic">Sin jugadores alineados</td></tr> )}
+                            }) : ( <tr><td colSpan={4 + LINEUP_MATCHDAYS.length} className="p-6 text-center text-white/30 italic">Sin jugadores alineados</td></tr> )}
                         </tbody>
                     </table>
                 </div>
@@ -1222,22 +1286,28 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
     );
 };
 
-const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
-    const [adminTab, setAdminTab] = useState<'puntos'|'partidos'|'tesoreria'>('puntos');
+const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury }: any) => {
+    const [adminTab, setAdminTab] = useState<'puntos'|'partidos'|'tesoreria'|'laboratorio'>('puntos');
     const [adminMatchday, setAdminMatchday] = useState("J1");
     const [searchTerm, setSearchTerm] = useState("");
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [updateTrigger, setUpdateTrigger] = useState(0); // <--- NUEVO: Gatillo visual
 
+    // Al depender de updateTrigger, forzamos que lea el estado al instante
     const isMatchdayClosed = GLOBAL_CLOSED_MATCHDAYS[adminMatchday] || false;
-    const isMarketOpen = GLOBAL_MATCHES['MARKET_OPEN'] === 'true'; // NUEVO
+    const isMarketOpen = GLOBAL_MATCHES['MARKET_OPEN'] === 'true'; 
 
     const handleToggleClose = async () => {
         const newVal = !isMatchdayClosed;
         const matchId = `CLOSED_${adminMatchday}`;
         const { error } = await supabase.from('match_results').upsert({ match_id: matchId, result: newVal ? 'true' : 'false' });
-        if (!error) { GLOBAL_CLOSED_MATCHDAYS[adminMatchday] = newVal; onRefresh(); } else alert("Error: " + error.message);
+        if (!error) { 
+            GLOBAL_CLOSED_MATCHDAYS[adminMatchday] = newVal; 
+            setUpdateTrigger(prev => prev + 1); // <--- Cambia el color al instante
+            onRefresh(); 
+        } else alert("Error: " + error.message);
     };
 
-    // NUEVO: LA LLAVE DEL MERCADO DE FICHAJES
     const handleToggleMarket = async () => {
         if (!confirm(isMarketOpen ? "¿CERRAR el Mercado de Fichajes?" : "⚠️ ¿ABRIR MERCADO? Esto guardará la 'Caja Fuerte' con la plantilla de Fase de Grupos de TODOS los jugadores.")) return;
         
@@ -1245,25 +1315,88 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
         const { error } = await supabase.from('match_results').upsert({ match_id: 'MARKET_OPEN', result: newVal ? 'true' : 'false' });
         
         if (newVal) {
-            // Guardamos el snapshot de J1 para todos los equipos si no lo tienen
             for (const t of allTeams) {
                 const squadData = t.rawSquad || {};
                 if (!squadData.j1_snapshot) {
-                    const snap = { 
-                        selected: squadData.selected || squadData.titulares || {}, 
-                        bench: squadData.bench || squadData.banquillo || {}, 
-                        extras: squadData.extras || {}, 
-                        captain: squadData.captain 
-                    };
+                    const snap = { selected: squadData.selected || squadData.titulares || {}, bench: squadData.bench || squadData.banquillo || {}, extras: squadData.extras || {}, captain: squadData.captain };
                     await supabase.from('teams').update({ squad: { ...squadData, j1_snapshot: snap } }).eq('id', t.id);
                 }
             }
         }
         
-        if (!error) {
-            GLOBAL_MATCHES['MARKET_OPEN'] = newVal ? 'true' : 'false';
-            onRefresh();
+        if (!error) { 
+            GLOBAL_MATCHES['MARKET_OPEN'] = newVal ? 'true' : 'false'; 
+            setUpdateTrigger(prev => prev + 1); // <--- Cambia el color al instante
+            onRefresh(); 
         } else alert("Error: " + error.message);
+    };
+
+    // --- EL SCRIPT DE SIMULACIÓN ---
+    const handleSimulateJornada = async (jornada: string) => {
+        if (!confirm(`¿Generar datos ficticios para 11 partidos de la ${jornada}? (1 partido quedará libre para tus pruebas)`)) return;
+        setIsSimulating(true);
+        
+        try {
+            let matchesToSimulate: any[] = [];
+            // Extraemos los emparejamientos lógicos de cada grupo
+            EURO_GROUPS_DATA.forEach(g => {
+                const [t1, t2, t3, t4] = g.teams;
+                if (jornada === 'J1') matchesToSimulate.push([t1, t2], [t3, t4]);
+                if (jornada === 'J2') matchesToSimulate.push([t1, t3], [t2, t4]);
+                if (jornada === 'J3') matchesToSimulate.push([t1, t4], [t2, t3]);
+            });
+
+            // Magia: Sacamos el último partido de la lista para que lo hagas tú a mano
+            const manualMatch = matchesToSimulate.pop(); 
+            
+            const playerUpserts: any[] = [];
+            const matchUpserts: any[] = [];
+
+            for (const [teamA, teamB] of matchesToSimulate) {
+                // 1. Inventar un resultado (Ej: 2-1)
+                const score = `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}`;
+                // Nota: Asumimos que el match_id que usas es "Alemania-Escocia". Si no, los resultados los puedes poner a mano rápido, lo que más tiempo quita son los jugadores.
+                matchUpserts.push({ match_id: `${teamA}-${teamB}`, result: score });
+
+                // 2. Inventar puntos para 15 jugadores de cada equipo
+                for (const team of [teamA, teamB]) {
+                    const squad = PLAYERS_DB.filter((p: any) => p.seleccion === team);
+                    // Mezclamos la plantilla y cogemos a 15 al azar
+                    const shuffled = squad.sort(() => 0.5 - Math.random()).slice(0, 15);
+                    
+                    shuffled.forEach((player: any) => {
+                        const pts = Math.floor(Math.random() * 12) + 1; // Entre 1 y 12 puntos
+                        const currentScores = GLOBAL_SCORES[player.nombre] || {};
+                        playerUpserts.push({ 
+                            player_name: player.nombre, 
+                            scores: { ...currentScores, [jornada]: pts } 
+                        });
+                    });
+                }
+            }
+
+            // Enviar en bloque a la base de datos (Ultra rápido)
+            if (matchUpserts.length > 0) await supabase.from('match_results').upsert(matchUpserts);
+            if (playerUpserts.length > 0) await supabase.from('player_scores').upsert(playerUpserts);
+
+            alert(`✅ Simulación inyectada.\n\nSe han puntuado ${playerUpserts.length} jugadores.\nEl partido reservado para que tú lo cierres manualmente es:\n\n⚽ ${manualMatch[0]} vs ${manualMatch[1]}`);
+            onRefresh();
+        } catch(e) { console.error(e); alert("Error simulando."); }
+        setIsSimulating(false);
+    };
+
+    // --- EL BOTÓN NUCLEAR (LIMPIEZA) ---
+    const handleClearDatabase = async () => {
+        if (prompt("Escribe BORRAR para eliminar todos los puntos y resultados del torneo (Las plantillas NO se borrarán):") !== "BORRAR") return;
+        setIsSimulating(true);
+        try {
+            // Borra todos los registros que no sean vacíos (básicamente todo)
+            await supabase.from('match_results').delete().neq('match_id', 'DUMMY');
+            await supabase.from('player_scores').delete().neq('player_name', 'DUMMY');
+            alert("🧹 Base de datos de resultados limpia y lista para la Eurocopa real.");
+            onRefresh();
+        } catch(e) { console.error(e); }
+        setIsSimulating(false);
     };
 
     const filteredPlayers = useMemo(() => {
@@ -1279,29 +1412,49 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
     return (
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
             <div className="flex justify-between items-center bg-red-600/10 border-2 border-red-500/50 rounded-2xl p-4 mb-6 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                <div><h1 className="text-2xl font-black italic text-red-500 uppercase tracking-tighter flex items-center gap-2"><IconSettings size={28} className="animate-spin-slow" /> MODO DIOS</h1><p className="text-red-400/60 text-[9px] font-bold uppercase tracking-widest">Panel de Control</p></div>
+                <div><h1 className="text-2xl font-black italic text-red-500 uppercase tracking-tighter flex items-center gap-2"><IconSettings size={28} className={isSimulating ? "animate-spin" : "animate-spin-slow"} /> MODO DIOS</h1><p className="text-red-400/60 text-[9px] font-bold uppercase tracking-widest">Panel de Control</p></div>
                 {adminTab === 'puntos' && ( <select value={adminMatchday} onChange={e => setAdminMatchday(e.target.value)} className="bg-red-600 text-white font-black p-2 rounded-xl outline-none shadow-lg border border-red-500 text-sm cursor-pointer">{LINEUP_MATCHDAYS.map(j => <option key={j} value={j} className="bg-[#1c2a45] text-white">Editando {j}</option>)}</select> )}
             </div>
             
-            <div className="flex gap-2 bg-black/40 p-2 rounded-xl border border-white/5 mb-6 overflow-x-auto">
-                <button onClick={()=>setAdminTab('puntos')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${adminTab==='puntos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Puntos</button>
-                <button onClick={()=>setAdminTab('partidos')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${adminTab==='partidos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Partidos</button>
-                <button onClick={()=>setAdminTab('tesoreria')} className={`flex-1 py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all ${adminTab==='tesoreria'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Tesorería</button>
+            <div className="flex gap-2 bg-black/40 p-2 rounded-xl border border-white/5 mb-6 overflow-x-auto custom-scrollbar">
+                <button onClick={()=>setAdminTab('puntos')} className={`py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all whitespace-nowrap ${adminTab==='puntos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Puntos</button>
+                <button onClick={()=>setAdminTab('partidos')} className={`py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all whitespace-nowrap ${adminTab==='partidos'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Partidos</button>
+                <button onClick={()=>setAdminTab('tesoreria')} className={`py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all whitespace-nowrap ${adminTab==='tesoreria'?'bg-red-600 text-white shadow-lg':'text-white/40 hover:bg-white/5'}`}>Tesorería</button>
+                <button onClick={()=>setAdminTab('laboratorio')} className={`py-2 px-4 rounded-lg font-black text-[10px] uppercase transition-all whitespace-nowrap ${adminTab==='laboratorio'?'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.5)]':'text-purple-400/50 hover:bg-purple-900/20 border border-purple-500/30'}`}><IconRefresh size={12} className="inline mr-1"/> Lab</button>
             </div>
             
+            {/* PESTAÑA DE LABORATORIO (NUEVA) */}
+            {adminTab === 'laboratorio' && (
+                <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                    <div className="bg-purple-900/20 p-4 rounded-2xl border border-purple-500/30 text-center">
+                        <h3 className="text-purple-400 font-black uppercase text-sm mb-2">Simulador de Torneo</h3>
+                        <p className="text-white/60 text-xs mb-4">Inyecta datos masivos para probar las clasificaciones, quinielas y eliminatorias. Se dejará 1 partido vacío por jornada para tus pruebas manuales.</p>
+                        
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J1')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J1</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J2')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J2</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J3')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J3</button>
+                        </div>
+
+                        <div className="pt-4 border-t border-purple-500/30">
+                            <button disabled={isSimulating} onClick={handleClearDatabase} className="w-full bg-red-900/40 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2">
+                                <IconTrash2 size={16}/> BORRAR TODA LA BASE DE DATOS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Resto de pestañas... */}
             {adminTab === 'puntos' && (
                 <div className="space-y-4 animate-in slide-in-from-right duration-300">
-                    
                     <div className="grid grid-cols-2 gap-2">
-                        {/* BOTÓN CERRAR JORNADA */}
                         <div className="flex flex-col justify-center bg-blue-900/20 p-3 rounded-xl border border-blue-500/30">
                             <h3 className="text-[10px] font-black text-blue-400 uppercase mb-2">Estado Jornada</h3>
                             <button onClick={handleToggleClose} className={`w-full py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center justify-center gap-1 ${isMatchdayClosed ? 'bg-red-600 text-white border border-red-500' : 'bg-[#22c55e] text-black border border-green-500'}`}>
                                 {isMatchdayClosed ? <><IconLock size={12}/> CERRADA</> : <><IconCheck size={12}/> ABIERTA</>}
                             </button>
                         </div>
-                        
-                        {/* NUEVO BOTÓN MERCADO */}
                         <div className="flex flex-col justify-center bg-purple-900/20 p-3 rounded-xl border border-purple-500/30">
                             <h3 className="text-[10px] font-black text-purple-400 uppercase mb-2">Mercado Octavos</h3>
                             <button onClick={handleToggleMarket} className={`w-full py-2 rounded-lg font-black text-[10px] uppercase transition-all shadow-lg flex items-center justify-center gap-1 ${isMarketOpen ? 'bg-purple-500 text-white border border-purple-400 animate-pulse' : 'bg-gray-700 text-gray-400 border border-gray-600'}`}>
@@ -1309,7 +1462,6 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
                             </button>
                         </div>
                     </div>
-
                     <input type="text" placeholder={`🔍 Buscar para sumar a ${adminMatchday}`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-[#1c2a45] border border-white/10 p-4 rounded-xl text-white font-bold outline-none focus:border-red-500 transition-colors shadow-inner" />
                     <div className="space-y-2">
                         {searchTerm.length >= 3 ? ( filteredPlayers.length > 0 ? filteredPlayers.map(p => ( <PlayerAdminRow key={p.id} p={p} onRefresh={onRefresh} adminMatchday={adminMatchday} isMatchdayClosed={isMatchdayClosed} /> )) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Ningún resultado encontrado.</div> ) : <div className="text-center p-8 text-white/30 italic text-sm border border-dashed border-white/10 rounded-xl">Escribe al menos 3 letras. (Ej: Alemania)</div>}
@@ -1330,7 +1482,12 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet }: any) => {
             
             {adminTab === 'tesoreria' && (
                 <div className="space-y-2 animate-in slide-in-from-right duration-300">
-                    <p className="text-white/50 text-xs text-center mb-4">Control de pagos. Pulsa en SIN APUESTA si el jugador no participa.</p>
+                    <div className="flex justify-between items-center mb-4 bg-white/5 p-3 rounded-xl border border-white/10">
+                        <p className="text-white/50 text-[10px] text-left uppercase font-bold w-1/2">Control de pagos. Marca quién ha pagado.</p>
+                        <button onClick={onSaveTreasury} className="bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg font-black text-[10px] uppercase shadow-[0_0_15px_rgba(34,197,94,0.4)] flex items-center gap-2 transition-all">
+                            <IconSave size={14}/> GUARDAR
+                        </button>
+                    </div>
                     {allTeams.map((t: any) => (
                         <div key={t.id} className="bg-[#1c2a45] p-4 rounded-xl border border-white/5 flex justify-between items-center hover:bg-white/5 transition-colors">
                             <div><h3 className="text-white font-black italic uppercase text-sm">{t.name}</h3><span className="text-[10px] text-white/50 uppercase font-bold flex items-center gap-1"><IconUser size={10}/> {t.user}</span></div>
@@ -1561,18 +1718,14 @@ const handleSaveSquad = async () => {
   const isValidLineupTactic = useMemo(() => VALID_FORMATIONS.includes(currentLineupTactic), [currentLineupTactic]);
   const isJornadaEditable = (j: string) => { if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return false; const activeIndex = LINEUP_MATCHDAYS.indexOf(CURRENT_REAL_MATCHDAY); const targetIndex = LINEUP_MATCHDAYS.indexOf(j); return targetIndex === activeIndex + 1; };
 
-  // --- SUSTITUCIONES EN TIEMPO REAL ---
-  // --- SUSTITUCIONES EN TIEMPO REAL ---
-  const currentViewSubstitutions = useMemo(() => {
-    const selectedObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? selected : lineupSelected;
-    const benchObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? bench : lineupBench;
-    const banquilloArr = ["S1","S2","S3","S4","S5","S6"].map(k => benchObj[k]).filter(Boolean);
-    const cap = lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain;
-    const isClosed = GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada] || false;
-    
-    return processSubstitutions(selectedObj, banquilloArr, cap, lineupViewJornada, isClosed);
-}, [selected, bench, captain, lineupSelected, lineupBench, lineupCaptain, lineupViewJornada]);
-
+  // --- SUSTITUCIONES EN TIEMPO REAL (Sin caché, para que reaccione al instante) ---
+  const selectedObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? selected : lineupSelected;
+  const benchObj = lineupViewJornada === CURRENT_REAL_MATCHDAY ? bench : lineupBench;
+  const banquilloArr = ["S1","S2","S3","S4","S5","S6"].map(k => benchObj[k]).filter(Boolean);
+  const viewCap = lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain;
+  const isClosedView = GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada] || false;
+  
+  const currentViewSubstitutions = processSubstitutions(selectedObj, banquilloArr, viewCap, lineupViewJornada, isClosedView);
 
 
   const loadUserData = async (u: any) => { 
@@ -1612,30 +1765,44 @@ const handleSaveSquad = async () => {
               setQuinielaSelections(q?.selections || {}); setQuinielaLocked(q?.locked || false);
           }
 
-          let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, id: t.id, name: t.team_name, user: t.username}, i));
+          let combinedTeams = (dbTeams || []).map((t:any, i:number) => formatTeamData({...t, hasPaidBet: t.has_paid_bet, id: t.id, name: t.team_name, user: t.username}, i));
           
           combinedTeams = combinedTeams.map(t => {
-              // LA CAJA FUERTE: Si hay un snapshot de la J1, lo usamos. Si no, usamos el equipo base.
-              const j1Source = t.squad?.j1_snapshot || t.squad;
-              const j2Squad = t.squad?.j2 ? { titulares: t.squad.j2.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j2.bench?.[k]).filter(Boolean), captain: t.squad.j2.captain } : { titulares: j1Source.selected || j1Source.titulares, banquillo: j1Source.bench || j1Source.banquillo, captain: j1Source.captain };
-              const j3Squad = t.squad?.j3 ? { titulares: t.squad.j3.selected||{}, banquillo: ["S1","S2","S3","S4","S5","S6"].map(k=>t.squad.j3.bench?.[k]).filter(Boolean), captain: t.squad.j3.captain } : j2Squad;
-
-              const ptsJ1 = processSubstitutions(j1Source.selected || j1Source.titulares || {}, j1Source.bench || j1Source.banquillo || [], j1Source.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
-              const ptsJ2 = processSubstitutions(j2Squad.titulares || {}, j2Squad.banquillo || [], j2Squad.captain, "J2", GLOBAL_CLOSED_MATCHDAYS["J2"] || false).total;
-              const ptsJ3 = processSubstitutions(j3Squad.titulares || {}, j3Squad.banquillo || [], j3Squad.captain, "J3", GLOBAL_CLOSED_MATCHDAYS["J3"] || false).total;
+              let total = 0;
+              const matchdayPoints: any = {};
               
-              const total = ptsJ1 + ptsJ2 + ptsJ3;
-              return { ...t, points: total, matchdayPoints: { "J1": ptsJ1, "J2": ptsJ2, "J3": ptsJ3 } };
+              // Calculamos TODAS las jornadas dinámicamente
+              LINEUP_MATCHDAYS.forEach(j => {
+                  let phaseObj = t.squad || {}; 
+                  if (j === 'J1') phaseObj = t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'J2') phaseObj = t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'J3') phaseObj = t.squad?.j3 || t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'OCT') phaseObj = t.squad?.oct || t.squad?.j3 || t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'CUA') phaseObj = t.squad?.cua || t.squad?.oct || t.squad?.j3 || t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'SEM') phaseObj = t.squad?.sem || t.squad?.cua || t.squad?.oct || t.squad?.j3 || t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+                  if (j === 'FIN') phaseObj = t.squad?.fin || t.squad?.sem || t.squad?.cua || t.squad?.oct || t.squad?.j3 || t.squad?.j2 || t.squad?.j1_snapshot || t.squad || {};
+
+                  const starters = phaseObj.selected || phaseObj.titulares || {};
+                  const benchRaw = phaseObj.bench || phaseObj.banquillo || [];
+                  const benchArr = Array.isArray(benchRaw) ? benchRaw : ["S1","S2","S3","S4","S5","S6"].map(k => benchRaw[k]).filter(Boolean);
+                  const cap = phaseObj.captain;
+                  const isClosed = GLOBAL_CLOSED_MATCHDAYS[j] || false;
+
+                  const pts = processSubstitutions(starters, benchArr, cap, j, isClosed).total;
+                  matchdayPoints[j] = pts;
+                  total += pts;
+              });
+
+              return { ...t, points: total, matchdayPoints };
           });
 
           const myIndex = combinedTeams.findIndex((t:any) => t.id === u.id);
-          const myJ1Source = myData?.squad?.j1_snapshot || myParsedSquad;
-          const ptsMyJ1 = processSubstitutions(myJ1Source.selected || myJ1Source.titulares || {}, myJ1Source.bench || myJ1Source.banquillo || [], myJ1Source.captain, "J1", GLOBAL_CLOSED_MATCHDAYS["J1"] || false).total;
-          
-          const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: ptsMyJ1, matchdayPoints: { "J1": ptsMyJ1 }, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
-
-          if (myIndex === -1) combinedTeams.push(formatTeamData(myLiveData, 0));
-          else combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
+          if (myIndex === -1) {
+              const myLiveData = { id: u.id, name: tName, user: myData?.username || u.user_metadata?.username || "Yo", points: 0, matchdayPoints: {}, squad: myParsedSquad, hasPaidBet: myData?.hasPaidBet || false };
+              combinedTeams.push(formatTeamData(myLiveData, 0));
+          } else {
+              combinedTeams[myIndex] = formatTeamData({ ...combinedTeams[myIndex], name: tName, squad: myParsedSquad, points: combinedTeams[myIndex].points, matchdayPoints: combinedTeams[myIndex].matchdayPoints }, 0);
+          }
 
           setAllTeams(combinedTeams);
       } catch(e) { console.error("Error cargando datos:", e); }
@@ -1728,31 +1895,95 @@ const handleSaveSquad = async () => {
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(4); };
   const handleResetTeam = async () => { if(confirm("¿Estás seguro? Se borrará todo tu equipo.")) { setSelected({}); setBench({}); setExtras({}); setCaptain(null); setSquadValidated(false); if(user && user.id) { await supabase.from('teams').update({ squad: {}, is_validated: false, points: 0 }).eq('id', user.id); loadUserData(user); } } };
   
-  const handleToggleBet = async (teamId: any, status: boolean) => { 
-      const updatedTeams = allTeams.map(t => { if (t.id === teamId) return { ...t, hasPaidBet: status }; return t; }); 
-      setAllTeams(updatedTeams); 
-      try { await supabase.from('teams').update({ hasPaidBet: status }).eq('id', teamId); } catch (err) {} 
-  };
+  // Cambia el estado visualmente en la pantalla
+  const handleToggleBet = (teamId: string, newValue: boolean) => {
+    setAllTeams((prev: any) => prev.map((t: any) => t.id === teamId ? { ...t, hasPaidBet: newValue } : t));
+};
+
+// Envía todos los cambios juntos a la Base de Datos
+const handleSaveTreasury = async () => {
+    let successCount = 0;
+    for (const t of allTeams) {
+        const { error } = await supabase.from('teams').update({ has_paid_bet: t.hasPaidBet }).eq('id', t.id);
+        if (!error) successCount++;
+    }
+    if (successCount === allTeams.length) {
+        alert("✅ ¡Tesorería guardada en la base de datos de forma permanente!");
+    } else {
+        alert("⚠️ Hubo algún error guardando a ciertos equipos. Revisa tu conexión.");
+    }
+};
+
+
+
 
   const getAssistantText = () => {
       if (view === 'squad') { if (hasTournamentStarted) return "EL TORNEO HA COMENZADO. El mercado de fichajes está cerrado."; return !squadValidated ? `PASO ${step} DE 6: ${step===1?"Elige tu 11 titular":step===2?"Elige capitán":step===3?"Elige banquillo":"Elige no convocados"}` : "¡PLANTILLA LISTA! Ve a Alineaciones."; }
       if (view === 'quiniela') return "Predice los 2 clasificados de cada grupo. ¡Acierta y gana presupuesto!";
       if (view === 'lineups') { if (lineupViewJornada === CURRENT_REAL_MATCHDAY) return `VISUALIZANDO ${lineupViewJornada}: JORNADA FINALIZADA. Sustituciones aplicadas.`; if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return "El torneo aún no ha comenzado."; if (isJornadaEditable(lineupViewJornada)) { if (!isValidLineupTactic) return `⚠️ TÁCTICA ${currentLineupTactic} INCORRECTA. Revisa tu 11.`; return `EDITANDO ${lineupViewJornada}: Táctica ${currentLineupTactic} correcta. Haz cambios y guarda.`; } return `JORNADA ${lineupViewJornada}: Bloqueada.`; } return "";
-  };
+  
+    };
 
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
   const displayCaptain = isLineupEditing ? lineupCaptain : (lineupViewJornada === CURRENT_REAL_MATCHDAY ? captain : lineupCaptain);
 
-  const renderPointsBadge = (player: any, isCaptain: boolean) => {
-      if (!player) return null;
-      let pts = getPlayerPointsRow(player.nombre, lineupViewJornada);
-      if (pts === undefined || pts === null) return null; 
-      if (isCaptain && typeof pts === 'number') pts = pts * 2;
-      let bgColor = pts >= 0 ? "bg-green-500" : "bg-red-500"; 
-      let text = (pts > 0 ? "+" : "") + pts; 
-      return (<div className={`absolute -bottom-2 -right-2 w-7 h-7 rounded-full ${bgColor} border-2 border-white flex items-center justify-center text-white font-black text-[10px] shadow-lg z-50 animate-in zoom-in`}>{text}</div>);
-  };
+  
+
+  const renderPointsBadge = (player: any, isStarter: boolean = true) => {
+    if (!player) return null;
+
+    let pts = getPlayerPointsRow(player.nombre, lineupViewJornada);
+    const isClosed = GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada] || false;
+    
+    const isSubbedIn = isClosed && currentViewSubstitutions.subbedInIds.has(player.id);
+    const isSubbedOut = isClosed && currentViewSubstitutions.subbedOutIds.has(player.id);
+
+    // 1. SI NO TIENE PUNTOS O NO HA JUGADO
+    if (typeof pts !== 'number') {
+        if (isStarter && isClosed && isSubbedOut) {
+            return (
+                <div className="absolute -bottom-2 -right-2 flex items-center gap-1 z-20">
+                    <div className="bg-red-600 rounded-full p-0.5 border border-white shadow-lg z-30">
+                        <IconArrowDown size={12} className="text-white" />
+                    </div>
+                    <div className="text-[10px] font-black px-1.5 py-0.5 rounded-full border shadow-lg bg-red-900 text-red-300 border-red-500 line-through opacity-80">
+                        -
+                    </div>
+                </div>
+            );
+        }
+        return null; 
+    }
+
+    // 2. CAPITÁN x2
+    const isCap = player.id === displayCaptain;
+    if (isCap && (isStarter || isSubbedIn)) {
+        pts *= 2;
+    }
+
+    // 3. OCULTAR SUPLENTES NO USADOS CUANDO SE CIERRA LA JORNADA
+    if (!isStarter && isClosed && !isSubbedIn) return null;
+
+    // 4. MAGIA VISUAL: Solo los del banquillo cuando la jornada está ABIERTA se ven semitransparentes
+    const isVirtual = !isStarter && !isClosed; 
+
+    return (
+        <div className={`absolute -bottom-2 -right-2 flex items-center gap-1 z-20 transition-opacity ${isVirtual ? 'opacity-40 hover:opacity-100' : 'opacity-100'}`}>
+            {!isStarter && isSubbedIn && (
+                <div className="bg-[#22c55e] rounded-full p-0.5 border border-white shadow-lg z-30 animate-in zoom-in">
+                    <IconArrowUp size={12} className="text-black" />
+                </div>
+            )}
+            <div className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border shadow-lg ${
+                (!isStarter && isSubbedIn) ? 'bg-[#22c55e] text-black border-white ring-2 ring-green-400' : 'bg-[#22c55e] text-black border-white'
+            }`}>
+                {pts > 0 ? '+' : ''}{pts}
+            </div>
+        </div>
+    );
+};
+
 
   return (
     <div className="min-h-screen bg-[#05080f] text-white font-sans antialiased pb-44">
@@ -1789,7 +2020,7 @@ const handleSaveSquad = async () => {
       {view === 'classification' && ( <div className="max-w-md mx-auto px-4 mt-20 pb-32"> <div className="mb-8 mt-4"><h3 className="text-[#facc15] font-black uppercase text-lg mb-4 flex gap-2"><IconTrophy/> CLASIFICACIÓN GENERAL</h3>{allTeams.sort((a,b)=>b.points-a.points).map((t,i) => (<TeamCard key={t.id} team={t} rank={i+1} isMyTeam={t.id === user.id} isAdmin={isAdmin} onToggleBet={handleToggleBet} />))}</div><EvolutionChart teams={allTeams} myTeamId={user.id}/> <MatchdayStandings teams={allTeams} /> </div> )}
       {view === 'quiniela' && <QuinielaView selections={quinielaSelections} onToggle={toggleQuiniela} locked={quinielaLocked} onEdit={() => setQuinielaLocked(!quinielaLocked)} canEdit={!hasTournamentStarted} />}
       
-      {view === 'admin' && isAdmin && <AdminView onRefresh={() => loadUserData(user)} allTeams={allTeams} onToggleBet={handleToggleBet} />}
+      {view === 'admin' && isAdmin && <AdminView onRefresh={loadUserData} allTeams={allTeams} onToggleBet={handleToggleBet} onSaveTreasury={handleSaveTreasury} />}
 
       {view === 'squad' && (
          <div className="max-w-md mx-auto px-4 mt-36 pb-10"> 
@@ -1894,6 +2125,11 @@ const handleSaveSquad = async () => {
              
              <div className="mt-8 transition-all duration-300">
                  <div className="p-4 rounded-[2.5rem] bg-[#1c2a45]/50 border border-white/5 mb-4 shadow-xl">
+                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 mb-3">
+    <p className="text-[9px] text-yellow-400 text-center uppercase font-bold tracking-widest leading-relaxed">
+        ⚠️ Los puntos asignados a los suplentes son virtuales. No serán efectivos si el cambio por un jugador titular no se realiza al cerrar la jornada.
+    </p>
+</div>
                      <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">BANQUILLO</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setBenchFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${benchFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
                      <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => { 
                          const p = (lineupViewJornada===CURRENT_REAL_MATCHDAY ? bench : lineupBench)[id];
