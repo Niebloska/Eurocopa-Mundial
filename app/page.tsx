@@ -1471,6 +1471,7 @@ export default function EuroApp() {
   const [activeSort, setActiveSort] = useState<'price' | 'alpha'>('price');
   const [sortAlpha, setSortAlpha] = useState<'asc' | 'desc'>('asc'); 
   const [showExitModal, setShowExitModal] = useState(false);
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
 
   const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
 
@@ -1478,36 +1479,37 @@ export default function EuroApp() {
   const budgetSpent = allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0);
   
   // Calculamos en tiempo real si el jugador ha ganado premio en la quiniela
-  const { standings: currentStandings } = getTournamentStandings();
-  const myExtraBudget = calculateQuinielaPrize(quinielaSelections, currentStandings);
-  const dynamicMaxBudget = MAX_BUDGET + myExtraBudget;
   
+ 
 // --- LÓGICA DEL MERCADO DE FICHAJES (CONTADOR DE CAMBIOS) ---
+
+// --- LÓGICA DE CÁLCULO DINÁMICO (PRESUPUESTO, QUINIELA Y MERCADO) ---
+const { standings: currentStandings } = getTournamentStandings();
+const myExtraBudget = calculateQuinielaPrize(quinielaSelections, currentStandings);
+const dynamicMaxBudget = MAX_BUDGET + myExtraBudget;
 
 const myTeamData = allTeams.find((t:any) => t.id === user?.id);
 const snapshot = myTeamData?.rawSquad?.j1_snapshot;
 let marketChangesCount = 0;
 
 if (isMarketOpen && snapshot) {
-    // 1. Sacamos los IDs de todos los jugadores que tenías en la Fase de Grupos
     const oldIds = new Set([
         ...Object.values(snapshot.selected || {}).map((p:any)=>p?.id),
         ...(Array.isArray(snapshot.bench) ? snapshot.bench : Object.values(snapshot.bench || {})).map((p:any)=>p?.id),
         ...(Array.isArray(snapshot.extras) ? snapshot.extras : Object.values(snapshot.extras || {})).map((p:any)=>p?.id)
     ].filter(Boolean));
     
-    // 2. Sacamos los IDs de tu equipo actual
     const currentIds = [
         ...Object.values(selected).map((p:any)=>p?.id),
         ...Object.values(bench).map((p:any)=>p?.id),
         ...Object.values(extras).map((p:any)=>p?.id)
     ].filter(Boolean);
     
-    // 3. Por cada jugador nuevo que no estuviera antes, sumamos 1 al contador
     currentIds.forEach(id => {
         if (!oldIds.has(id)) marketChangesCount++;
     });
 }
+// -------------------------------------------------------------------
 
 const handleSaveSquad = async () => {
     if (allSquadPlayers.length < 20) {
@@ -1571,7 +1573,7 @@ const handleSaveSquad = async () => {
     return processSubstitutions(selectedObj, banquilloArr, cap, lineupViewJornada, isClosed);
 }, [selected, bench, captain, lineupSelected, lineupBench, lineupCaptain, lineupViewJornada]);
 
-const [isMarketOpen, setIsMarketOpen] = useState(false);
+
 
   const loadUserData = async (u: any) => { 
       try {
