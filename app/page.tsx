@@ -877,7 +877,7 @@ const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: stri
 // ==========================================
 // 9. TABLAS DE PUNTUACIONES (VISTAS)
 // ==========================================
-const processSubstitutions = (starters: any, bench: any[], captain: number, matchday: string, isClosed: boolean) => {
+const processSubstitutions = (starters: any, bench: any[], captain: number | null, matchday: string, isClosed: boolean) => {
     let total = 0;
     const subbedInIds = new Set();
     const subbedOutIds = new Set();
