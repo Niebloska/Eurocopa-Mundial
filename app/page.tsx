@@ -15,7 +15,7 @@ const LINEUP_MATCHDAYS = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"];
 const MAX_BUDGET = 400;
 const GAME_START_DATE = "2024-06-14T21:00:00";
 
-const SIMULATED_GAME_START = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(); 
+const SIMULATED_GAME_START = new Date(Date.now() -1 * 24 * 60 * 60 * 1000).toISOString(); 
 
 
 // --- PUNTOS J1 (GLOBAL) ---
@@ -327,31 +327,40 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                       const textClass = (isSubbedOut || isPenalized) ? 'text-white' : 'text-black';
   
                       return (
-                          <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
-                              <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
-                                  
-                                  {isPenalized ? (
-                                      <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] z-50 animate-pulse">-1</span>
-                                  ) : p ? (
-                                      <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span>
-                                  ) : (
-                                      <IconPlus size={18} />
-                                  )}
-  
-                                  {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
-                                  
-                                  {/* AQUÍ VUELVEN LAS BURBUJAS DE PUNTOS */}
-                                  {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
-  
-                                  {isSubbedOut && (
-                                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
-                                          <IconSub size={16} className="text-white" />
-                                      </div>
-                                  )}
-                              </div>
-                              {p && !isPenalized && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
-                          </div>
-                      );
+                        <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
+                            <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
+                                
+                                {p ? (
+                                    <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span>
+                                ) : isPenalized ? (
+                                    <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] z-50 animate-pulse">-1</span>
+                                ) : (
+                                    <IconPlus size={18} />
+                                )}
+
+                                {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
+                                
+                                {/* BURBUJAS NORMALES */}
+                                {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
+
+                                {/* FLECHAS DE SUSTITUIDO */}
+                                {isSubbedOut && (
+                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
+                                        <IconSub size={16} className="text-white" />
+                                    </div>
+                                )}
+
+                                {/* MEDALLA ROJA -1 SI NO HUBO SUSTITUTO */}
+                                {isPenalized && p && (
+                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-red-900 border-2 border-red-500 flex items-center justify-center shadow-lg z-50 animate-pulse">
+                                        <span className="text-[10px] font-black text-white">-1</span>
+                                    </div>
+                                )}
+                            </div>
+                            {p && !isPenalized && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
+                            {isPenalized && p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter grayscale opacity-50">{getFlag(p.seleccion)}</span>}
+                        </div>
+                    );
                   })}
               </div>
           ))}
@@ -914,8 +923,8 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
 
     if (!isClosed) {
         Object.values(starters).forEach((p: any) => {
+            if(!p) return;
             let pts = getPlayerPointsRow(p.nombre, matchday);
-            // Blindaje contra el NaN: solo sumamos si es un número válido
             if (typeof pts === 'number') {
                 if (p.id === captain) pts *= 2;
                 total += pts;
@@ -928,11 +937,16 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
     const missingStarters: any[] = [];
     const activeStarters: any[] = [];
 
+    // 1. Evaluamos a los titulares
     Object.entries(starters).forEach(([slot, p]: [string, any]) => {
+        if (!p) {
+            penalizedSlots.add(slot);
+            total -= 1;
+            return;
+        }
         const pts = getPlayerPointsRow(p.nombre, matchday);
         if (typeof pts !== 'number') {
             missingStarters.push({ slot, p });
-            subbedOutIds.add(p.id);
         } else {
             activeStarters.push(p);
             formation[p.posicion] = (formation[p.posicion] || 0) + 1;
@@ -945,6 +959,7 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
     let subsUsed = 0;
     const replacedSlots = new Set();
 
+    // 2. Intentamos sustituir (AHORA SOLO REVISA LÍMITES MÁXIMOS)
     if (missingStarters.length > 0) {
         bench.forEach((sub: any) => {
             if (!sub || subsUsed >= missingStarters.length) return;
@@ -954,13 +969,14 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
             const neededPos = sub.posicion;
             if (activeStarters.length < 11) {
                 const tempFormation = { ...formation };
-                tempFormation[neededPos]++;
+                tempFormation[neededPos] = (tempFormation[neededPos] || 0) + 1;
                 
+                // MAGIA: Solo frenamos si excede el máximo permitido por la UEFA
                 const isValid = 
                     tempFormation.POR <= 1 &&
-                    tempFormation.DEF >= 3 && tempFormation.DEF <= 5 &&
-                    tempFormation.MED >= 2 && tempFormation.MED <= 5 &&
-                    tempFormation.DEL >= 1 && tempFormation.DEL <= 3;
+                    tempFormation.DEF <= 5 &&
+                    tempFormation.MED <= 5 &&
+                    tempFormation.DEL <= 3;
 
                 if (isValid) {
                     formation[neededPos]++;
@@ -969,10 +985,15 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
                     subsUsed++;
                     
                     const matchIdx = missingStarters.findIndex(m => !replacedSlots.has(m.slot) && m.p.posicion === neededPos);
-                    if (matchIdx !== -1) replacedSlots.add(missingStarters[matchIdx].slot);
-                    else {
+                    if (matchIdx !== -1) {
+                        replacedSlots.add(missingStarters[matchIdx].slot);
+                        subbedOutIds.add(missingStarters[matchIdx].p.id);
+                    } else {
                         const anyIdx = missingStarters.findIndex(m => !replacedSlots.has(m.slot));
-                        if (anyIdx !== -1) replacedSlots.add(missingStarters[anyIdx].slot);
+                        if (anyIdx !== -1) {
+                            replacedSlots.add(missingStarters[anyIdx].slot);
+                            subbedOutIds.add(missingStarters[anyIdx].p.id);
+                        }
                     }
 
                     let pts = subPts;
@@ -983,6 +1004,7 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
         });
     }
 
+    // 3. Castigamos solo a los que NO entraron
     missingStarters.forEach(m => {
         if (!replacedSlots.has(m.slot)) {
             penalizedSlots.add(m.slot);
@@ -1395,6 +1417,7 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
     };
 
     // --- EL SCRIPT DE SIMULACIÓN ---
+    // --- EL SCRIPT DE SIMULACIÓN BLINDADO ---
     const handleSimulateJornada = async (jornada: string) => {
         if (!confirm(`¿Generar datos ficticios para 11 partidos de la ${jornada}? (1 partido quedará libre para tus pruebas)`)) return;
         setIsSimulating(true);
@@ -1416,6 +1439,9 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             for (const [teamA, teamB] of matchesToSimulate) {
                 const score = `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}`;
                 matchUpserts.push({ match_id: `${teamA}-${teamB}`, result: score });
+                
+                // Actualizamos la memoria local de los partidos al instante
+                GLOBAL_MATCHES[`${teamA}-${teamB}`] = score;
 
                 for (const team of [teamA, teamB]) {
                     const squad = PLAYERS_DB.filter((p: any) => p.seleccion === team);
@@ -1424,18 +1450,33 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
                     shuffled.forEach((player: any) => {
                         const pts = Math.floor(Math.random() * 12) + 1;
                         const currentScores = GLOBAL_SCORES[player.nombre] || {};
+                        const newScores = { ...currentScores, [jornada]: pts };
+                        
                         playerUpserts.push({ 
                             player_name: player.nombre, 
-                            scores: { ...currentScores, [jornada]: pts } 
+                            scores: newScores 
                         });
+                        
+                        // MAGIA: Actualizamos la memoria local de puntos para que se pinten sin pulsar F5
+                        GLOBAL_SCORES[player.nombre] = newScores;
                     });
                 }
             }
 
-            if (matchUpserts.length > 0) await supabase.from('match_results').upsert(matchUpserts);
-            if (playerUpserts.length > 0) await supabase.from('player_scores').upsert(playerUpserts);
+            // BLINDAJE: Añadimos onConflict para que Supabase se trague los 330 de golpe
+            if (matchUpserts.length > 0) {
+                const { error: errM } = await supabase.from('match_results').upsert(matchUpserts, { onConflict: 'match_id' });
+                if (errM) console.error("Error partidos:", errM);
+            }
+            if (playerUpserts.length > 0) {
+                const { error: errP } = await supabase.from('player_scores').upsert(playerUpserts, { onConflict: 'player_name' });
+                if (errP) alert("Aviso Supabase: " + errP.message);
+            }
 
-            alert(`✅ Simulación inyectada.\n\nSe han puntuado ${playerUpserts.length} jugadores.\nEl partido reservado para que tú lo cierres manualmente es:\n\n⚽ ${manualMatch[0]} vs ${manualMatch[1]}`);
+            alert(`✅ Simulación inyectada con éxito.\n\nSe han puntuado ${playerUpserts.length} jugadores.\nEl partido reservado para ti es:\n\n⚽ ${manualMatch[0]} vs ${manualMatch[1]}`);
+            
+            // Forzamos el refresco inmediato de toda la pantalla
+            setUpdateTrigger(prev => prev + 1);
             onRefresh();
         } catch(e) { console.error(e); alert("Error simulando."); }
         setIsSimulating(false);
@@ -2427,16 +2468,16 @@ const getAssistantText = () => {
              )}
 
 <Field 
-    selected={lineupViewJornada === currentRealMatchday ? selected : lineupSelected} 
-    step={(Object.keys((lineupViewJornada === currentRealMatchday ? extras : lineupExtras) || {}).length > 0 || hasConfirmedNoExtras) ? 3 : 2} 
-    canInteractField={isJornadaEditable(lineupViewJornada)} 
-    setActiveSlot={setActiveSlot} 
-    captain={displayCaptain} 
-    setCaptain={setLineupCaptain} 
-    substitutions={currentViewSubstitutions} 
-    matchday={lineupViewJornada} 
-    renderPointsBadge={renderPointsBadge} 
-/>
+                 selected={lineupViewJornada === currentRealMatchday ? selected : lineupSelected} 
+                 step={(Object.keys((lineupViewJornada === currentRealMatchday ? extras : lineupExtras) || {}).length > 0 || hasConfirmedNoExtras) ? 3 : 2} 
+                 canInteractField={isJornadaEditable(lineupViewJornada) && isLineupEditing} 
+                 setActiveSlot={setActiveSlot} 
+                 captain={displayCaptain} 
+                 setCaptain={setLineupCaptain} 
+                 substitutions={currentViewSubstitutions} 
+                 matchday={lineupViewJornada} 
+                 renderPointsBadge={renderPointsBadge} 
+             />
 
              
              <div className="mt-8 transition-all duration-300">
@@ -2481,44 +2522,44 @@ const getAssistantText = () => {
          </div>
       )}
 
-      {activeSlot && (
+{activeSlot && (
       <SelectionModal 
-      isOpen={!!activeSlot} 
-      onClose={() => setActiveSlot(null)} 
-      players={PLAYERS_DB} 
-      activeSlot={activeSlot}
-      // --- CONECTAMOS LOS CABLES QUE FALTABAN ---
-      activeSort={activeSort}
-      setActiveSort={setActiveSort}
-      sortPrice={sortPrice}
-      setSortPrice={setSortPrice}
-      sortAlpha={sortAlpha}
-      setSortAlpha={setSortAlpha}
-      selectedIds={[...Object.values(selected || {}), ...Object.values(bench || {}), ...Object.values(extras || {})].map((p: any) => p?.id).filter(Boolean)}
-// ------------------------------------------
-onSelect={(player: any) => {
-    const slotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
-          let slotType = typeof activeSlot === 'string' ? 'selected' : activeSlot?.type;
-          if (slotType === 'titular') slotType = 'selected'; 
+          isOpen={!!activeSlot} 
+          onClose={() => setActiveSlot(null)} 
+          players={PLAYERS_DB} 
+          activeSlot={activeSlot}
+          
+          // --- CABLES DE LA ALINEACIÓN Y COLORES ---
+          mode={view === 'lineups' ? 'lineup' : 'market'}
+          lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
+          // -----------------------------------------
 
-          // --- 🛡️ INICIO DEL BLINDAJE TÁCTICO ---
-          if (slotId && String(slotId).includes('-')) {
-              const slotPos = String(slotId).split('-')[0]; 
-              if (player.posicion !== slotPos) {
-                  alert(`⚠️ ¡Falta táctica! Estás intentando colocar a un ${player.posicion} en un hueco de ${slotPos}.`);
-                  return; 
+          activeSort={activeSort}
+          setActiveSort={setActiveSort}
+          sortPrice={sortPrice}
+          setSortPrice={setSortPrice}
+          sortAlpha={sortAlpha}
+          setSortAlpha={setSortAlpha}
+          selectedIds={[...Object.values(selected || {}), ...Object.values(bench || {}), ...Object.values(extras || {})].map((p: any) => p?.id).filter(Boolean)}
+          onSelect={(player: any) => {
+              const slotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
+              let slotType = typeof activeSlot === 'string' ? 'selected' : activeSlot?.type;
+              if (slotType === 'titular') slotType = 'selected'; 
+
+              if (slotId && String(slotId).includes('-')) {
+                  const slotPos = String(slotId).split('-')[0]; 
+                  if (player.posicion !== slotPos) {
+                      alert(`⚠️ ¡Falta táctica! Estás intentando colocar a un ${player.posicion} en un hueco de ${slotPos}.`);
+                      return; 
+                  }
               }
-          }
-          // --- 🛡️ FIN DEL BLINDAJE ---
 
-          if (slotId) {
-              handleLineupSwap(slotId, player, slotType);
-          }
-          setActiveSlot(null);
-      }}
-      onRemove={handleLineupToExtras}
-      isMarketOpen={isMarketOpen}
-  />
+              if (slotId) handleLineupSwap(slotId, player, slotType);
+              setActiveSlot(null);
+          }}
+          onRemove={handleLineupToExtras}
+          isMarketOpen={isMarketOpen}
+      />
       )}
     </div>
   );
