@@ -2017,7 +2017,7 @@ const handleSaveSquad = async () => {
   useEffect(() => {
      if (lineupViewJornada === currentRealMatchday) { setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras); setLineupCaptain(captain); } 
      else if (Object.keys(lineupSelected).length === 0 && Object.keys(selected).length > 0) { setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras); setLineupCaptain(captain); }
-  }, [selected, bench, extras, captain, lineupViewJornada, lineupSelected]); 
+    }, [selected, bench, extras, captain, lineupViewJornada, lineupSelected, currentRealMatchday]);
 
   const toggleQuiniela = (g: string, t: string) => { if(quinielaLocked) return; const c = quinielaSelections[g]||[]; if(c.includes(t)) setQuinielaSelections({...quinielaSelections,[g]:c.filter(x=>x!==t)}); else if(c.length<2) setQuinielaSelections({...quinielaSelections,[g]:[...c,t]}); };
   const handleSaveName = async () => { if(user && user.id) { await supabase.from('teams').update({ team_name: currentTeamName }).eq('id', user.id); setIsEditingName(false); loadUserData(user); } };
@@ -2495,9 +2495,9 @@ const getAssistantText = () => {
       sortAlpha={sortAlpha}
       setSortAlpha={setSortAlpha}
       selectedIds={[...Object.values(selected || {}), ...Object.values(bench || {}), ...Object.values(extras || {})].map((p: any) => p?.id).filter(Boolean)}
-      // ------------------------------------------
-      onSelect={(player) => {
-          const slotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
+// ------------------------------------------
+onSelect={(player: any) => {
+    const slotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
           let slotType = typeof activeSlot === 'string' ? 'selected' : activeSlot?.type;
           if (slotType === 'titular') slotType = 'selected'; 
 
