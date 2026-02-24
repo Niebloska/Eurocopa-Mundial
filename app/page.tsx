@@ -292,7 +292,7 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
 // 4. CAMPO DE FÚTBOL Y BANQUILLO
 // ==========================================
 
-const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain, substitutions, matchday, renderPointsBadge }: any) => {
+const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCaptain, substitutions, matchday, renderPointsBadge, advancedTeams }: any) => {
     const { subbedOutIds, penalizedSlots } = substitutions || { subbedOutIds: new Set(), penalizedSlots: new Set() };
     const isEditable = !matchday || (Date.now() >= new Date(SIMULATED_GAME_START).getTime() && LINEUP_MATCHDAYS.indexOf(GLOBAL_ACTIVE_MATCHDAY) + 1 === LINEUP_MATCHDAYS.indexOf(matchday));
     const isMatchdayClosed = GLOBAL_CLOSED_MATCHDAYS[matchday] || false;
@@ -322,45 +322,43 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                       
                       const isPenalized = isMatchdayClosed && penalizedSlots.has(id);
                       const isSubbedOut = p && !isEditable && subbedOutIds.has(p.id) && !isPenalized;
-                      
-                      const bgClass = isPenalized ? 'bg-red-900/90 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : (isSubbedOut ? 'bg-gray-500 border-gray-400' : (p ? 'bg-white border-[#22c55e]' : 'bg-black/40 border-white/20'));
+                      const isEliminated = advancedTeams && p && advancedTeams.size > 0 && !advancedTeams.has(p.seleccion);
+                      const bgClass = isPenalized ? 'bg-red-900/90 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : (isSubbedOut ? 'bg-gray-500 border-gray-400' : (p ? (isEliminated ? 'bg-gray-300 border-gray-400 shadow-inner' : 'bg-white border-[#22c55e]') : 'bg-black/40 border-white/20'));
                       const textClass = (isSubbedOut || isPenalized) ? 'text-white' : 'text-black';
-  
+
                       return (
-                        <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
-                            <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
-                                
-                                {p ? (
-                                    <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span>
-                                ) : isPenalized ? (
-                                    <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] z-50 animate-pulse">-1</span>
-                                ) : (
-                                    <IconPlus size={18} />
-                                )}
+                          <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
+                              <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
+                                  
+                                  {p ? (
+                                      <span className={`text-[9px] font-black ${textClass} text-center leading-none uppercase italic`}>{p.nombre.split(' ').pop()}</span>
+                                  ) : isPenalized ? (
+                                      <span className="text-2xl font-black text-red-500 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] z-50 animate-pulse">-1</span>
+                                  ) : (
+                                      <IconPlus size={18} />
+                                  )}
 
-                                {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
-                                
-                                {/* BURBUJAS NORMALES */}
-                                {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
+                                  {p && step >= 2 && !isPenalized && (<button onClick={(e) => { e.stopPropagation(); if (canInteractField) setCaptain(p.id); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${(captain === p.id && !isSubbedOut) ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${canInteractField ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{(captain === p.id && !isSubbedOut) ? <IconCheck size={8} /> : 'C'}</button>)}
+                                  
+                                  {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
 
-                                {/* FLECHAS DE SUSTITUIDO */}
-                                {isSubbedOut && (
-                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
-                                        <IconSub size={16} className="text-white" />
-                                    </div>
-                                )}
+                                  {isSubbedOut && (
+                                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
+                                          <IconSub size={16} className="text-white" />
+                                      </div>
+                                  )}
 
-                                {/* MEDALLA ROJA -1 SI NO HUBO SUSTITUTO */}
-                                {isPenalized && p && (
-                                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-red-900 border-2 border-red-500 flex items-center justify-center shadow-lg z-50 animate-pulse">
-                                        <span className="text-[10px] font-black text-white">-1</span>
-                                    </div>
-                                )}
-                            </div>
-                            {p && !isPenalized && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>}
-                            {isPenalized && p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter grayscale opacity-50">{getFlag(p.seleccion)}</span>}
-                        </div>
-                    );
+                                  {isPenalized && p && (
+                                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-red-900 border-2 border-red-500 flex items-center justify-center shadow-lg z-50 animate-pulse">
+                                          <span className="text-[10px] font-black text-white">-1</span>
+                                      </div>
+                                  )}
+                              </div>
+                              {p && !isPenalized && <span className={`mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>{getFlag(p.seleccion)}</span>}
+                              {isPenalized && p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter grayscale opacity-50">{getFlag(p.seleccion)}</span>}
+                          </div>
+                      );
+                      
                   })}
               </div>
           ))}
@@ -371,20 +369,21 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
   // ==========================================
   // 5. VISTAS DE DATOS: GRÁFICAS Y CALENDARIO
   // ==========================================
-  const BenchCard = ({ player, id, posColor, onClick, isSubbedIn, matchday }: any) => {
+  const BenchCard = ({ player, id, posColor, onClick, isSubbedIn, matchday, advancedTeams }: any) => {
     if (!player) return (
         <div onClick={onClick} className="h-full flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-white/20 cursor-pointer hover:bg-white/5 transition-colors p-4">
             <IconPlus size={24} />
             <span className="text-[10px] font-black mt-2 uppercase tracking-widest">{id}</span>
         </div>
     );
-  
+
+    // ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
     const pts = matchday ? getPlayerPointsRow(player.nombre, matchday) : null;
+    const isEliminated = advancedTeams && advancedTeams.size > 0 && !advancedTeams.has(player.seleccion);
     
     return (
-      <div onClick={onClick} className={`relative w-full h-full flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer active:scale-95 shadow-lg ${isSubbedIn ? 'bg-[#1c2a45] border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-[#1c2a45] border-white/10 hover:bg-white/5'}`}>
+      <div onClick={onClick} className={`relative w-full h-full flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer active:scale-95 shadow-lg ${isSubbedIn ? 'bg-[#1c2a45] border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]' : (isEliminated ? 'bg-gray-800 border-gray-600 opacity-60' : 'bg-[#1c2a45] border-white/10 hover:bg-white/5')}`}>
           
-          {/* ICONO DE SUSTITUCIÓN Y PUNTOS DEBAJO */}
           {isSubbedIn && (
               <div className="absolute top-1 right-1 flex flex-col items-center z-40">
                   <IconSub size={16} className="text-[#22c55e] drop-shadow-md"/>
@@ -395,18 +394,15 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                   )}
               </div>
           )}
-  
-          {/* NOMBRE ARRIBA */}
+
           <span className={`text-[10px] font-black text-white text-center uppercase leading-tight truncate w-full ${isSubbedIn ? 'pr-3' : ''}`}>
               {player.nombre.split(' ').pop()}
           </span>
           
-          {/* BANDERA EN EL CENTRO */}
           <div className="flex-1 flex items-center justify-center mt-1">
-              <span className="text-4xl leading-none drop-shadow-md filter">{getFlag(player.seleccion)}</span>
+              <span className={`text-4xl leading-none drop-shadow-md filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>{getFlag(player.seleccion)}</span>
           </div>
           
-          {/* POSICIÓN ABAJO */}
           <div className={`w-full text-center text-[9px] font-black uppercase py-0.5 mt-1 rounded ${posColor}`}>
               {player.posicion}
           </div>
@@ -497,64 +493,36 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
   
   const CalendarView = () => {
     const [phase, setPhase] = useState<'grupos'|'eliminatorias'>('grupos');
-    const { standings, thirdGroups } = getTournamentStandings();
+    const { standings } = getTournamentStandings();
+    const knockouts = getKnockoutFixtures();
 
-    // MATRIZ OFICIAL UEFA PARA LOS TERCEROS CLASIFICADOS
-    const thirdMappings: any = {
-        'ABCD': { '1B': '3A', '1C': '3D', '1E': '3B', '1F': '3C' },
-        'ABCE': { '1B': '3A', '1C': '3E', '1E': '3B', '1F': '3C' },
-        'ABCF': { '1B': '3A', '1C': '3F', '1E': '3B', '1F': '3C' },
-        'ABDE': { '1B': '3D', '1C': '3E', '1E': '3A', '1F': '3B' },
-        'ABDF': { '1B': '3D', '1C': '3F', '1E': '3A', '1F': '3B' },
-        'ABEF': { '1B': '3E', '1C': '3F', '1E': '3B', '1F': '3A' },
-        'ACDE': { '1B': '3E', '1C': '3D', '1E': '3C', '1F': '3A' },
-        'ACDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3A' },
-        'ACEF': { '1B': '3E', '1C': '3F', '1E': '3C', '1F': '3A' },
-        'ADEF': { '1B': '3E', '1C': '3F', '1E': '3D', '1F': '3A' },
-        'BCDE': { '1B': '3E', '1C': '3D', '1E': '3B', '1F': '3C' },
-        'BCDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3B' },
-        'BCEF': { '1B': '3F', '1C': '3E', '1E': '3C', '1F': '3B' },
-        'BDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3B' },
-        'CDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3C' }
-    };
-
-    const getTeam = (posCode: string) => {
-        if (!posCode) return { name: '???', isKnown: false };
-        if (posCode.length === 2) {
-            const rank = parseInt(posCode.charAt(0)) - 1; 
-            const group = posCode.charAt(1);
-            const team = standings[`GRUPO ${group}`]?.[rank];
-            // Solo lo damos por definitivo si ese grupo ya ha jugado sus 3 partidos (ej: 6 partidos totales en el grupo = 2 por equipo)
-            const isGroupFinished = standings[`GRUPO ${group}`]?.every(t => t.played === 3);
-            return team && isGroupFinished ? { name: team.name, isKnown: true } : { name: posCode, isKnown: false };
+    const MatchBox = ({ match }: any) => {
+        const res1 = GLOBAL_MATCHES[`${match.t1.name}-${match.t2.name}`];
+        const res2 = GLOBAL_MATCHES[`${match.t2.name}-${match.t1.name}`];
+        const res = res1 || res2;
+        let s1 = "-", s2 = "-";
+        if (res) {
+            const parts = res.split('-');
+            if (res1) { s1 = parts[0].trim(); s2 = parts[1].trim(); }
+            else { s1 = parts[1].trim(); s2 = parts[0].trim(); }
         }
-        return { name: posCode, isKnown: false }; // Para los "3A/D/E/F"
+
+        const w1 = res && parseInt(s1) > parseInt(s2) ? 'text-[#22c55e]' : 'text-white/60';
+        const w2 = res && parseInt(s2) > parseInt(s1) ? 'text-[#22c55e]' : 'text-white/60';
+
+        return (
+            <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full mb-3">
+                <div className={`flex items-center justify-between py-1 border-b border-white/5 ${match.t1.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
+                    <div className="flex items-center gap-2"><span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span></div>
+                    <span className={`font-black bg-black/40 px-1.5 rounded ${w1}`}>{s1}</span>
+                </div>
+                <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
+                    <div className="flex items-center gap-2"><span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span></div>
+                    <span className={`font-black bg-black/40 px-1.5 rounded ${w2}`}>{s2}</span>
+                </div>
+            </div>
+        );
     };
-
-    const map = thirdMappings[thirdGroups] || { '1B': '3A/D/E/F', '1C': '3D/E/F', '1E': '3A/B/C/D', '1F': '3A/B/C' };
-
-    // Definición estricta de cruces
-    const octavos = [
-        { id: 'O1', t1: getTeam('1B'), t2: getTeam(map['1B']) },
-        { id: 'O2', t1: getTeam('1A'), t2: getTeam('2C') },
-        { id: 'O3', t1: getTeam('1F'), t2: getTeam(map['1F']) },
-        { id: 'O4', t1: getTeam('2D'), t2: getTeam('2E') },
-        { id: 'O5', t1: getTeam('1E'), t2: getTeam(map['1E']) },
-        { id: 'O6', t1: getTeam('1D'), t2: getTeam('2F') },
-        { id: 'O7', t1: getTeam('1C'), t2: getTeam(map['1C']) },
-        { id: 'O8', t1: getTeam('2A'), t2: getTeam('2B') }
-    ];
-
-    const MatchBox = ({ match }: any) => (
-        <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full">
-            <div className={`flex items-center justify-between py-1 border-b border-white/5 ${match.t1.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
-                <div className="flex items-center gap-2"><span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span></div>
-            </div>
-            <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
-                <div className="flex items-center gap-2"><span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span></div>
-            </div>
-        </div>
-    );
 
     return (
         <div className="max-w-md mx-auto px-4 mt-20 pb-32 animate-in fade-in">
@@ -572,8 +540,6 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                             <div className="bg-gradient-to-r from-[#22c55e] to-green-700 p-2 text-center shadow-md">
                                 <h3 className="font-black italic text-black uppercase">{g.n}</h3>
                             </div>
-                            
-                            {/* TABLA DE CLASIFICACIÓN DEL GRUPO EN TIEMPO REAL */}
                             <div className="bg-[#0d1526] p-2 border-b border-white/10">
                                 <table className="w-full text-left text-[9px] uppercase font-black text-white/70">
                                     <thead><tr className="border-b border-white/10"><th className="pb-1 pl-1 w-6">#</th><th className="pb-1">Equipo</th><th className="pb-1 text-center">PJ</th><th className="pb-1 text-center">GF</th><th className="pb-1 text-center">GC</th><th className="pb-1 text-center text-[#22c55e]">PTS</th></tr></thead>
@@ -591,7 +557,6 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                     </tbody>
                                 </table>
                             </div>
-
                             <div className="divide-y divide-white/5">
                                 {g.m.map((m, i) => {
                                     const matchId = `${m.t1}-${m.t2}`;
@@ -620,28 +585,28 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                 <div className="space-y-6">
                     <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-center shadow-lg">
                         <h2 className="text-cyan-400 font-black italic uppercase text-lg mb-1">El Camino a Berlín</h2>
-                        <p className="text-[9px] text-white/60 font-bold uppercase tracking-widest">Los cruces se completan automáticamente al terminar la fase de grupos</p>
+                        <p className="text-[9px] text-white/60 font-bold uppercase tracking-widest">Los cruces se generan según los resultados reales</p>
                     </div>
 
-                    <div className="flex justify-between gap-2 overflow-hidden">
-                        {/* LADO IZQUIERDO DEL CUADRO */}
-                        <div className="flex-1 flex flex-col gap-4">
-                            <div className="text-center font-black text-[9px] text-white/40 uppercase mb-2">Lado Izquierdo</div>
-                            {octavos.slice(0, 4).map((m, i) => <MatchBox key={i} match={m} />)}
+                    <div className="flex flex-col gap-6">
+                        <div>
+                            <h3 className="text-cyan-400 font-black text-[10px] text-center uppercase tracking-widest mb-3 border-b border-cyan-500/30 pb-2">OCTAVOS DE FINAL</h3>
+                            <div className="grid grid-cols-2 gap-x-3">{knockouts.octavos.map(m => <MatchBox key={m.id} match={m} />)}</div>
                         </div>
-
-                        {/* FINAL AL CENTRO (DECORATIVA) */}
-                        <div className="w-16 flex flex-col items-center justify-center relative">
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center opacity-30">
-                                <IconTrophy size={48} className="text-[#ffd700]" />
-                                <span className="text-[8px] font-black text-white mt-2 tracking-widest">FINAL</span>
-                            </div>
+                        
+                        <div>
+                            <h3 className="text-cyan-400 font-black text-[10px] text-center uppercase tracking-widest mb-3 border-b border-cyan-500/30 pb-2 mt-4">CUARTOS DE FINAL</h3>
+                            <div className="grid grid-cols-2 gap-x-3">{knockouts.cuartos.map(m => <MatchBox key={m.id} match={m} />)}</div>
                         </div>
-
-                        {/* LADO DERECHO DEL CUADRO */}
-                        <div className="flex-1 flex flex-col gap-4">
-                            <div className="text-center font-black text-[9px] text-white/40 uppercase mb-2">Lado Derecho</div>
-                            {octavos.slice(4, 8).map((m, i) => <MatchBox key={i} match={m} />)}
+                        
+                        <div>
+                            <h3 className="text-cyan-400 font-black text-[10px] text-center uppercase tracking-widest mb-3 border-b border-cyan-500/30 pb-2 mt-4">SEMIFINALES</h3>
+                            <div className="grid grid-cols-2 gap-x-3">{knockouts.semis.map(m => <MatchBox key={m.id} match={m} />)}</div>
+                        </div>
+                        
+                        <div>
+                            <h3 className="text-[#ffd700] font-black text-sm text-center uppercase tracking-widest mb-3 border-b border-[#ffd700]/30 pb-2 mt-4 flex items-center justify-center gap-2"><IconTrophy/> GRAN FINAL</h3>
+                            <div className="flex justify-center w-full max-w-[250px] mx-auto">{knockouts.final.map(m => <MatchBox key={m.id} match={m} />)}</div>
                         </div>
                     </div>
                 </div>
@@ -853,21 +818,88 @@ const getTournamentStandings = () => {
         standings[g.name] = teams;
         
         // Top 2 clasificados directamente si han jugado todo
-        if (teams[0].played === 3) advancedTeams.add(teams[0].name);
-        if (teams[1]?.played === 3) advancedTeams.add(teams[1].name);
-        
-        // Recogemos a los 3º para la tabla global de mejores terceros
-        if (teams[2]?.played === 3) allThirds.push({ ...teams[2], group: g.name.replace('GRUPO ', '') });
-    });
+       // Eliminamos la restricción estricta de partidos para que el torneo no se bloquee
+       if (teams[0]) advancedTeams.add(teams[0].name);
+       if (teams[1]) advancedTeams.add(teams[1].name);
+       
+       // Recogemos a los 3º para la tabla global de mejores terceros
+       if (teams[2]) allThirds.push({ ...teams[2], group: g.name.replace('GRUPO ', '') });
+   });
 
-    // Ordenamos los 3º y sacamos los 4 mejores
-    allThirds.sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
-    const bestThirds = allThirds.slice(0, 4);
-    const thirdGroups = bestThirds.map(t => t.group).sort().join('');
-    
-    bestThirds.forEach(t => advancedTeams.add(t.name));
+   // Ordenamos los 3º y sacamos los 4 mejores
+   allThirds.sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+   const bestThirds = allThirds.slice(0, 4);
+   const thirdGroups = bestThirds.map(t => t.group).sort().join('');
+   
+   bestThirds.forEach(t => advancedTeams.add(t.name));
 
-    return { standings, advancedTeams, bestThirds, thirdGroups };
+   return { standings, advancedTeams, bestThirds, thirdGroups };
+};
+
+const resolveMatchWinner = (t1: string, t2: string) => {
+    if (!t1 || !t2 || t1 === '???' || t2 === '???') return null;
+    const res1 = GLOBAL_MATCHES[`${t1}-${t2}`];
+    const res2 = GLOBAL_MATCHES[`${t2}-${t1}`];
+    const res = res1 || res2;
+    if (!res) return null;
+    const [g1, g2] = res.split('-').map(Number);
+    if (g1 > g2) return res1 ? t1 : t2;
+    if (g2 > g1) return res1 ? t2 : t1;
+    return t1; // Empate -> gana t1 en simulación para no romper el bracket
+};
+
+const getKnockoutFixtures = () => {
+    const { standings, thirdGroups } = getTournamentStandings();
+    const thirdMappings: any = {
+        'ABCD': { '1B': '3A', '1C': '3D', '1E': '3B', '1F': '3C' }, 'ABCE': { '1B': '3A', '1C': '3E', '1E': '3B', '1F': '3C' },
+        'ABCF': { '1B': '3A', '1C': '3F', '1E': '3B', '1F': '3C' }, 'ABDE': { '1B': '3D', '1C': '3E', '1E': '3A', '1F': '3B' },
+        'ABDF': { '1B': '3D', '1C': '3F', '1E': '3A', '1F': '3B' }, 'ABEF': { '1B': '3E', '1C': '3F', '1E': '3B', '1F': '3A' },
+        'ACDE': { '1B': '3E', '1C': '3D', '1E': '3C', '1F': '3A' }, 'ACDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3A' },
+        'ACEF': { '1B': '3E', '1C': '3F', '1E': '3C', '1F': '3A' }, 'ADEF': { '1B': '3E', '1C': '3F', '1E': '3D', '1F': '3A' },
+        'BCDE': { '1B': '3E', '1C': '3D', '1E': '3B', '1F': '3C' }, 'BCDF': { '1B': '3F', '1C': '3D', '1E': '3C', '1F': '3B' },
+        'BCEF': { '1B': '3F', '1C': '3E', '1E': '3C', '1F': '3B' }, 'BDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3B' },
+        'CDEF': { '1B': '3F', '1C': '3E', '1E': '3D', '1F': '3C' }
+    };
+
+    const getTeam = (posCode: string) => {
+        if (!posCode) return { name: '???', isKnown: false };
+        if (posCode.length === 2) {
+            const rank = parseInt(posCode.charAt(0)) - 1; 
+            const group = posCode.charAt(1);
+            const team = standings[`GRUPO ${group}`]?.[rank];
+            // MAGIA: Ahora coge al clasificado haya jugado o no todos sus partidos
+            return team ? { name: team.name, isKnown: true } : { name: posCode, isKnown: false };
+        }
+        return { name: posCode, isKnown: false }; 
+    };
+
+    const map = thirdMappings[thirdGroups] || { '1B': '3A/D/E/F', '1C': '3D/E/F', '1E': '3A/B/C/D', '1F': '3A/B/C' };
+
+    const O1 = { id: 'O1', t1: getTeam('1B'), t2: getTeam(map['1B']) };
+    const O2 = { id: 'O2', t1: getTeam('1A'), t2: getTeam('2C') };
+    const O3 = { id: 'O3', t1: getTeam('1F'), t2: getTeam(map['1F']) };
+    const O4 = { id: 'O4', t1: getTeam('2D'), t2: getTeam('2E') };
+    const O5 = { id: 'O5', t1: getTeam('1E'), t2: getTeam(map['1E']) };
+    const O6 = { id: 'O6', t1: getTeam('1D'), t2: getTeam('2F') };
+    const O7 = { id: 'O7', t1: getTeam('1C'), t2: getTeam(map['1C']) };
+    const O8 = { id: 'O8', t1: getTeam('2A'), t2: getTeam('2B') };
+
+    const getW = (match: any) => {
+        if (!match.t1.isKnown || !match.t2.isKnown) return { name: '???', isKnown: false };
+        const winnerName = resolveMatchWinner(match.t1.name, match.t2.name);
+        return winnerName ? { name: winnerName, isKnown: true } : { name: '???', isKnown: false };
+    };
+
+    const C1 = { id: 'C1', t1: getW(O1), t2: getW(O2) };
+    const C2 = { id: 'C2', t1: getW(O3), t2: getW(O4) };
+    const C3 = { id: 'C3', t1: getW(O5), t2: getW(O6) };
+    const C4 = { id: 'C4', t1: getW(O7), t2: getW(O8) };
+
+    const S1 = { id: 'S1', t1: getW(C1), t2: getW(C2) };
+    const S2 = { id: 'S2', t1: getW(C3), t2: getW(C4) };
+    const F = { id: 'F', t1: getW(S1), t2: getW(S2) };
+
+    return { octavos: [O1, O2, O3, O4, O5, O6, O7, O8], cuartos: [C1, C2, C3, C4], semis: [S1, S2], final: [F] };
 };
 
 // --- CALCULADORA DE PREMIOS EUROQUINIELA ---
@@ -1033,7 +1065,9 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
     };
 
     const raw = team.rawSquad || {};
-    checkHistory(raw); checkHistory(raw.j2); checkHistory(raw.j3); 
+    checkHistory(raw); 
+    checkHistory(raw.j1_snapshot); // ¡AQUÍ ESTÁ LA MAGIA PARA LEER A LOS DESCARTADOS!
+    checkHistory(raw.j2); checkHistory(raw.j3); 
     checkHistory(raw.oct); checkHistory(raw.cua); checkHistory(raw.sem); checkHistory(raw.fin);
 
     const allPlayers = Array.from(allUniquePlayers.values()).sort((a: any, b: any) => {
@@ -1147,16 +1181,16 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
                                 });
 
                                 return ( 
-                                    <tr key={p.id} className={`hover:bg-white/5 transition-colors group ${p.isSold ? 'bg-red-900/10' : ''}`}>
+                                    <tr key={p.id} className={`hover:bg-white/5 transition-colors group ${p.isSold ? 'bg-gray-800/40 opacity-70 grayscale' : ''}`}>
                                         <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${p.isSold ? 'bg-gray-700 text-gray-400 opacity-60' : posColors[p.posicion]}`}>{p.posicion}</span></td>
                                         <td className="p-3 text-center text-lg">{p.isSold ? <span className="grayscale opacity-40">{getFlag(p.seleccion)}</span> : getFlag(p.seleccion)}</td>
                                         <td className="p-3 truncate max-w-[120px] font-medium text-white/90 flex items-center gap-2">
-                                            <span className={p.isSold ? 'text-white/40' : 'group-hover:text-white'}>{p.nombre}</span>
-                                            {p.isSold ? <span className="bg-red-900/80 text-red-400 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-red-500/50">VENDIDO</span> : (isCapInSomePhase && <IconCaptain className="scale-75"/>)}
+                                            <span className={p.isSold ? 'text-white/50 italic' : 'group-hover:text-white'}>{p.nombre}</span>
+                                            {p.isSold ? <span className="bg-gray-700 text-gray-300 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-gray-500">DESCARTADO</span> : (isCapInSomePhase && <IconCaptain className="scale-75"/>)}
                                         </td>
                                         <td className="p-3 text-center font-black text-white bg-blue-900/20 border-x border-white/5 text-sm">{totalPts > 0 ? totalPts : "-"}</td>
                                         {cells}
-                                    </tr> 
+                                    </tr>
                                 );
                             }) : ( <tr><td colSpan={4 + LINEUP_MATCHDAYS.length} className="p-6 text-center text-white/30 italic">Sin jugadores alineados</td></tr> )}
                         </tbody>
@@ -1418,20 +1452,44 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
 
     // --- EL SCRIPT DE SIMULACIÓN ---
     // --- EL SCRIPT DE SIMULACIÓN BLINDADO ---
+    // --- EL SCRIPT DE SIMULACIÓN BLINDADO Y CON ELIMINATORIAS ---
+    // --- EL SCRIPT DE SIMULACIÓN BLINDADO Y ATÓMICO ---
     const handleSimulateJornada = async (jornada: string) => {
-        if (!confirm(`¿Generar datos ficticios para 11 partidos de la ${jornada}? (1 partido quedará libre para tus pruebas)`)) return;
+        if (!confirm(`¿Generar datos ficticios para los partidos de la ${jornada}?`)) return;
         setIsSimulating(true);
         
         try {
             let matchesToSimulate: any[] = [];
-            EURO_GROUPS_DATA.forEach(g => {
-                const [t1, t2, t3, t4] = g.teams;
-                if (jornada === 'J1') matchesToSimulate.push([t1, t2], [t3, t4]);
-                if (jornada === 'J2') matchesToSimulate.push([t1, t3], [t2, t4]);
-                if (jornada === 'J3') matchesToSimulate.push([t1, t4], [t2, t3]);
-            });
+            
+            // FASE DE GRUPOS
+            if (['J1', 'J2', 'J3'].includes(jornada)) {
+                EURO_GROUPS_DATA.forEach(g => {
+                    const [t1, t2, t3, t4] = g.teams;
+                    if (jornada === 'J1') matchesToSimulate.push([t1, t2], [t3, t4]);
+                    if (jornada === 'J2') matchesToSimulate.push([t1, t3], [t2, t4]);
+                    if (jornada === 'J3') matchesToSimulate.push([t1, t4], [t2, t3]);
+                });
+            } else {
+                // FASE ELIMINATORIA: Cogemos los cruces del nuevo motor
+                const knockouts = getKnockoutFixtures();
+                let roundMatches: any[] = [];
+                if (jornada === 'OCT') roundMatches = knockouts.octavos;
+                if (jornada === 'CUA') roundMatches = knockouts.cuartos;
+                if (jornada === 'SEM') roundMatches = knockouts.semis;
+                if (jornada === 'FIN') roundMatches = knockouts.final;
+                
+                roundMatches.forEach((m: any) => {
+                    if (m.t1.isKnown && m.t2.isKnown) matchesToSimulate.push([m.t1.name, m.t2.name]);
+                });
 
-            const manualMatch = matchesToSimulate.pop(); 
+                if (matchesToSimulate.length === 0) {
+                    alert("⚠️ Faltan resultados de la fase anterior para generar estos cruces.");
+                    setIsSimulating(false);
+                    return;
+                }
+            }
+
+            const manualMatch = matchesToSimulate.length > 1 ? matchesToSimulate.pop() : null; 
             
             const playerUpserts: any[] = [];
             const matchUpserts: any[] = [];
@@ -1439,8 +1497,6 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             for (const [teamA, teamB] of matchesToSimulate) {
                 const score = `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}`;
                 matchUpserts.push({ match_id: `${teamA}-${teamB}`, result: score });
-                
-                // Actualizamos la memoria local de los partidos al instante
                 GLOBAL_MATCHES[`${teamA}-${teamB}`] = score;
 
                 for (const team of [teamA, teamB]) {
@@ -1452,18 +1508,15 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
                         const currentScores = GLOBAL_SCORES[player.nombre] || {};
                         const newScores = { ...currentScores, [jornada]: pts };
                         
-                        playerUpserts.push({ 
-                            player_name: player.nombre, 
-                            scores: newScores 
-                        });
-                        
-                        // MAGIA: Actualizamos la memoria local de puntos para que se pinten sin pulsar F5
+                        playerUpserts.push({ player_name: player.nombre, scores: newScores });
                         GLOBAL_SCORES[player.nombre] = newScores;
                     });
                 }
             }
 
-            // BLINDAJE: Añadimos onConflict para que Supabase se trague los 330 de golpe
+            // ⚡ MAGIA ATÓMICA: Metemos el avance de jornada DENTRO de los partidos
+            matchUpserts.push({ match_id: 'ACTIVE_MATCHDAY', result: jornada });
+
             if (matchUpserts.length > 0) {
                 const { error: errM } = await supabase.from('match_results').upsert(matchUpserts, { onConflict: 'match_id' });
                 if (errM) console.error("Error partidos:", errM);
@@ -1473,11 +1526,17 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
                 if (errP) alert("Aviso Supabase: " + errP.message);
             }
 
-            alert(`✅ Simulación inyectada con éxito.\n\nSe han puntuado ${playerUpserts.length} jugadores.\nEl partido reservado para ti es:\n\n⚽ ${manualMatch[0]} vs ${manualMatch[1]}`);
+            setCurrentRealMatchday(jornada);
+            GLOBAL_ACTIVE_MATCHDAY = jornada;
+
+            alert(`✅ Simulación inyectada con éxito.\nSe han puntuado ${playerUpserts.length} jugadores.` + (manualMatch ? `\n\nEl partido reservado para ti es:\n⚽ ${manualMatch[0]} vs ${manualMatch[1]}` : ''));
             
-            // Forzamos el refresco inmediato de toda la pantalla
-            setUpdateTrigger(prev => prev + 1);
-            onRefresh();
+            // Lo bajamos a medio segundo porque ya no hay peligro de cuelgue
+            setTimeout(() => {
+                setUpdateTrigger(prev => prev + 1);
+                onRefresh();
+            }, 500); 
+
         } catch(e) { console.error(e); alert("Error simulando."); }
         setIsSimulating(false);
     };
@@ -1525,10 +1584,14 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
                         <h3 className="text-purple-400 font-black uppercase text-sm mb-2">Simulador de Torneo</h3>
                         <p className="text-white/60 text-xs mb-4">Inyecta datos masivos para probar las clasificaciones, quinielas y eliminatorias. Se dejará 1 partido vacío por jornada para tus pruebas manuales.</p>
                         
-                        <div className="grid grid-cols-3 gap-2 mb-4">
-                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J1')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J1</button>
-                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J2')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J2</button>
-                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J3')} className="bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-black text-xs transition-colors">Simular J3</button>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J1')} className="bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular J1</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J2')} className="bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular J2</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('J3')} className="bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular J3</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('OCT')} className="bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular OCT</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('CUA')} className="bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular CUA</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('SEM')} className="bg-cyan-600 hover:bg-cyan-500 text-white py-2 rounded-xl font-black text-[10px] transition-colors">Simular SEM</button>
+                            <button disabled={isSimulating} onClick={() => handleSimulateJornada('FIN')} className="bg-yellow-600 hover:bg-yellow-500 text-black py-2 rounded-xl font-black text-[10px] transition-colors col-span-2 shadow-[0_0_10px_rgba(250,204,21,0.5)]">Simular FINAL 🏆</button>
                         </div>
 
                         <div className="pt-4 border-t border-purple-500/30">
@@ -1596,12 +1659,23 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             
             {adminTab === 'partidos' && (
                 <div className="space-y-6 animate-in slide-in-from-right duration-300">
-                    {generateFixture().map(g => (
-                        <div key={g.n} className="bg-black/20 p-3 rounded-2xl border border-white/5">
-                            <h3 className="text-[#22c55e] font-black text-xs uppercase mb-3 text-center">{g.n}</h3>
-                            {g.m.map((m, i) => <MatchAdminRow key={i} m={m} onRefresh={onRefresh} />)}
-                        </div>
-                    ))}
+                    {(() => {
+                        const knockouts = getKnockoutFixtures();
+                        const adminFixtures = [
+                            ...generateFixture(),
+                            { n: "OCTAVOS DE FINAL", m: knockouts.octavos.filter((m:any) => m.t1.isKnown && m.t2.isKnown).map((m:any) => ({ t1: m.t1.name, t2: m.t2.name, d: "Octavos", result: "" })) },
+                            { n: "CUARTOS DE FINAL", m: knockouts.cuartos.filter((m:any) => m.t1.isKnown && m.t2.isKnown).map((m:any) => ({ t1: m.t1.name, t2: m.t2.name, d: "Cuartos", result: "" })) },
+                            { n: "SEMIFINALES", m: knockouts.semis.filter((m:any) => m.t1.isKnown && m.t2.isKnown).map((m:any) => ({ t1: m.t1.name, t2: m.t2.name, d: "Semis", result: "" })) },
+                            { n: "GRAN FINAL", m: knockouts.final.filter((m:any) => m.t1.isKnown && m.t2.isKnown).map((m:any) => ({ t1: m.t1.name, t2: m.t2.name, d: "Final", result: "" })) }
+                        ].filter(g => g.m.length > 0);
+
+                        return adminFixtures.map(g => (
+                            <div key={g.n} className="bg-black/20 p-3 rounded-2xl border border-white/5">
+                                <h3 className="text-[#22c55e] font-black text-xs uppercase mb-3 text-center">{g.n}</h3>
+                                {g.m.map((m:any, i:number) => <MatchAdminRow key={i} m={m} onRefresh={onRefresh} />)}
+                            </div>
+                        ));
+                    })()}
                 </div>
             )}
             
@@ -1681,91 +1755,176 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
   };
 
 
-  const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected, sortAlpha, setSortAlpha, isMarketOpen }: any) => {
+  const SelectionModal = ({ activeSlot, onClose, onSelect, onRemove, onRemoveToBench, selectedIds, lineupTopology, mode, sortPrice, setSortPrice, activeSort, setActiveSort, allPlayersSelected, sortAlpha, setSortAlpha, isMarketOpen, advancedTeams }: any) => {
     const [filterPos, setFilterPos] = useState("TODOS"); 
     const [filterCountry, setFilterCountry] = useState("TODOS"); 
-    const uniqueCountries = useMemo(() => ["TODOS", ...Array.from(new Set(PLAYERS_DB.map((p: any) => p.seleccion))).sort()], []);
-    const getCountryCount = React.useCallback((country: string) => { if (!allPlayersSelected) return 0; return allPlayersSelected.filter((p: any) => p.seleccion === country).length; }, [allPlayersSelected]);
-    const getPlayerStatus = React.useCallback((playerId: number) => { if (!lineupTopology) return "NONE"; const { selected, bench, extras } = lineupTopology; if (Object.values(selected).find((p:any) => p.id === playerId)) return "TITULAR"; if (Object.values(bench).find((p:any) => p.id === playerId)) return "BANQUILLO"; if (Object.values(extras).find((p:any) => p.id === playerId)) return "NO CONVOCADO"; return "NONE"; }, [lineupTopology]);
- // AUTO-FILTRO CORREGIDO: Entiende tanto textos como objetos
- useEffect(() => {
-    const currentSlotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
-    if (currentSlotId && String(currentSlotId).includes('-')) {
-        setFilterPos(String(currentSlotId).split('-')[0]);
-    } else {
-        setFilterPos("TODOS");
-    }
-}, [activeSlot]);
+
+    // Filtrar países para el selector (Ocultar eliminados si hay mercado abierto)
+    const uniqueCountries = useMemo(() => {
+        let all = Array.from(new Set(PLAYERS_DB.map((p: any) => p.seleccion))).sort() as string[];
+        if (isMarketOpen && advancedTeams && advancedTeams.size > 0) {
+            all = all.filter(c => advancedTeams.has(c));
+        }
+        return ["TODOS", ...all];
+    }, [isMarketOpen, advancedTeams]);
+
+    // Arreglo del contador: mira la lista que le acabamos de pasar por cable
+    const getCountryCount = React.useCallback((country: string) => { 
+        if (!allPlayersSelected) return 0; 
+        return allPlayersSelected.filter((p: any) => p.seleccion === country).length; 
+    }, [allPlayersSelected]);
+
+    const getPlayerStatus = React.useCallback((playerId: number) => { 
+        if (!lineupTopology) return "NONE"; 
+        const { selected, bench, extras } = lineupTopology; 
+        if (Object.values(selected).find((p:any) => p?.id === playerId)) return "TITULAR"; 
+        if (Object.values(bench).find((p:any) => p?.id === playerId)) return "BANQUILLO"; 
+        if (Object.values(extras).find((p:any) => p?.id === playerId)) return "NO CONVOCADO"; 
+        return "NONE"; 
+    }, [lineupTopology]);
+
+    useEffect(() => {
+        const currentSlotId = typeof activeSlot === 'string' ? activeSlot : activeSlot?.id;
+        if (currentSlotId && String(currentSlotId).includes('-')) {
+            setFilterPos(String(currentSlotId).split('-')[0]);
+        } else {
+            setFilterPos("TODOS");
+        }
+    }, [activeSlot]);
+
     const filteredPlayers = useMemo(() => {
-      let result: any[] = [];
-      if (mode === 'lineup' && lineupTopology) { const { selected, bench, extras } = lineupTopology; const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)]; if (activeSlot.type === 'titular') { result = allMyPlayers.filter((p:any) => p.posicion === activeSlot.pos); } else { result = allMyPlayers; } } else { result = PLAYERS_DB.filter(p => !(selectedIds || []).includes(p.id)); }
-      if (filterCountry !== "TODOS") result = result.filter((p:any) => p.seleccion === filterCountry);
-      if (filterPos !== "TODOS") result = result.filter((p:any) => p.posicion === filterPos);
-      if (mode === 'lineup') { result.sort((a:any, b:any) => { const statusOrder: any = { "TITULAR": 1, "BANQUILLO": 2, "NO CONVOCADO": 3, "NONE": 4 }; return statusOrder[getPlayerStatus(a.id)] - statusOrder[getPlayerStatus(b.id)]; }); } else { if (activeSort === 'price') { result.sort((a:any, b:any) => sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio); } else { result.sort((a:any, b:any) => sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre)); } }
-      return result;
-    }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus, sortAlpha]);
-  
-    const getStatusBg = (id: number) => { const s = getPlayerStatus(id); if (s === "TITULAR") return "bg-green-900/30 border-green-500/50"; if (s === "BANQUILLO") return "bg-yellow-400/20 border-yellow-400/60"; if (s === "NO CONVOCADO") return "bg-red-900/40 border-red-500/50"; return "bg-[#162136] border-white/10"; };
-  
-    // ¡LA MAGIA DEL LÍMITE!
+        let result: any[] = [];
+        if (mode === 'lineup' && lineupTopology) { 
+            const { selected, bench, extras } = lineupTopology; 
+            const allMyPlayers = [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)]; 
+            if (activeSlot.type === 'titular') { 
+                result = allMyPlayers.filter((p:any) => p?.posicion === activeSlot.pos); 
+            } else { 
+                result = allMyPlayers; 
+            } 
+        } else { 
+            result = PLAYERS_DB.filter(p => !(selectedIds || []).includes(p.id)); 
+            // MAGIA: Ocultar jugadores de selecciones eliminadas al fichar
+            if (isMarketOpen && advancedTeams && advancedTeams.size > 0) {
+                result = result.filter(p => advancedTeams.has(p.seleccion));
+            }
+        }
+
+        if (filterCountry !== "TODOS") result = result.filter((p:any) => p?.seleccion === filterCountry);
+        if (filterPos !== "TODOS") result = result.filter((p:any) => p?.posicion === filterPos);
+        
+        if (mode === 'lineup') { 
+            result.sort((a:any, b:any) => { 
+                const statusOrder: any = { "TITULAR": 1, "BANQUILLO": 2, "NO CONVOCADO": 3, "NONE": 4 }; 
+                return statusOrder[getPlayerStatus(a.id)] - statusOrder[getPlayerStatus(b.id)]; 
+            }); 
+        } else { 
+            if (activeSort === 'price') { 
+                result.sort((a:any, b:any) => sortPrice === 'desc' ? b.precio - a.precio : a.precio - b.precio); 
+            } else { 
+                result.sort((a:any, b:any) => sortAlpha === 'asc' ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre)); 
+            } 
+        }
+        return result.filter(Boolean);
+    }, [selectedIds, filterPos, filterCountry, mode, lineupTopology, activeSlot, sortPrice, activeSort, getPlayerStatus, sortAlpha, isMarketOpen, advancedTeams]);
+
+    const getStatusBg = (id: number) => { 
+        const s = getPlayerStatus(id); 
+        if (s === "TITULAR") return "bg-green-900/30 border-green-500/50"; 
+        if (s === "BANQUILLO") return "bg-yellow-400/20 border-yellow-400/60"; 
+        if (s === "NO CONVOCADO") return "bg-red-900/40 border-red-500/50"; 
+        return "bg-[#162136] border-white/10"; 
+    };
+
     const maxCountryLimit = isMarketOpen ? 8 : 7; 
-  
+
     return (
-      <div className="fixed inset-0 z-[200] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom">
-        <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-black italic uppercase text-white">ELEGIR</h2><button onClick={onClose}><IconX/></button></div>
-        {onRemove && ( <button onClick={onRemove} className="mb-4 w-full bg-red-600/20 border border-red-500 text-red-500 p-4 rounded-xl font-black text-xs uppercase hover:bg-red-600 hover:text-white transition-colors flex justify-center items-center gap-2">{mode === 'lineup' ? 'ENVIAR A LA GRADA' : 'ELIMINAR JUGADOR'} <IconTrash2 size={16} /></button> )}
-        {/* --- ZONA DE FILTROS RECUPERADA --- */}
-        <div className="flex flex-col gap-3 mb-4 mt-3">
-            {/* 1. Posiciones */}
-            <div className="flex gap-2">
-                {["TODOS", "POR", "DEF", "MED", "DEL"].map(pos => (
-                    <button key={pos} onClick={() => setFilterPos(pos)} className={`flex-1 py-2 rounded-xl font-black text-[10px] border transition-all ${filterPos === pos ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white border-white/20 hover:bg-white/10'}`}>
-                        {pos}
+        <div className="fixed inset-0 z-[200] bg-[#05080f] p-6 flex flex-col animate-in slide-in-from-bottom">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black italic uppercase text-white">ELEGIR</h2>
+                <button onClick={onClose}><IconX/></button>
+            </div>
+            
+            {onRemove && ( 
+                <div className="flex gap-2 mb-4 w-full">
+                    {onRemoveToBench && activeSlot && activeSlot.type !== 'bench' && mode === 'lineup' && (
+                        <button onClick={onRemoveToBench} className="flex-1 bg-yellow-600/20 border border-yellow-500 text-yellow-500 py-3 px-2 rounded-xl font-black text-[10px] uppercase hover:bg-yellow-600 hover:text-black transition-colors flex justify-center items-center gap-1 shadow-lg">
+                            AL BANQUILLO ⬇️
+                        </button>
+                    )}
+                    <button onClick={onRemove} className="flex-1 bg-red-600/20 border border-red-500 text-red-500 py-3 px-2 rounded-xl font-black text-[10px] uppercase hover:bg-red-600 hover:text-white transition-colors flex justify-center items-center gap-1 shadow-lg">
+                        {mode === 'lineup' ? 'A LA GRADA 🗑️' : 'DESCARTAR 💸'}
                     </button>
+                </div>
+            )}
+
+            <div className="flex flex-col gap-3 mb-4 mt-3">
+                <div className="flex gap-2">
+                    {["TODOS", "POR", "DEF", "MED", "DEL"].map(pos => (
+                        <button key={pos} onClick={() => setFilterPos(pos)} className={`flex-1 py-2 rounded-xl font-black text-[10px] border transition-all ${filterPos === pos ? 'bg-white text-black shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white border-white/20 hover:bg-white/10'}`}>
+                            {pos}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-2">
+                    <select 
+                        value={filterCountry} 
+                        onChange={(e) => setFilterCountry(e.target.value)}
+                        className="flex-1 bg-[#162136] text-white p-2 rounded-lg text-[10px] font-bold outline-none border border-white/20 shadow-inner cursor-pointer"
+                    >
+                        {uniqueCountries.map((c: string) => {
+                            const countInSquad = getCountryCount(c);
+                            return (
+                                <option key={c} value={c}>
+                                    {c === "TODOS" ? "🌍 TODOS LOS PAÍSES" : `${getFlag(c)} ${c} (${countInSquad}/${maxCountryLimit})`}
+                                </option>
+                            );
+                        })}
+                    </select>
+
+                    <button onClick={() => { setActiveSort('price'); setSortPrice(sortPrice === 'desc' ? 'asc' : 'desc'); }} className={`px-3 py-2 rounded-lg text-[10px] font-black border transition-all ${activeSort === 'price' ? 'bg-[#facc15] text-black border-[#facc15]' : 'bg-[#162136] text-white border-white/20 hover:bg-white/10'}`}>
+                        💰 PRECIO {activeSort === 'price' ? (sortPrice === 'desc' ? '⬇' : '⬆') : ''}
+                    </button>
+
+                    <button onClick={() => { setActiveSort('alpha'); setSortAlpha(sortAlpha === 'asc' ? 'desc' : 'asc'); }} className={`px-3 py-2 rounded-lg text-[10px] font-black border transition-all ${activeSort === 'alpha' ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-[#162136] text-white border-white/20 hover:bg-white/10'}`}>
+                        🔤 A-Z {activeSort === 'alpha' ? (sortAlpha === 'asc' ? '⬇' : '⬆') : ''}
+                    </button>
+                </div>
+            </div>
+            
+            {mode === 'market' && ( 
+                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
+                    {uniqueCountries.map(c => { 
+                        const count = getCountryCount(c); 
+                        const isMaxed = count >= maxCountryLimit; 
+                        return ( 
+                            <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>
+                                {c !== "TODOS" && <span>{getFlag(c)}</span>} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/{maxCountryLimit})</span>}
+                            </button> 
+                        ); 
+                    })}
+                </div> 
+            )}
+            
+            <div className="space-y-3 overflow-y-auto flex-1 pb-10">
+                {filteredPlayers.length === 0 ? <p className="text-center text-white/30 italic mt-10">No hay jugadores disponibles.</p> : filteredPlayers.map((p: any) => (
+                    <div key={p.id} onClick={() => onSelect(p)} className={`p-4 rounded-xl border flex justify-between items-center active:scale-95 transition-transform ${mode === 'lineup' ? getStatusBg(p.id) : 'bg-[#162136] border-white/10'}`}>
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{getFlag(p.seleccion)}</span>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-bold text-white">{p.nombre}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-white/50">{p.posicion}</span>
+                                    {mode === 'lineup' && <span className="text-[9px] font-black uppercase tracking-wide opacity-70">{getPlayerStatus(p.id)}</span>}
+                                </div>
+                            </div>
+                        </div>
+                        <span className="text-[#22c55e] font-black">{p.precio}M</span>
+                    </div>
                 ))}
             </div>
-
-            {/* 2. Países, Precio y A-Z */}
-            <div className="flex gap-2">
-            <select 
-                    value={filterCountry} 
-                    onChange={(e) => setFilterCountry(e.target.value)}
-                    className="flex-1 bg-[#162136] text-white p-2 rounded-lg text-[10px] font-bold outline-none border border-white/20 shadow-inner cursor-pointer"
-                >
-                    {uniqueCountries.map((c: string) => {
-                        // MAGIA: Contamos cuántos de TUS jugadores (selectedIds) son de esta selección
-                        const countInSquad = PLAYERS_DB.filter((p:any) => (selectedIds || []).includes(p.id) && p.seleccion === c).length;
-                        return (
-                            <option key={c} value={c}>
-                                {c === "TODOS" ? "🌍 TODOS LOS PAÍSES" : `${getFlag(c)} ${c} (${countInSquad}/7)`}
-                            </option>
-                        );
-                    })}
-                </select>
-
-                <button onClick={() => { setActiveSort('price'); setSortPrice(sortPrice === 'desc' ? 'asc' : 'desc'); }} className={`px-3 py-2 rounded-lg text-[10px] font-black border transition-all ${activeSort === 'price' ? 'bg-[#facc15] text-black border-[#facc15]' : 'bg-[#162136] text-white border-white/20 hover:bg-white/10'}`}>
-                    💰 PRECIO {activeSort === 'price' ? (sortPrice === 'desc' ? '⬇' : '⬆') : ''}
-                </button>
-
-                <button onClick={() => { setActiveSort('alpha'); setSortAlpha(sortAlpha === 'asc' ? 'desc' : 'asc'); }} className={`px-3 py-2 rounded-lg text-[10px] font-black border transition-all ${activeSort === 'alpha' ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-[#162136] text-white border-white/20 hover:bg-white/10'}`}>
-                    🔤 A-Z {activeSort === 'alpha' ? (sortAlpha === 'asc' ? '⬇' : '⬆') : ''}
-                </button>
-            </div>
         </div>
-        {/* --- FIN ZONA DE FILTROS --- */}
-        
-        {/* RENDERIZADO DEL LÍMITE (7 u 8) */}
-        {mode === 'market' && ( <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">{uniqueCountries.map(c => { const count = getCountryCount(c); const isMaxed = count >= maxCountryLimit; return ( <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>{c !== "TODOS" && <span>{getFlag(c)}</span>} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/{maxCountryLimit})</span>}</button> ); })}</div> )}
-        
-        {mode === 'market' && ( <div className="grid grid-cols-2 gap-3 mb-4"><button onClick={() => { setSortPrice((prev: any) => prev === 'desc' ? 'asc' : 'desc'); setActiveSort('price'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'price' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowUpDown size={14}/> {sortPrice === 'desc' ? 'PRECIO MÁX' : 'PRECIO MÍN'}</button><button onClick={() => { setSortAlpha((prev: any) => prev === 'asc' ? 'desc' : 'asc'); setActiveSort('alpha'); }} className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-[10px] uppercase ${activeSort === 'alpha' ? 'bg-[#1c2a45] border-[#22c55e] text-[#22c55e]' : 'border-white/10 text-white/40'}`}><IconArrowDownUp size={14}/> {sortAlpha === 'asc' ? 'A - Z' : 'Z - A'}</button></div> )}
-        <div className="space-y-3 overflow-y-auto flex-1 pb-10">
-            {filteredPlayers.length === 0 ? <p className="text-center text-white/30 italic mt-10">No hay jugadores disponibles.</p> : filteredPlayers.map((p: any) => (
-                <div key={p.id} onClick={() => onSelect(p)} className={`p-4 rounded-xl border flex justify-between items-center active:scale-95 transition-transform ${mode === 'lineup' ? getStatusBg(p.id) : 'bg-[#162136] border-white/10'}`}>
-                    <div className="flex items-center gap-3"><span className="text-2xl">{getFlag(p.seleccion)}</span><div className="flex flex-col"><span className="text-sm font-bold text-white">{p.nombre}</span><div className="flex items-center gap-2"><span className="text-[10px] text-white/50">{p.posicion}</span>{mode === 'lineup' && <span className="text-[9px] font-black uppercase tracking-wide opacity-70">{getPlayerStatus(p.id)}</span>}</div></div></div><span className="text-[#22c55e] font-black">{p.precio}M</span>
-                </div>
-            ))}
-        </div>
-      </div>
     );
   };
 
@@ -1816,7 +1975,7 @@ export default function EuroApp() {
 // --- LÓGICA DEL MERCADO DE FICHAJES (CONTADOR DE CAMBIOS) ---
 
 // --- LÓGICA DE CÁLCULO DINÁMICO (PRESUPUESTO, QUINIELA Y MERCADO) ---
-const { standings: currentStandings } = getTournamentStandings();
+const { standings: currentStandings, advancedTeams } = getTournamentStandings();
 const myExtraBudget = calculateQuinielaPrize(quinielaSelections, currentStandings);
 const dynamicMaxBudget = MAX_BUDGET + myExtraBudget;
 
@@ -1824,48 +1983,51 @@ const myTeamData = allTeams.find((t:any) => t.id === user?.id);
 const snapshot = myTeamData?.rawSquad?.j1_snapshot;
 let marketChangesCount = 0;
 
+// Sacamos a los jugadores de la caja fuerte inicial
+const snapshotIds = new Set([
+    ...Object.values(snapshot?.selected || {}).map((p:any)=>p?.id),
+    ...(Array.isArray(snapshot?.bench) ? snapshot.bench : Object.values(snapshot?.bench || {})).map((p:any)=>p?.id),
+    ...(Array.isArray(snapshot?.extras) ? snapshot.extras : Object.values(snapshot?.extras || {})).map((p:any)=>p?.id)
+].filter(Boolean));
+
+const currentIdsSet = new Set(allSquadPlayers.map((p:any)=>p?.id));
+
+// MAGIA: Si el mercado está abierto, el descarte son los que estaban en el snapshot pero ya no están en tu equipo actual
+const discardedPlayers = isMarketOpen && snapshot ? PLAYERS_DB.filter((p:any) => snapshotIds.has(p.id) && !currentIdsSet.has(p.id)) : [];
+
 if (isMarketOpen && snapshot) {
-    const oldIds = new Set([
-        ...Object.values(snapshot.selected || {}).map((p:any)=>p?.id),
-        ...(Array.isArray(snapshot.bench) ? snapshot.bench : Object.values(snapshot.bench || {})).map((p:any)=>p?.id),
-        ...(Array.isArray(snapshot.extras) ? snapshot.extras : Object.values(snapshot.extras || {})).map((p:any)=>p?.id)
-    ].filter(Boolean));
-    
-    const currentIds = [
-        ...Object.values(selected).map((p:any)=>p?.id),
-        ...Object.values(bench).map((p:any)=>p?.id),
-        ...Object.values(extras).map((p:any)=>p?.id)
-    ].filter(Boolean);
-    
+    const currentIds = Array.from(currentIdsSet);
     currentIds.forEach(id => {
-        if (!oldIds.has(id)) marketChangesCount++;
+        if (!snapshotIds.has(id)) marketChangesCount++;
     });
 }
 // -------------------------------------------------------------------
 
+// --- FUNCIÓN ÚNICA Y BLINDADA PARA GUARDAR/VALIDAR PLANTILLA ---
 const handleSaveSquad = async () => {
-    // MAGIA: Permitimos 17 jugadores si ha pulsado "SIN NO CONVOCADOS"
-    const isSquadComplete = hasConfirmedNoExtras ? allSquadPlayers.length >= 17 : allSquadPlayers.length === 20;
+    if(!isValidTactic) return alert("⚠️ Táctica inválida."); 
+    if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
 
+    const isSquadComplete = hasConfirmedNoExtras ? allSquadPlayers.length >= 17 : allSquadPlayers.length === 20;
     if (!isSquadComplete) {
         alert(hasConfirmedNoExtras ? "Faltan jugadores para completar tu 11 titular y 6 suplentes (17 en total)." : "Faltan jugadores para completar la plantilla de 20.");
         return;
     }
     if (budgetSpent > dynamicMaxBudget) {
-        alert("Has excedido el presupuesto máximo.");
+        alert("⚠️ Presupuesto excedido.");
         return;
     }
     if (isMarketOpen && marketChangesCount > 7) {
-        alert("Has superado el límite de 7 fichajes.");
+        alert("⚠️ Has superado el límite de 7 fichajes.");
         return;
     }
 
-    // Recuperamos tu equipo y su "caja fuerte" para no borrar el historial
+    // Recuperamos tu equipo y su "caja fuerte" para NO BORRAR la historia (J1, J2, J3...)
     const myTeam = allTeams.find((t:any) => t.id === user?.id);
     const raw = myTeam?.rawSquad || {};
 
     const newSquad = {
-        ...raw,
+        ...raw, // <-- BLINDAJE: Esto salva la vida de las alineaciones pasadas
         selected,
         bench,
         extras,
@@ -1876,7 +2038,8 @@ const handleSaveSquad = async () => {
     
     if (!error) {
         setSquadValidated(true);
-        alert("¡Plantilla guardada y validada con éxito!");
+        alert("✅ ¡Plantilla guardada y validada con éxito!");
+        loadUserData(user); // MAGIA: Refresca inmediatamente la barra y los descartes
     } else {
         alert("Error al guardar: " + error.message);
     }
@@ -1885,29 +2048,59 @@ const handleSaveSquad = async () => {
   const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(`${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}`), [selected]);
   
   const currentLineupTactic = useMemo(() => {
-    // Ahora mira SIEMPRE a la jornada que estás visualizando en pantalla
-    const s = lineupViewJornada === currentRealMatchday ? selected : lineupSelected;
+    const s = lineupSelected; // FUERA LA TRAMPA: Siempre miramos lineupSelected
     if (!s || Object.keys(s).length === 0) return "0-0-0";
-    
-    // Contamos los jugadores reales por su posición, no por los huecos
     const defs = Object.values(s).filter((p:any) => p && p.posicion === 'DEF').length;
     const meds = Object.values(s).filter((p:any) => p && p.posicion === 'MED').length;
     const dels = Object.values(s).filter((p:any) => p && p.posicion === 'DEL').length;
     return `${defs}-${meds}-${dels}`;
-}, [lineupSelected, selected, lineupViewJornada, currentRealMatchday]);
+  }, [lineupSelected]);
 
   const isValidLineupTactic = useMemo(() => VALID_FORMATIONS.includes(currentLineupTactic), [currentLineupTactic]);
   const isJornadaEditable = (j: string) => { if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return false; const activeIndex = LINEUP_MATCHDAYS.indexOf(currentRealMatchday); const targetIndex = LINEUP_MATCHDAYS.indexOf(j); return targetIndex === activeIndex + 1; };
 
-  // --- SUSTITUCIONES EN TIEMPO REAL (Sin caché, para que reaccione al instante) ---
-  const selectedObj = lineupViewJornada === currentRealMatchday ? selected : lineupSelected;
-  const benchObj = lineupViewJornada === currentRealMatchday ? bench : lineupBench;
+  // --- SUSTITUCIONES EN TIEMPO REAL (Limpio) ---
+  const selectedObj = lineupSelected;
+  const benchObj = lineupBench;
   const banquilloArr = ["S1","S2","S3","S4","S5","S6"].map(k => benchObj[k]).filter(Boolean);
-  const viewCap = lineupViewJornada === currentRealMatchday ? captain : lineupCaptain;
+  const viewCap = lineupCaptain;
   const isClosedView = GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada] || false;
   
   const currentViewSubstitutions = processSubstitutions(selectedObj, banquilloArr, viewCap, lineupViewJornada, isClosedView);
 
+  // --- MEMORIA INTELIGENTE (HERENCIA EN CASCADA) ---
+  useEffect(() => {
+      if (!user) return;
+      const myTeam = allTeams.find(t => t.id === user.id);
+      if (!myTeam) return;
+      const raw = myTeam.rawSquad || {};
+      const key = lineupViewJornada.toLowerCase();
+      
+      const getInheritedPhase = (j: string) => {
+          if (j === 'j2') return raw.j2 || raw;
+          if (j === 'j3') return raw.j3 || raw.j2 || raw;
+          if (j === 'oct') return raw.oct || raw.j3 || raw.j2 || raw;
+          if (j === 'cua') return raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+          if (j === 'sem') return raw.sem || raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+          if (j === 'fin') return raw.fin || raw.sem || raw.cua || raw.oct || raw.j3 || raw.j2 || raw;
+          return raw;
+      };
+
+      if (key === 'j1') {
+          setLineupSelected(raw.j1_snapshot?.selected || selected);
+          setLineupBench(raw.j1_snapshot?.bench || bench);
+          setLineupExtras(raw.j1_snapshot?.extras || extras);
+          setLineupCaptain(raw.j1_snapshot?.captain || captain);
+      } else {
+          const phaseObj = getInheritedPhase(key);
+          setLineupSelected(phaseObj.selected || selected);
+          setLineupBench(phaseObj.bench || bench);
+          setLineupExtras(phaseObj.extras || extras);
+          setLineupCaptain(phaseObj.captain || captain);
+      }
+  }, [lineupViewJornada, allTeams, selected, bench, extras, captain, user]);
+  
+  
 
   const loadUserData = async (u: any) => { 
       try {
@@ -1945,7 +2138,6 @@ const handleSaveSquad = async () => {
               let s = myData.squad;
               if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = {}; } }
               setSelected(s?.selected || {}); setBench(s?.bench || {}); setExtras(s?.extras || {}); setCaptain(s?.captain); setSquadValidated(myData.is_validated); 
-              if (s?.j2) { setLineupSelected(s.j2.selected || {}); setLineupBench(s.j2.bench || {}); setLineupExtras(s.j2.extras || {}); setLineupCaptain(s.j2.captain || null); }
               const benchArray = s?.bench ? ["S1","S2","S3","S4","S5","S6"].map(k=>s.bench[k]).filter(Boolean) : [];
               myParsedSquad = { titulares: s?.selected || {}, banquillo: benchArray, extras: s?.extras ? Object.values(s.extras) : [], captain: s?.captain };
               let q = myData.quiniela; if (typeof q === 'string') { try { q = JSON.parse(q); } catch (e) { q = {}; } }
@@ -2055,12 +2247,48 @@ const handleSaveSquad = async () => {
       if (user) { window.history.pushState(null, document.title, window.location.href); const handlePopState = () => { window.history.pushState(null, document.title, window.location.href); setShowExitModal(true); }; window.addEventListener('popstate', handlePopState); return () => { window.removeEventListener('popstate', handlePopState); }; }
   }, [user]);
 
+  // --- MEMORIA INTELIGENTE DE ALINEACIONES ---
   useEffect(() => {
-     if (lineupViewJornada === currentRealMatchday) { setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras); setLineupCaptain(captain); } 
-     else if (Object.keys(lineupSelected).length === 0 && Object.keys(selected).length > 0) { setLineupSelected(selected); setLineupBench(bench); setLineupExtras(extras); setLineupCaptain(captain); }
-    }, [selected, bench, extras, captain, lineupViewJornada, lineupSelected, currentRealMatchday]);
+    if (!user) return;
+    const myTeam = allTeams.find(t => t.id === user.id);
+    if (!myTeam) return;
+    const raw = myTeam.rawSquad || {};
+    
+    const key = lineupViewJornada.toLowerCase();
+    
+    if (key === 'j1') {
+        // La J1 siempre es la plantilla base
+        setLineupSelected(selected);
+        setLineupBench(bench);
+        setLineupExtras(extras);
+        setLineupCaptain(captain);
+    } else {
+        // Si estamos viendo J2, J3... miramos si existe en la BD
+        if (raw[key] && Object.keys(raw[key].selected || {}).length > 0) {
+            setLineupSelected(raw[key].selected);
+            setLineupBench(raw[key].bench || {});
+            setLineupExtras(raw[key].extras || {});
+            setLineupCaptain(raw[key].captain || null);
+        } else {
+            // Si no la hemos editado todavía, hereda la base
+            setLineupSelected(selected);
+            setLineupBench(bench);
+            setLineupExtras(extras);
+            setLineupCaptain(captain);
+        }
+    }
+}, [lineupViewJornada, allTeams, selected, bench, extras, captain, user]);
 
-  const toggleQuiniela = (g: string, t: string) => { if(quinielaLocked) return; const c = quinielaSelections[g]||[]; if(c.includes(t)) setQuinielaSelections({...quinielaSelections,[g]:c.filter(x=>x!==t)}); else if(c.length<2) setQuinielaSelections({...quinielaSelections,[g]:[...c,t]}); };
+const toggleQuiniela = (g: string, t: string) => { if(quinielaLocked) return; const c = quinielaSelections[g]||[]; if(c.includes(t)) setQuinielaSelections({...quinielaSelections,[g]:c.filter(x=>x!==t)}); else if(c.length<2) setQuinielaSelections({...quinielaSelections,[g]:[...c,t]}); };
+  
+// AÑADE ESTA FUNCIÓN NUEVA:
+const handleToggleQuinielaLock = async () => {
+    const newLockState = !quinielaLocked;
+    setQuinielaLocked(newLockState);
+    if (user && user.id) {
+        await supabase.from('teams').update({ quiniela: { selections: quinielaSelections, locked: newLockState } }).eq('id', user.id);
+    }
+};
   const handleSaveName = async () => { if(user && user.id) { await supabase.from('teams').update({ team_name: currentTeamName }).eq('id', user.id); setIsEditingName(false); loadUserData(user); } };
 
   const handleLineupSwap = (slotId: string, incomingPlayer: any, targetSlotType: 'selected' | 'bench' | 'extras') => {
@@ -2138,10 +2366,43 @@ const handleSaveSquad = async () => {
       setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt); setActiveSlot(null);
   };
 
-  const handleValidateSquad = async () => { 
-      if(!isValidTactic) return alert("⚠️ Táctica inválida."); if(Object.keys(selected).length!==11) return alert("⚠️ Faltan titulares."); if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); if(budgetSpent > MAX_BUDGET) return alert("⚠️ Presupuesto excedido.");
-      setSquadValidated(true); if(user && user.id) { await supabase.from('teams').update({ team_name: currentTeamName, is_validated: true, squad: { selected, bench, extras, captain } }).eq('id', user.id); loadUserData(user); }
-  };
+  // --- NUEVA FUNCIÓN: ENVIAR AL BANQUILLO ---
+  const handleLineupToBench = () => {
+    if (!activeSlot || activeSlot.type === 'bench') return;
+    
+    const isLineup = view === 'lineups';
+    const currSel = isLineup ? lineupSelected : selected;
+    const currBen = isLineup ? lineupBench : bench;
+    const currExt = isLineup ? lineupExtras : extras;
+
+    let playerToMove = null;
+    if (activeSlot.type === 'titular') playerToMove = currSel[activeSlot.id];
+    else if (activeSlot.type === 'extras') playerToMove = currExt[activeSlot.id];
+    
+    if (!playerToMove) return;
+
+    const emptySlot = ["S1", "S2", "S3", "S4", "S5", "S6"].find(id => !currBen[id]);
+    if (!emptySlot) return alert("⚠️ El banquillo está lleno. Manda a alguien a la grada primero.");
+
+    let newSel = { ...currSel };
+    let newExt = { ...currExt };
+    let newBen = { ...currBen, [emptySlot]: playerToMove };
+
+    if (activeSlot.type === 'titular') delete newSel[activeSlot.id];
+    else if (activeSlot.type === 'extras') delete newExt[activeSlot.id];
+
+    if (isLineup) {
+        setLineupSelected(newSel); setLineupBench(newBen); setLineupExtras(newExt);
+    } else {
+        setSelected(newSel); setBench(newBen); setExtras(newExt);
+    }
+    setActiveSlot(null);
+};
+
+// Redirigimos el botón antiguo al nuevo motor blindado
+const handleValidateSquad = () => { 
+    handleSaveSquad(); 
+};
 
   const handleSaveLineup = async () => {
     if(!isValidLineupTactic) return alert("⚠️ Táctica inválida para esta jornada.");
@@ -2189,7 +2450,28 @@ const handleSaveSquad = async () => {
 };
   
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(4); };
-  const handleResetTeam = async () => { if(confirm("¿Estás seguro? Se borrará todo tu equipo.")) { setSelected({}); setBench({}); setExtras({}); setCaptain(null); setSquadValidated(false); if(user && user.id) { await supabase.from('teams').update({ squad: {}, is_validated: false, points: 0 }).eq('id', user.id); loadUserData(user); } } };
+// Reinicio Inteligente (No borra la historia)
+const handleResetTeam = async () => { 
+    if(confirm(isMarketOpen ? "⚠️ ¿Deshacer fichajes no guardados y volver a la plantilla base?" : "¿Estás seguro? Se borrará todo tu equipo.")) { 
+        const myTeam = allTeams.find((t:any) => t.id === user?.id);
+        const raw = myTeam?.rawSquad || {};
+
+        if (isMarketOpen && raw.j1_snapshot) {
+            // Si estamos en mercado, solo restauramos el snapshot (deshacer fichajes)
+            setSelected(raw.j1_snapshot.selected || {}); 
+            setBench(raw.j1_snapshot.bench || {}); 
+            setExtras(raw.j1_snapshot.extras || {}); 
+            setCaptain(raw.j1_snapshot.captain); 
+        } else {
+            // Si estamos creando equipo desde cero, borramos todo
+            setSelected({}); setBench({}); setExtras({}); setCaptain(null); 
+            if(user && user.id) { 
+                await supabase.from('teams').update({ squad: raw, is_validated: false }).eq('id', user.id); 
+            } 
+        }
+        setSquadValidated(false); 
+    } 
+};
   
   // Cambia el estado visualmente en la pantalla
   const handleToggleBet = (teamId: string, newValue: boolean) => {
@@ -2332,11 +2614,11 @@ const getAssistantText = () => {
             </div>
             {view === 'squad' && (
                 <div className="mt-2 flex gap-2">
-                    {hasTournamentStarted ? ( <div className="w-full bg-red-900/40 text-red-500 px-3 py-2 rounded-lg font-black text-[10px] uppercase border border-red-500/50 flex items-center justify-center gap-2 shadow-lg"><IconLock size={14}/> MERCADO CERRADO</div>
+                    {(hasTournamentStarted && !isMarketOpen) ? ( <div className="w-full bg-red-900/40 text-red-500 px-3 py-2 rounded-lg font-black text-[10px] uppercase border border-red-500/50 flex items-center justify-center gap-2 shadow-lg"><IconLock size={14}/> MERCADO CERRADO</div>
                     ) : squadValidated ? ( <button onClick={handleUnlockSquad} className="flex-1 bg-[#facc15] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"><IconEdit size={14}/> EDITAR PLANTILLA</button>
                     ) : ( <div className="flex gap-2 w-full"><button onClick={handleValidateSquad} className="flex-1 bg-[#22c55e] text-black p-2 rounded-lg font-black text-[10px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg animate-pulse-slow"><IconCheck size={14}/> VALIDAR</button><button onClick={handleResetTeam} className="flex-1 bg-red-500/20 text-red-500 border border-red-500/50 p-2 rounded-lg font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"><IconTrash2 size={14}/> REINICIAR</button></div> )}
                 </div>
-            )}
+            )} 
         </div>
       )}
 
@@ -2344,7 +2626,7 @@ const getAssistantText = () => {
       {view === 'calendar' && <CalendarView />}
       {view === 'scores' && <ScoresView teams={allTeams} myTeamId={user.id} isAdmin={isAdmin} />}
       {view === 'classification' && ( <div className="max-w-md mx-auto px-4 mt-20 pb-32"> <div className="mb-8 mt-4"><h3 className="text-[#facc15] font-black uppercase text-lg mb-4 flex gap-2"><IconTrophy/> CLASIFICACIÓN GENERAL</h3>{allTeams.sort((a,b)=>b.points-a.points).map((t,i) => (<TeamCard key={t.id} team={t} rank={i+1} isMyTeam={t.id === user.id} isAdmin={isAdmin} onToggleBet={handleToggleBet} />))}</div><EvolutionChart teams={allTeams} myTeamId={user.id}/> <MatchdayStandings teams={allTeams} /> </div> )}
-      {view === 'quiniela' && <QuinielaView selections={quinielaSelections} onToggle={toggleQuiniela} locked={quinielaLocked} onEdit={() => setQuinielaLocked(!quinielaLocked)} canEdit={!hasTournamentStarted} />}
+      {view === 'quiniela' && <QuinielaView selections={quinielaSelections} onToggle={toggleQuiniela} locked={quinielaLocked} onEdit={handleToggleQuinielaLock} canEdit={!hasTournamentStarted} />}
       
       {view === 'admin' && isAdmin && <AdminView onRefresh={loadUserData} allTeams={allTeams} onToggleBet={handleToggleBet} onSaveTreasury={handleSaveTreasury} currentRealMatchday={currentRealMatchday} setCurrentRealMatchday={setCurrentRealMatchday} />}
 
@@ -2392,39 +2674,43 @@ const getAssistantText = () => {
              </div>
 
              <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1 mb-2">TÁCTICA: <span className="text-[#22c55e] ml-2 text-xl drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]">{Object.keys(selected).length === 11 ? `${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}` : '--'}</span></div>
-             <Field selected={selected} step={step >= 4 ? 2 : 1} canInteractField={!squadValidated && !hasTournamentStarted || isMarketOpen} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} />
+             <Field selected={selected} step={step >= 4 ? 2 : 1} canInteractField={!squadValidated && !hasTournamentStarted || isMarketOpen} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} advancedTeams={advancedTeams} />
              
              <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 2 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                 <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
-                <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => (!squadValidated && !hasTournamentStarted || isMarketOpen) && setActiveSlot({id, type:'bench', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated || isMarketOpen ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} /></div>)}</div>
+                <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => <div key={id} onClick={() => (!squadValidated && (!hasTournamentStarted || isMarketOpen)) && setActiveSlot({id, type:'bench', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!squadValidated && (!hasTournamentStarted || isMarketOpen) ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={bench[id]} id={id} posColor={posColors[bench[id]?.posicion]} advancedTeams={advancedTeams} /></div>)}</div>
              </div>
 
              <div className={`mt-6 p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 transition-all duration-300 ${step === 3 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                  <p className="text-center font-black italic text-[10px] text-white/40 mb-3 uppercase tracking-widest">NO CONVOCADOS</p>
-                 <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => (!squadValidated && !hasTournamentStarted || isMarketOpen) && setActiveSlot({id, type:'extras', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!hasTournamentStarted && !squadValidated || isMarketOpen ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} /></div>)}</div>
+                 <div className="grid grid-cols-3 gap-2 mb-4">{["NC1", "NC2", "NC3"].map(id => <div key={id} onClick={() => (!squadValidated && (!hasTournamentStarted || isMarketOpen)) && setActiveSlot({id, type:'extras', pos:'TODOS'})} className={`aspect-square bg-white/5 rounded-xl border border-white/10 p-1 ${!squadValidated && (!hasTournamentStarted || isMarketOpen) ? 'cursor-pointer hover:bg-white/10' : ''}`}><BenchCard player={extras[id]} id={id} posColor={posColors[extras[id]?.posicion]} advancedTeams={advancedTeams} /></div>)}</div>
                  
-                 {/* --- ZONA DEL BOTÓN ROJO EN PLANTILLA --- */}
-                 {(!squadValidated || isMarketOpen) && Object.keys(extras || {}).length === 0 && (
+                 {(!squadValidated && (!hasTournamentStarted || isMarketOpen)) && Object.keys(extras || {}).length === 0 && (
                      <div className="mt-4">
-                         <button 
-                             onClick={() => setHasConfirmedNoExtras(!hasConfirmedNoExtras)}
-                             className={`w-full py-3 rounded-xl font-black text-[10px] tracking-widest uppercase border transition-all ${hasConfirmedNoExtras ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-[#1c2a45] text-red-500 border-red-600/30 hover:bg-red-900/20'}`}
-                         >
+                         <button onClick={() => setHasConfirmedNoExtras(!hasConfirmedNoExtras)} className={`w-full py-3 rounded-xl font-black text-[10px] tracking-widest uppercase border transition-all ${hasConfirmedNoExtras ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-[#1c2a45] text-red-500 border-red-600/30 hover:bg-red-900/20'}`}>
                              {hasConfirmedNoExtras ? '✅ SIN NO CONVOCADOS' : '❌ JUGAR SIN NO CONVOCADOS'}
                          </button>
-                         
-                         {!hasConfirmedNoExtras && (
-                             <p className="text-center text-[#facc15] text-[9px] font-bold mt-3 uppercase animate-pulse">
-                                 ⚠️ Ficha un no convocado o pulsa el botón rojo para poder elegir capitán
-                             </p>
-                         )}
+                         {!hasConfirmedNoExtras && <p className="text-center text-[#facc15] text-[9px] font-bold mt-3 uppercase animate-pulse">⚠️ Ficha un no convocado o pulsa el botón rojo para poder elegir capitán</p>}
                      </div>
                  )}
-                 {/* --- FIN ZONA BOTÓN ROJO --- */}
              </div>
 
-             {/* BOTÓN GUARDAR (CON BLOQUEO DE LÍMITES Y CAPITÁN) */}
-             {squadValidated && !isMarketOpen ? (
+             {/* BANDEJA DE DESCARTADOS (SOLO MERCADO ABIERTO) */}
+             {isMarketOpen && discardedPlayers.length > 0 && (
+                 <div className={`mt-6 p-4 rounded-[2.5rem] bg-red-900/10 border border-red-500/20 mb-10 shadow-xl`}>
+                     <p className="text-center font-black italic text-[10px] text-red-500 mb-3 uppercase tracking-widest">DESCARTADOS (VENDIDOS)</p>
+                     <div className="grid grid-cols-4 gap-2 mb-2">
+                         {discardedPlayers.map(p => (
+                             <div key={p.id} className="aspect-square bg-black/40 rounded-xl border border-red-900/30 p-1 opacity-50 grayscale transition-all hover:opacity-80">
+                                 <BenchCard player={p} id="OUT" posColor="bg-gray-800 text-gray-400" />
+                             </div>
+                         ))}
+                     </div>
+                 </div>
+             )}
+
+             {/* BOTÓN GUARDAR (SOLO SI NO ESTÁ VALIDADO) */}
+             {squadValidated ? (
                  <div className="mt-8 mb-8 p-4 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-2xl text-center">
                      <p className="text-[#22c55e] font-black text-sm uppercase flex items-center justify-center gap-2"><IconCheck size={20} /> Plantilla Validada</p>
                      <p className="text-[10px] text-white/50 mt-1 uppercase">Lista para competir</p>
@@ -2468,28 +2754,27 @@ const getAssistantText = () => {
              )}
 
 <Field 
-                 selected={lineupViewJornada === currentRealMatchday ? selected : lineupSelected} 
-                 step={(Object.keys((lineupViewJornada === currentRealMatchday ? extras : lineupExtras) || {}).length > 0 || hasConfirmedNoExtras) ? 3 : 2} 
+                 selected={lineupSelected} 
+                 step={(Object.keys(lineupExtras || {}).length > 0 || hasConfirmedNoExtras) ? 3 : 2} 
                  canInteractField={isJornadaEditable(lineupViewJornada) && isLineupEditing} 
                  setActiveSlot={setActiveSlot} 
-                 captain={displayCaptain} 
+                 captain={lineupCaptain} 
                  setCaptain={setLineupCaptain} 
                  substitutions={currentViewSubstitutions} 
                  matchday={lineupViewJornada} 
                  renderPointsBadge={renderPointsBadge} 
              />
-
              
              <div className="mt-8 transition-all duration-300">
                  <div className="p-4 rounded-[2.5rem] bg-[#1c2a45]/50 border border-white/5 mb-4 shadow-xl">
                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 mb-3">
-    <p className="text-[9px] text-yellow-400 text-center uppercase font-bold tracking-widest leading-relaxed">
-        ⚠️ Los puntos asignados a los suplentes son virtuales. No serán efectivos si el cambio por un jugador titular no se realiza al cerrar la jornada.
-    </p>
-</div>
+                     <p className="text-[9px] text-yellow-400 text-center uppercase font-bold tracking-widest leading-relaxed">
+                         ⚠️ Los puntos asignados a los suplentes son virtuales. No serán efectivos si el cambio por un jugador titular no se realiza al cerrar la jornada.
+                     </p>
+                 </div>
                      <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">BANQUILLO</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setBenchFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${benchFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
                      <div className="grid grid-cols-3 gap-2">{["S1", "S2", "S3", "S4", "S5", "S6"].map(id => { 
-                         const p = (lineupViewJornada===currentRealMatchday ? bench : lineupBench)[id];
+                         const p = lineupBench[id];
                          if(benchFilter!=="TODOS" && p?.posicion!==benchFilter) return null;
                          
                          const isEditable = isJornadaEditable(lineupViewJornada);
@@ -2507,7 +2792,7 @@ const getAssistantText = () => {
                  <div className="p-4 rounded-[2.5rem] bg-[#2a3b5a]/30 border border-white/5 mb-10 shadow-xl">
                      <div className="flex justify-between mb-2"><p className="font-black italic text-[10px] text-white/40 uppercase tracking-widest">NO CONVOCADOS</p><div className="flex gap-1">{["TODOS", "POR", "DEF", "MED", "DEL"].map(p=><button key={p} onClick={()=>setExtrasFilter(p)} className={`text-[8px] px-2 py-0.5 rounded font-bold ${extrasFilter===p?'bg-cyan-400 text-black':'bg-black/30'}`}>{p}</button>)}</div></div>
                      <div className="grid grid-cols-3 gap-2">
-                         {Object.entries(lineupViewJornada===currentRealMatchday ? extras : lineupExtras).map(([key, p]: any) => {
+                         {Object.entries(lineupExtras || {}).map(([key, p]: any) => {
                              if(extrasFilter!=="TODOS" && p?.posicion!==extrasFilter) return null;
                              return (
                                  <div key={key} onClick={() => isJornadaEditable(lineupViewJornada) && isLineupEditing && setActiveSlot({id: key, type:'extras', pos:'TODOS'})} className="aspect-square bg-white/5 rounded-xl border border-white/10 p-1 cursor-pointer hover:bg-white/10 transition-colors">
@@ -2516,24 +2801,24 @@ const getAssistantText = () => {
                              );
                          })}
                      </div>
-                     
                  </div>
              </div>
          </div>
       )}
 
-{activeSlot && (
+      {activeSlot && (
       <SelectionModal 
           isOpen={!!activeSlot} 
           onClose={() => setActiveSlot(null)} 
           players={PLAYERS_DB} 
           activeSlot={activeSlot}
           
-          // --- CABLES DE LA ALINEACIÓN Y COLORES ---
           mode={view === 'lineups' ? 'lineup' : 'market'}
           lineupTopology={{ selected: lineupSelected, bench: lineupBench, extras: lineupExtras }}
-          // -----------------------------------------
-
+          
+          advancedTeams={advancedTeams}
+          allPlayersSelected={[...Object.values(selected || {}), ...Object.values(bench || {}), ...Object.values(extras || {})].filter(Boolean)}
+          
           activeSort={activeSort}
           setActiveSort={setActiveSort}
           sortPrice={sortPrice}
@@ -2558,6 +2843,7 @@ const getAssistantText = () => {
               setActiveSlot(null);
           }}
           onRemove={handleLineupToExtras}
+          onRemoveToBench={handleLineupToBench}
           isMarketOpen={isMarketOpen}
       />
       )}
