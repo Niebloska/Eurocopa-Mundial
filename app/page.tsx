@@ -241,52 +241,75 @@ const safeArray = (data: any) => { if (!data) return []; return Array.isArray(da
 
 // TEAM CARD 
 const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
-  const [expanded, setExpanded] = useState(false);
-  const canView = isMyTeam || isAdmin;
+    const [expanded, setExpanded] = useState(false);
+    const canView = isMyTeam || isAdmin;
+    
+    useEffect(() => { if (isMyTeam) setExpanded(true); }, [isMyTeam]);
   
-  useEffect(() => { if (isMyTeam) setExpanded(true); }, [isMyTeam]);
-
-  const squadData = team.squad || {};
-  const filterByPos = (pos: string) => safeArray(squadData.titulares).filter((p:any) => p && p.posicion === pos);
+    const squadData = team.squad || {};
+    const filterByPos = (pos: string) => safeArray(squadData.titulares).filter((p:any) => p && p.posicion === pos);
+    
+    const trophies = team.trophies || [];
+    
+    // MAGIA: Detectamos si el torneo ha terminado y este es el ganador absoluto
+    const isChampion = rank === 1 && GLOBAL_CLOSED_MATCHDAYS['FIN'];
+    
+    // Hacemos que el #1 brille más fuerte si es el campeón
+    const getRankColor = (r: number) => { 
+        if (r === 1) return isChampion ? "text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] scale-110 transition-transform" : "text-[#ffd700] drop-shadow-md"; 
+        if (r === 2) return "text-[#c0c0c0]"; 
+        if (r === 3) return "text-[#cd7f32]"; 
+        return "text-white/30"; 
+    };
   
-  const trophies = team.trophies || [];
-  const getRankColor = (r: number) => { if (r === 1) return "text-[#ffd700] drop-shadow-md"; if (r === 2) return "text-[#c0c0c0]"; if (r === 3) return "text-[#cd7f32]"; return "text-white/30"; };
-
-  return (
-    <div className={`rounded-2xl border transition-all overflow-hidden mb-3 ${isMyTeam ? 'bg-[#1c2a45] border-[#22c55e] animate-pulse-slow shadow-[0_0_10px_rgba(34,197,94,0.3)] ring-1 ring-[#22c55e]' : 'bg-[#1c2a45] border-white/5'}`}>
-       <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors`}>
-          <div className="flex items-center gap-4">
-              <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
-              <div>
-                  <h3 className={`font-black text-sm uppercase italic ${isMyTeam ? 'text-[#22c55e]' : 'text-white'}`}>{team.name}</h3>
-                  <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>{team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}</div>
-                  {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
-              </div>
-          </div>
-          <div className="flex items-center gap-4">
-              <div className="text-right"><span className="block font-black text-[#22c55e] text-lg">{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
-              {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
-          </div>
-       </div>
-       {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
-       {expanded && canView && (
-         <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
-            <div className="border border-[#22c55e]/20 rounded-2xl bg-[#2e9d4a]/10 p-4 relative overflow-hidden">
-              <p className="text-[9px] font-black uppercase text-[#22c55e] mb-3 text-center">ONCE INICIAL</p>
-              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-              <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-              <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+    // Asignamos el traje de gala si es el campeón
+    const cardStyles = isChampion 
+        ? 'bg-gradient-to-br from-yellow-900/30 via-[#1c2a45] to-[#1c2a45] border-[#ffd700] shadow-[0_0_20px_rgba(255,215,0,0.3)] ring-1 ring-[#ffd700]' 
+        : (isMyTeam ? 'bg-[#1c2a45] border-[#22c55e] animate-pulse-slow shadow-[0_0_10px_rgba(34,197,94,0.3)] ring-1 ring-[#22c55e]' : 'bg-[#1c2a45] border-white/5');
+  
+    return (
+      <div className={`relative rounded-2xl border transition-all overflow-hidden mb-3 ${cardStyles}`}>
+         
+         {/* LA BANDA DE CAMPEÓN */}
+         {isChampion && (
+             <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-500 to-yellow-300 text-black text-[8px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 flex items-center gap-1 border-b border-l border-yellow-100 animate-in slide-in-from-top">
+                 <IconTrophy size={10} /> CAMPEÓN EUROCOPA FANTÁSTICA 2024
+             </div>
+         )}
+  
+         <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors relative z-0`}>
+            <div className="flex items-center gap-4">
+                <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
+                <div>
+                    <h3 className={`font-black text-sm uppercase italic ${isChampion ? 'text-[#ffd700]' : (isMyTeam ? 'text-[#22c55e]' : 'text-white')}`}>{team.name}</h3>
+                    <div className="flex items-center gap-2"><div className="flex items-center gap-1 text-[10px] text-white/50 uppercase font-bold"><IconUser size={10} /> {team.user}</div>{team.hasPaidBet ? <IconCoinGold /> : <IconNoCoin />}</div>
+                    {trophies.length > 0 && (<div className="flex gap-1 mt-1">{trophies.map((t: string) => (<div key={t} className="bg-[#facc15] text-black px-1.5 rounded flex items-center gap-0.5 text-[8px] font-black shadow-lg shadow-yellow-500/20"><IconTrophy size={8} /> {t}</div>))}</div>)}
+                </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-               <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo && squadData.banquillo.length > 0 ? squadData.banquillo.map((p:any) => <BenchCard key={p.id} player={p} id="S" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
-               <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-2 gap-2">{squadData.extras && squadData.extras.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
+            <div className="flex items-center gap-4">
+                <div className="text-right"><span className={`block font-black text-lg ${isChampion ? 'text-[#ffd700]' : 'text-[#22c55e]'}`}>{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
+                {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
             </div>
          </div>
-       )}
-    </div>
-  );
-};
+         {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
+         {expanded && canView && (
+           <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
+              <div className={`border rounded-2xl p-4 relative overflow-hidden ${isChampion ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-[#2e9d4a]/10 border-[#22c55e]/20'}`}>
+                <p className={`text-[9px] font-black uppercase mb-3 text-center ${isChampion ? 'text-[#ffd700]' : 'text-[#22c55e]'}`}>ONCE INICIAL</p>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo && squadData.banquillo.length > 0 ? squadData.banquillo.map((p:any) => <BenchCard key={p.id} player={p} id="S" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
+                 <div className="border border-white/10 rounded-2xl bg-white/5 p-3"><p className="text-[9px] font-black uppercase text-white/40 mb-3 text-center">NO CONV.</p><div className="grid grid-cols-2 gap-2">{squadData.extras && squadData.extras.length > 0 ? squadData.extras.map((p:any) => <BenchCard key={p.id} player={p} id="NC" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
+              </div>
+           </div>
+         )}
+      </div>
+    );
+  };
 
 // ==========================================
 // 4. CAMPO DE FÚTBOL Y BANQUILLO
@@ -319,13 +342,16 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
               <div key={row.pos} className={`absolute w-full -translate-y-1/2 flex justify-${row.slots.length===1?'center':'between'} gap-1 px-6 z-30`} style={{top: row.top}}>
                   {row.slots.map(i => {
                       const id = `${row.pos}-${i}`; const p = selected[id];
-                      
+                      const pts = (matchday && p) ? getPlayerPointsRow(p.nombre, matchday) : null;
                       const isPenalized = isMatchdayClosed && penalizedSlots.has(id);
                       const isSubbedOut = p && !isEditable && subbedOutIds.has(p.id) && !isPenalized;
-                      const isEliminated = advancedTeams && p && advancedTeams.size > 0 && !advancedTeams.has(p.seleccion);
+                      // MAGIA: Solo hay eliminados de verdad cuando la Jornada 3 se ha cerrado oficialmente
+                      const isKnockoutPhase = GLOBAL_CLOSED_MATCHDAYS['J3'] === true;
+                      const isEliminated = isKnockoutPhase && advancedTeams && p && advancedTeams.size > 0 && !advancedTeams.has(p.seleccion);
+                      
+                      // VARIABLES DE ESTILO RECUPERADAS:
                       const bgClass = isPenalized ? 'bg-red-900/90 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)]' : (isSubbedOut ? 'bg-gray-500 border-gray-400' : (p ? (isEliminated ? 'bg-gray-300 border-gray-400 shadow-inner' : 'bg-white border-[#22c55e]') : 'bg-black/40 border-white/20'));
                       const textClass = (isSubbedOut || isPenalized) ? 'text-white' : 'text-black';
-
                       return (
                           <div key={i} className="relative flex flex-col items-center group" onClick={() => canInteractField && setActiveSlot({id, type:'titular', pos:row.pos})}>
                               <div className={`w-12 h-12 rounded-full border-[3px] flex items-center justify-center shadow-xl transition-all relative z-30 ${bgClass} ${(canInteractField && !p) ? 'animate-pulse ring-4 ring-white/50 border-white' : ''}`}>
@@ -379,7 +405,8 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
 
     // ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
     const pts = matchday ? getPlayerPointsRow(player.nombre, matchday) : null;
-    const isEliminated = advancedTeams && advancedTeams.size > 0 && !advancedTeams.has(player.seleccion);
+    const isKnockoutPhase = GLOBAL_CLOSED_MATCHDAYS['J3'] === true;
+    const isEliminated = isKnockoutPhase && advancedTeams && advancedTeams.size > 0 && !advancedTeams.has(player.seleccion);
     
     return (
       <div onClick={onClick} className={`relative w-full h-full flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer active:scale-95 shadow-lg ${isSubbedIn ? 'bg-[#1c2a45] border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]' : (isEliminated ? 'bg-gray-800 border-gray-600 opacity-60' : 'bg-[#1c2a45] border-white/10 hover:bg-white/5')}`}>
@@ -413,19 +440,18 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
   const EvolutionChart = ({ teams, myTeamId }: { teams: any[], myTeamId: string | undefined }) => {
     const height = 220; const width = 350; const padding = 30;
     
-    const maxEvolLength = Math.max(...teams.map(t => (t.calculatedEvolution || []).length), 1);
-    // Ahora usamos directamente las jornadas oficiales sin la palabra "INICIO"
-    const xLabels = LINEUP_MATCHDAYS.slice(0, maxEvolLength);
+    // FIJAMOS EL EJE X PARA QUE SIEMPRE MUESTRE HASTA LA FINAL (7 JORNADAS)
+    const xLabels = LINEUP_MATCHDAYS; 
     
     const maxRank = teams.length > 0 ? teams.length : 4; 
-    const getX = (index: number) => padding + (index * (width - 2 * padding)) / Math.max(1, (maxEvolLength - 1));
+    const getX = (index: number) => padding + (index * (width - 2 * padding)) / (xLabels.length - 1);
     const getY = (rank: number) => padding + ((rank - 1) * (height - 2 * padding)) / Math.max(1, (maxRank - 1));
     
     return (
         <div className="w-full bg-[#1c2a45] rounded-2xl p-5 border border-white/5 shadow-xl mb-6 overflow-hidden relative">
             <h3 className="text-sm font-black italic uppercase text-[#facc15] mb-6 flex items-center gap-2"><IconChart size={14} /> EVOLUCIÓN DEL RANKING</h3>
             
-            {maxEvolLength < 1 || (maxEvolLength === 1 && (teams[0]?.calculatedEvolution || []).length === 0) ? (
+            {(!teams[0] || (teams[0].calculatedEvolution || []).length === 0) ? (
                 <div className="text-center text-white/40 italic py-10 text-xs">La gráfica aparecerá al jugar la J1.</div>
             ) : (
                 <>
@@ -464,7 +490,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
             )}
         </div>
     );
-};
+  };
 
   
   const MatchdayStandings = ({ teams }: { teams: any[] }) => {
@@ -500,6 +526,12 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
         const res1 = GLOBAL_MATCHES[`${match.t1.name}-${match.t2.name}`];
         const res2 = GLOBAL_MATCHES[`${match.t2.name}-${match.t1.name}`];
         const res = res1 || res2;
+        
+        // Buscamos si hubo penaltis
+        const pen1 = GLOBAL_MATCHES[`${match.t1.name}-${match.t2.name}_PEN`];
+        const pen2 = GLOBAL_MATCHES[`${match.t2.name}-${match.t1.name}_PEN`];
+        const penWinner = pen1 || pen2;
+
         let s1 = "-", s2 = "-";
         if (res) {
             const parts = res.split('-');
@@ -507,17 +539,25 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
             else { s1 = parts[1].trim(); s2 = parts[0].trim(); }
         }
 
-        const w1 = res && parseInt(s1) > parseInt(s2) ? 'text-[#22c55e]' : 'text-white/60';
-        const w2 = res && parseInt(s2) > parseInt(s1) ? 'text-[#22c55e]' : 'text-white/60';
+        const w1 = res && (parseInt(s1) > parseInt(s2) || penWinner === match.t1.name) ? 'text-[#22c55e]' : 'text-white/60';
+        const w2 = res && (parseInt(s2) > parseInt(s1) || penWinner === match.t2.name) ? 'text-[#22c55e]' : 'text-white/60';
 
         return (
-            <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full mb-3">
+            <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full mb-3 relative overflow-hidden">
                 <div className={`flex items-center justify-between py-1 border-b border-white/5 ${match.t1.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
-                    <div className="flex items-center gap-2"><span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span></div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span>
+                        <span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span>
+                        {penWinner === match.t1.name && <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">PEN</span>}
+                    </div>
                     <span className={`font-black bg-black/40 px-1.5 rounded ${w1}`}>{s1}</span>
                 </div>
                 <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
-                    <div className="flex items-center gap-2"><span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span><span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span></div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span>
+                        <span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span>
+                        {penWinner === match.t2.name && <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">PEN</span>}
+                    </div>
                     <span className={`font-black bg-black/40 px-1.5 rounded ${w2}`}>{s2}</span>
                 </div>
             </div>
@@ -842,10 +882,18 @@ const resolveMatchWinner = (t1: string, t2: string) => {
     const res2 = GLOBAL_MATCHES[`${t2}-${t1}`];
     const res = res1 || res2;
     if (!res) return null;
+    
     const [g1, g2] = res.split('-').map(Number);
     if (g1 > g2) return res1 ? t1 : t2;
     if (g2 > g1) return res1 ? t2 : t1;
-    return t1; // Empate -> gana t1 en simulación para no romper el bracket
+    
+    // MAGIA DE PENALTIS: Si hay empate, buscamos la etiqueta "_PEN" en la base de datos
+    const penWinner1 = GLOBAL_MATCHES[`${t1}-${t2}_PEN`];
+    const penWinner2 = GLOBAL_MATCHES[`${t2}-${t1}_PEN`];
+    if (penWinner1) return penWinner1;
+    if (penWinner2) return penWinner2;
+    
+    return t1; // Si simulamos a lo bestia y hay empate, pasamos al 1º para no romper el cuadro
 };
 
 const getKnockoutFixtures = () => {
@@ -1344,26 +1392,39 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday, isMatchdayClosed }: any) 
 
 const MatchAdminRow = ({ m, onRefresh }: any) => {
     const matchId = `${m.t1}-${m.t2}`;
-    // Ignoramos el resultado ficticio del generador para que solo bloquee si tú lo has guardado de verdad
     const currentRes = GLOBAL_MATCHES[matchId] || ""; 
+    const currentPenWinner = GLOBAL_MATCHES[`${matchId}_PEN`] || "";
+    
     const [g1, g2] = currentRes ? currentRes.split(" - ") : ["", ""];
     const [score1, setScore1] = useState(g1);
     const [score2, setScore2] = useState(g2);
+    const [penWinner, setPenWinner] = useState(currentPenWinner);
     const [isSaving, setIsSaving] = useState(false);
-    const [isLocked, setIsLocked] = useState(!!currentRes); // Se bloquea automáticamente si ya había resultado
+    const [isLocked, setIsLocked] = useState(!!currentRes); 
+
+    // Detectamos si es eliminatoria para habilitar la tanda de penaltis
+    const isKnockout = ["Octavos", "Cuartos", "Semis", "Final"].includes(m.d);
+    const isTie = score1 !== "" && score2 !== "" && score1 === score2;
 
     const handleSave = async () => {
         if (score1 === "" || score2 === "") return;
+        if (isKnockout && isTie && !penWinner) return alert("⚠️ Al haber empate, debes seleccionar qué equipo ganó la tanda de penaltis.");
+
         setIsSaving(true);
         const resString = `${score1} - ${score2}`;
         
-        // Técnica anti-duplicados: Borramos antes de insertar
-        await supabase.from('match_results').delete().eq('match_id', matchId);
-        const { error } = await supabase.from('match_results').insert({ match_id: matchId, result: resString });
+        // Empaquetamos el resultado y (si hay) el ganador de penaltis
+        const upserts = [{ match_id: matchId, result: resString }];
+        if (isKnockout && isTie && penWinner) {
+            upserts.push({ match_id: `${matchId}_PEN`, result: penWinner });
+        }
+        
+        const { error } = await supabase.from('match_results').upsert(upserts, { onConflict: 'match_id' });
         
         if (!error) { 
             GLOBAL_MATCHES[matchId] = resString; 
-            setIsLocked(true); // Bloqueamos visualmente al guardar
+            if (isKnockout && isTie && penWinner) GLOBAL_MATCHES[`${matchId}_PEN`] = penWinner;
+            setIsLocked(true); 
             onRefresh(); 
         } else { 
             alert("Error al guardar: " + error.message); 
@@ -1372,28 +1433,41 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
     };
 
     return (
-        <div className={`relative flex items-center justify-between p-3 rounded-xl border mb-2 transition-colors ${isLocked ? 'bg-green-900/10 border-green-500/30' : 'bg-[#1c2a45] border-white/5 hover:bg-white/5'}`}>
-           <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <span className="text-xl">{getFlag(m.t1)}</span></div>
-           
-           <div className="flex items-center gap-1 justify-center w-[20%]">
-               <input type="number" disabled={isLocked} value={score1} onChange={e=>setScore1(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
-               <span className="text-white/50 font-black">-</span>
-               <input type="number" disabled={isLocked} value={score2} onChange={e=>setScore2(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
-           </div>
-           
-           <div className="flex items-center gap-2 w-[40%] justify-start"><span className="text-xl">{getFlag(m.t2)}</span> <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span></div>
-           
-           <div className="absolute right-4 flex items-center">
-               {isLocked ? (
-                   <button onClick={() => setIsLocked(false)} className="bg-[#facc15] text-black px-2 py-1.5 rounded text-[8px] font-black uppercase hover:bg-yellow-400 active:scale-95 shadow-lg flex items-center gap-1 border border-yellow-600 transition-all">
-                       <IconEdit size={12}/> EDITAR
-                   </button>
-               ) : (
-                   <button onClick={handleSave} disabled={isSaving} className="bg-red-600 text-white px-2 py-1.5 rounded text-[8px] font-black uppercase hover:bg-red-500 active:scale-95 shadow-lg flex items-center gap-1 transition-all">
-                       {isSaving ? '...' : <><IconCheck size={12}/> OK</>}
-                   </button>
-               )}
-           </div>
+        <div className={`relative flex flex-col p-3 rounded-xl border mb-2 transition-colors ${isLocked ? 'bg-green-900/10 border-green-500/30' : 'bg-[#1c2a45] border-white/5 hover:bg-white/5'}`}>
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <span className="text-xl">{getFlag(m.t1)}</span></div>
+                
+                <div className="flex items-center gap-1 justify-center w-[20%]">
+                    <input type="number" disabled={isLocked} value={score1} onChange={e=>setScore1(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
+                    <span className="text-white/50 font-black">-</span>
+                    <input type="number" disabled={isLocked} value={score2} onChange={e=>setScore2(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
+                </div>
+                
+                <div className="flex items-center gap-2 w-[40%] justify-start"><span className="text-xl">{getFlag(m.t2)}</span> <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span></div>
+                
+                <div className="absolute right-4 flex items-center">
+                    {isLocked ? (
+                        <button onClick={() => setIsLocked(false)} className="bg-[#facc15] text-black px-2 py-1.5 rounded text-[8px] font-black uppercase hover:bg-yellow-400 active:scale-95 shadow-lg flex items-center gap-1 border border-yellow-600 transition-all">
+                            <IconEdit size={12}/> EDITAR
+                        </button>
+                    ) : (
+                        <button onClick={handleSave} disabled={isSaving} className="bg-red-600 text-white px-2 py-1.5 rounded text-[8px] font-black uppercase hover:bg-red-500 active:scale-95 shadow-lg flex items-center gap-1 transition-all">
+                            {isSaving ? '...' : <><IconCheck size={12}/> OK</>}
+                        </button>
+                    )}
+                </div>
+            </div>
+            
+            {/* ZONA DE PENALTIS DESPLEGABLE */}
+            {isKnockout && isTie && (
+                <div className="mt-3 pt-3 border-t border-white/10 flex flex-col items-center animate-in slide-in-from-top duration-300">
+                    <span className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-2 flex items-center gap-1">⚽ ¿Quién ganó los penaltis?</span>
+                    <div className="flex gap-2">
+                        <button disabled={isLocked} onClick={() => setPenWinner(m.t1)} className={`px-4 py-1.5 rounded text-[10px] font-black transition-all border ${penWinner === m.t1 ? 'bg-[#22c55e] text-black border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.4)] scale-105' : 'bg-black/40 text-white/40 border-white/10 hover:border-white/30'}`}>{getFlag(m.t1)} {m.t1}</button>
+                        <button disabled={isLocked} onClick={() => setPenWinner(m.t2)} className={`px-4 py-1.5 rounded text-[10px] font-black transition-all border ${penWinner === m.t2 ? 'bg-[#22c55e] text-black border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.4)] scale-105' : 'bg-black/40 text-white/40 border-white/10 hover:border-white/30'}`}>{getFlag(m.t2)} {m.t2}</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -1515,16 +1589,21 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             }
 
             // ⚡ MAGIA ATÓMICA: Metemos el avance de jornada DENTRO de los partidos
-            matchUpserts.push({ match_id: 'ACTIVE_MATCHDAY', result: jornada });
+    matchUpserts.push({ match_id: 'ACTIVE_MATCHDAY', result: jornada });
 
-            if (matchUpserts.length > 0) {
-                const { error: errM } = await supabase.from('match_results').upsert(matchUpserts, { onConflict: 'match_id' });
-                if (errM) console.error("Error partidos:", errM);
-            }
-            if (playerUpserts.length > 0) {
-                const { error: errP } = await supabase.from('player_scores').upsert(playerUpserts, { onConflict: 'player_name' });
-                if (errP) alert("Aviso Supabase: " + errP.message);
-            }
+    if (matchUpserts.length > 0) {
+        // 🛡️ Filtro anti-duplicados para los partidos
+        const uniqueMatchUpserts = Array.from(new Map(matchUpserts.map(item => [item.match_id, item])).values());
+        const { error: errM } = await supabase.from('match_results').upsert(uniqueMatchUpserts, { onConflict: 'match_id' });
+        if (errM) console.error("Error partidos:", errM);
+    }
+    
+    if (playerUpserts.length > 0) {
+        // 🛡️ Filtro anti-duplicados para los jugadores (Esto soluciona tu error de raíz)
+        const uniquePlayerUpserts = Array.from(new Map(playerUpserts.map(item => [item.player_name, item])).values());
+        const { error: errP } = await supabase.from('player_scores').upsert(uniquePlayerUpserts, { onConflict: 'player_name' });
+        if (errP) alert("Aviso Supabase: " + errP.message);
+    }
 
             setCurrentRealMatchday(jornada);
             GLOBAL_ACTIVE_MATCHDAY = jornada;
@@ -1967,7 +2046,7 @@ export default function EuroApp() {
   const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
 
   const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
-  const budgetSpent = allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0);
+  const budgetSpent = Math.round(allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0) * 10) / 10;
   
   // Calculamos en tiempo real si el jugador ha ganado premio en la quiniela
   
@@ -2008,13 +2087,16 @@ const handleSaveSquad = async () => {
     if(!isValidTactic) return alert("⚠️ Táctica inválida."); 
     if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
 
-    const isSquadComplete = hasConfirmedNoExtras ? allSquadPlayers.length >= 17 : allSquadPlayers.length === 20;
-    if (!isSquadComplete) {
-        alert(hasConfirmedNoExtras ? "Faltan jugadores para completar tu 11 titular y 6 suplentes (17 en total)." : "Faltan jugadores para completar la plantilla de 20.");
+    const numPlayers = allSquadPlayers.length;
+    // MAGIA: Válido si tiene entre 18 y 20, o si tiene 17 Y ha pulsado el botón rojo
+    const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
+    
+    if (!isValidCount) {
+        alert("Debes tener entre 17 y 20 jugadores. Si tienes 17, confirma que no quieres extras pulsando el botón rojo.");
         return;
     }
     if (budgetSpent > dynamicMaxBudget) {
-        alert("⚠️ Presupuesto excedido.");
+        alert(`⚠️ Presupuesto excedido. Gastado: ${budgetSpent}M / Límite: ${dynamicMaxBudget}M`);
         return;
     }
     if (isMarketOpen && marketChangesCount > 7) {
@@ -2174,8 +2256,14 @@ const handleSaveSquad = async () => {
           // MAGIA: CALCULAR EVOLUCIÓN DEL RANKING EN TIEMPO REAL
           const historyPoints = combinedTeams.map(t => ({ id: t.id, pts: 0 }));
           combinedTeams.forEach(t => { t.calculatedEvolution = []; });
-          LINEUP_MATCHDAYS.forEach(j => {
-              const isStarted = GLOBAL_CLOSED_MATCHDAYS[j] || activeMatchdayStr === j;
+          
+          // Calculamos el índice de la jornada actual para asegurar la línea de tiempo
+          const activeIndex = LINEUP_MATCHDAYS.indexOf(activeMatchdayStr);
+          
+          LINEUP_MATCHDAYS.forEach((j, idx) => {
+              // El blindaje: Si está cerrada, O si es una jornada pasada/actual, se calcula
+              const isStarted = GLOBAL_CLOSED_MATCHDAYS[j] || idx <= activeIndex;
+              
               if (isStarted) {
                   historyPoints.forEach(hp => {
                       const t = combinedTeams.find(x => x.id === hp.id);
@@ -2510,7 +2598,7 @@ const handleSaveTreasury = async () => {
 }, [selected, bench, extras, hasConfirmedNoExtras, captain, view]);
 
 const getAssistantText = () => {
-    if (view === 'squad') { 
+    if (view === 'squad') { if (isMarketOpen) return "MERCADO ABIERTO. Gestiona tus descartes y fichajes.";
         if (hasTournamentStarted) return "EL TORNEO HA COMENZADO. El mercado de fichajes está cerrado."; 
         if (squadValidated) return "¡PLANTILLA LISTA! Ve a Alineaciones.";
         if (step === 1) return "PASO 1 DE 4: Elige tu 11 titular";
@@ -2717,13 +2805,13 @@ const getAssistantText = () => {
                  </div>
              ) : (
                  <button 
-                     disabled={(!hasConfirmedNoExtras && allSquadPlayers.length < 20) || (hasConfirmedNoExtras && allSquadPlayers.length < 17) || !captain || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)}
+                     disabled={(allSquadPlayers.length < 17) || (allSquadPlayers.length === 17 && !hasConfirmedNoExtras) || !captain || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)}
                      onClick={handleSaveSquad} 
-                     className={`mt-8 mb-8 w-full p-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex justify-center items-center gap-2 ${((!hasConfirmedNoExtras && allSquadPlayers.length < 20) || (hasConfirmedNoExtras && allSquadPlayers.length < 17) || !captain || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)) ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed' : 'bg-gradient-to-r from-[#22c55e] to-green-600 text-black hover:scale-105 border border-green-400'}`}
+                     className={`mt-8 mb-8 w-full p-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex justify-center items-center gap-2 ${((allSquadPlayers.length < 17) || (allSquadPlayers.length === 17 && !hasConfirmedNoExtras) || !captain || budgetSpent > dynamicMaxBudget || (isMarketOpen && marketChangesCount > 7)) ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed' : 'bg-gradient-to-r from-[#22c55e] to-green-600 text-black hover:scale-105 border border-green-400'}`}
                  >
                      <IconCheck size={20} /> 
-                     {(!hasConfirmedNoExtras && allSquadPlayers.length < 20) ? `Faltan ${20 - allSquadPlayers.length} Jugadores` : 
-                     (hasConfirmedNoExtras && allSquadPlayers.length < 17) ? `Faltan ${17 - allSquadPlayers.length} Jugadores` :
+                     {allSquadPlayers.length < 17 ? `Faltan ${17 - allSquadPlayers.length} Jugadores (Mínimo)` : 
+                     (allSquadPlayers.length === 17 && !hasConfirmedNoExtras) ? `Confirma jugar sin Extras (Botón Rojo)` :
                      (!captain) ? '⚠️ ELIGE UN CAPITÁN' :
                      (budgetSpent > dynamicMaxBudget ? 'Presupuesto Excedido' : 
                      ((isMarketOpen && marketChangesCount > 7) ? 'Límite de Fichajes Superado' : 'Guardar Plantilla'))}
