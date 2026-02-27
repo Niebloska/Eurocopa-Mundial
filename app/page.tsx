@@ -15,42 +15,7 @@ const LINEUP_MATCHDAYS = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"];
 const MAX_BUDGET = 400;
 const GAME_START_DATE = "2024-06-14T21:00:00";
 
-const SIMULATED_GAME_START = new Date(Date.now() -1 * 24 * 60 * 60 * 1000).toISOString(); 
-
-
-// --- PUNTOS J1 (GLOBAL) ---
-const MOCK_SCORES: Record<string, number | null> = {
-    // Alemania
-    "Florian Wirtz": 14,   
-    "Jamal Musiala": 12,   
-    "Kai Havertz": 9,      
-    "Toni Kroos": 6,       
-    "Ilkay Gündogan": 7,   
-    "Antonio Rüdiger": -1, 
-    "Manuel Neuer": 6,     
-    "Maximilian Mittelstädt": 5,
-    "Jonathan Tah": 6,
-    "Joshua Kimmich": 8,   
-    "Robert Andrich": 4,   
-    "Niclas Füllkrug": 8,  
-    "Emre Can": 8,         
-    "Thomas Müller": 3,
-    "Leroy Sané": 2,       
-    
-    // Escocia
-    "Ryan Porteous": -5,   
-    "Angus Gunn": -2,      
-    "Scott McTominay": 2,
-    "Andrew Robertson": 1,
-    "John McGinn": 2,
-    "Che Adams": 1,
-    "Kieran Tierney": 1,
-    "Scott McKenna": 1,
-    
-    // CASO DE PRUEBA: NO JUEGAN (Para forzar sustituciones automáticas)
-    "Marc-André ter Stegen": null, 
-    "David Raum": null
-};
+const SIMULATED_GAME_START = new Date(Date.now() +1 * 24 * 60 * 60 * 1000).toISOString(); 
 
 const posColors: Record<string, string> = {
   "POR": "bg-[#facc15] text-black", 
@@ -819,10 +784,7 @@ const getPlayerPointsRow = (playerName: string, matchday: string) => {
         const lastName = normalizedName.split(' ').pop();
         if (lastName && normalizedKey.includes(lastName)) return value[matchday];
     }
-
-    // Usamos el puente global aquí
-    if (matchday === GLOBAL_ACTIVE_MATCHDAY && MOCK_SCORES[playerName] !== undefined) return MOCK_SCORES[playerName];
-    
+ 
     return undefined;
 };
 
@@ -1494,33 +1456,54 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
     };
 
     const handleToggleMarket = async () => {
-        if (!confirm(isMarketOpen ? "¿CERRAR el Mercado de Fichajes?" : "⚠️ ¿ABRIR MERCADO? Esto guardará la 'Caja Fuerte' con la plantilla de Fase de Grupos de TODOS los jugadores.")) return;
+        if (!confirm(isMarketOpen ? "¿CERRAR el Mercado de Fichajes?" : "⚠️ ¿ABRIR MERCADO? Esto guardará la 'Caja Fuerte' con la plantilla de TODOS los jugadores. Este proceso tardará unos segundos, dale a Aceptar y espera...")) return;
         
         const newVal = !isMarketOpen;
+        setIsSimulating(true); // Encendemos el engranaje de "Modo Dios" para que veas que está cargando
         
-        // EL BLINDAJE: Usamos upsert con onConflict para que Supabase no se bloquee
-        const { error } = await supabase
-            .from('match_results')
-            .upsert(
-                { match_id: 'MARKET_OPEN', result: newVal ? 'true' : 'false' },
-                { onConflict: 'match_id' }
-            );
-        
-        if (newVal && !error) {
-            for (const t of allTeams) {
-                const squadData = t.rawSquad || {};
-                if (!squadData.j1_snapshot) {
-                    const snap = { selected: squadData.selected || squadData.titulares || {}, bench: squadData.bench || squadData.banquillo || {}, extras: squadData.extras || {}, captain: squadData.captain };
-                    await supabase.from('teams').update({ squad: { ...squadData, j1_snapshot: snap } }).eq('id', t.id);
+        try {
+            // 1. Damos la orden a la base de datos de abrir el mercado
+            const { error } = await supabase
+                .from('match_results')
+                .upsert(
+                    [{ match_id: 'MARKET_OPEN', result: newVal ? 'true' : 'false' }],
+                    { onConflict: 'match_id' }
+                );
+            
+            if (error) throw error; // Si falla, saltamos al catch
+            
+            // 2. MAGIA: Si estamos abriendo, hacemos las copias de seguridad una por una
+            if (newVal) {
+                for (const t of allTeams) {
+                    const squadData = t.rawSquad || {};
+                    // Solo hacemos la foto si no existe ya una (para no sobrescribirla por error)
+                    if (!squadData.j1_snapshot) {
+                        const snap = { 
+                            selected: squadData.selected || squadData.titulares || {}, 
+                            bench: squadData.bench || squadData.banquillo || {}, 
+                            extras: squadData.extras || {}, 
+                            captain: squadData.captain || null 
+                        };
+                        await supabase.from('teams').update({ squad: { ...squadData, j1_snapshot: snap } }).eq('id', t.id);
+                    }
                 }
             }
-        }
-        
-        if (!error) { 
+            
+            // 3. Confirmamos y actualizamos la app
             GLOBAL_MATCHES['MARKET_OPEN'] = newVal ? 'true' : 'false'; 
-            setTimeout(() => onRefresh(), 500); // Respiro de medio segundo para que guarde bien
-        } else {
-            alert("Error al guardar mercado: " + error.message);
+            
+            alert(`✅ ¡Mercado ${newVal ? 'ABIERTO' : 'CERRADO'} con éxito!\n\nSe han creado las copias de seguridad. Ve a la pestaña 'Plantilla' y pulsa el botón amarillo 'EDITAR PLANTILLA' para empezar a fichar.`);
+            
+            // Forzamos la recarga visual de la app
+            setTimeout(() => {
+                setUpdateTrigger(prev => prev + 1);
+                onRefresh();
+            }, 500);
+
+        } catch (err: any) {
+            alert("❌ Fallo crítico al abrir el mercado: " + err.message);
+        } finally {
+            setIsSimulating(false); // Apagamos el engranaje
         }
     };
 
@@ -1622,12 +1605,26 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
 
     // --- EL BOTÓN NUCLEAR (LIMPIEZA) ---
     const handleClearDatabase = async () => {
-        if (prompt("Escribe BORRAR para eliminar todos los puntos y resultados del torneo (Las plantillas NO se borrarán):") !== "BORRAR") return;
+        if (prompt("Escribe BORRAR para eliminar todos los puntos y resultados del torneo:") !== "BORRAR") return;
         setIsSimulating(true);
         try {
             await supabase.from('match_results').delete().neq('match_id', 'DUMMY');
             await supabase.from('player_scores').delete().neq('player_name', 'DUMMY');
-            alert("🧹 Base de datos de resultados limpia y lista para la Eurocopa real.");
+
+            // 🧹 EL EXORCISMO: Limpiamos el historial "fantasma" de todos los equipos
+            for (const t of allTeams) {
+                const raw = t.rawSquad || {};
+                // Rescatamos solo la alineación actual, olvidando el pasado (j1_snapshot, j2, etc.)
+                const baseSquad = {
+                    selected: raw.selected || raw.titulares || {},
+                    bench: raw.bench || raw.banquillo || {},
+                    extras: raw.extras || {},
+                    captain: raw.captain || null
+                };
+                await supabase.from('teams').update({ squad: baseSquad }).eq('id', t.id);
+            }
+
+            alert("🧹 Base de datos limpia y fantasmas eliminados. Lista para empezar la simulación de cero.");
             onRefresh();
         } catch(e) { console.error(e); }
         setIsSimulating(false);
@@ -2011,6 +2008,32 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
 // 12. APP PRINCIPAL (EuroApp)
 // ==========================================
 
+const IntroScreen = ({ onFinish }: { onFinish: () => void }) => {
+    return (
+        <div className="fixed inset-0 z-[9999] bg-[#05080f] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
+            {/* Contenedor del vídeo adaptado */}
+            <div className="w-full h-full max-w-5xl max-h-screen aspect-video relative flex items-center justify-center pointer-events-auto">
+                <iframe
+                    className="w-full h-full"
+                    src="https://www.youtube.com/embed/7Kex5Mwm15o?si=zo5BnpIO1GgzqH1S&autoplay=1&controls=1&rel=0&modestbranding=1"
+                    title="Intro Eurocopa Fantástica 2024"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                ></iframe>
+            </div>
+
+            {/* Botón para saltar */}
+            <button 
+                onClick={onFinish}
+                className="absolute top-8 right-6 bg-black/80 text-white border border-white/40 px-4 py-2 rounded-full font-black text-[10px] uppercase hover:bg-white/20 transition-all backdrop-blur-sm z-50 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+            >
+                Saltar Intro ⏭️
+            </button>
+        </div>
+    );
+};
+
 export default function EuroApp() {
   const [user, setUser] = useState<{email: string, username: string, teamName?: string, id?: string} | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -2043,8 +2066,28 @@ export default function EuroApp() {
   const [isMarketOpen, setIsMarketOpen] = useState(false);
   const [currentRealMatchday, setCurrentRealMatchday] = useState("J1");
 
-  const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
+  // 1. NUEVO ESTADO PARA LA INTRO
+  const [showIntro, setShowIntro] = useState(false);
 
+  // 2. EFECTO PARA CONTROLAR SI YA LA HA VISTO HOY
+  useEffect(() => {
+      // Comprobamos la fecha guardada en el navegador
+      const lastSeen = localStorage.getItem('euro_intro_seen_date');
+      const today = new Date().toDateString();
+      
+      // Si no la ha visto hoy, mostramos la intro
+      if (lastSeen !== today) {
+          setShowIntro(true);
+      }
+  }, []);
+
+  const handleFinishIntro = () => {
+      setShowIntro(false);
+      // Guardamos en la memoria del navegador que ya la ha visto hoy
+      localStorage.setItem('euro_intro_seen_date', new Date().toDateString());
+  };
+
+  const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
   const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
   const budgetSpent = Math.round(allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0) * 10) / 10;
   
@@ -2062,10 +2105,10 @@ const myTeamData = allTeams.find((t:any) => t.id === user?.id);
 const snapshot = myTeamData?.rawSquad?.j1_snapshot;
 let marketChangesCount = 0;
 
-// Sacamos a los jugadores de la caja fuerte inicial
+// Sacamos a los jugadores de la caja fuerte inicial (con blindaje de nombres)
 const snapshotIds = new Set([
-    ...Object.values(snapshot?.selected || {}).map((p:any)=>p?.id),
-    ...(Array.isArray(snapshot?.bench) ? snapshot.bench : Object.values(snapshot?.bench || {})).map((p:any)=>p?.id),
+    ...Object.values(snapshot?.selected || snapshot?.titulares || {}).map((p:any)=>p?.id),
+    ...(Array.isArray(snapshot?.bench) ? snapshot.bench : Object.values(snapshot?.bench || snapshot?.banquillo || {})).map((p:any)=>p?.id),
     ...(Array.isArray(snapshot?.extras) ? snapshot.extras : Object.values(snapshot?.extras || {})).map((p:any)=>p?.id)
 ].filter(Boolean));
 
@@ -2088,7 +2131,6 @@ const handleSaveSquad = async () => {
     if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
 
     const numPlayers = allSquadPlayers.length;
-    // MAGIA: Válido si tiene entre 18 y 20, o si tiene 17 Y ha pulsado el botón rojo
     const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
     
     if (!isValidCount) {
@@ -2104,12 +2146,15 @@ const handleSaveSquad = async () => {
         return;
     }
 
-    // Recuperamos tu equipo y su "caja fuerte" para NO BORRAR la historia (J1, J2, J3...)
-    const myTeam = allTeams.find((t:any) => t.id === user?.id);
-    const raw = myTeam?.rawSquad || {};
+    // 🛡️ BLINDAJE SUPREMO: Evita pisar la caja fuerte descargando la versión más reciente de la BD
+    const { data: freshTeamData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
+    let raw = {};
+    if (freshTeamData?.squad) {
+        raw = typeof freshTeamData.squad === 'string' ? JSON.parse(freshTeamData.squad) : freshTeamData.squad;
+    }
 
     const newSquad = {
-        ...raw, // <-- BLINDAJE: Esto salva la vida de las alineaciones pasadas
+        ...raw, // <-- Ahora sí es 100% la versión real y no borraremos el j1_snapshot
         selected,
         bench,
         extras,
@@ -2121,7 +2166,7 @@ const handleSaveSquad = async () => {
     if (!error) {
         setSquadValidated(true);
         alert("✅ ¡Plantilla guardada y validada con éxito!");
-        loadUserData(user); // MAGIA: Refresca inmediatamente la barra y los descartes
+        loadUserData(user); 
     } else {
         alert("Error al guardar: " + error.message);
     }
@@ -2182,9 +2227,7 @@ const handleSaveSquad = async () => {
       }
   }, [lineupViewJornada, allTeams, selected, bench, extras, captain, user]);
   
-  
-
-  const loadUserData = async (u: any) => { 
+   const loadUserData = async (u: any) => { 
       try {
           const { data: scoresData } = await supabase.from('player_scores').select('*');
           if (scoresData) { scoresData.forEach((row: any) => { GLOBAL_SCORES[row.player_name] = row.scores || {}; }); }
@@ -2195,7 +2238,7 @@ const handleSaveSquad = async () => {
           if (matchesData) { 
               matchesData.forEach((row: any) => { 
                   if (row.match_id === 'MARKET_OPEN') {
-                      marketStatus = (row.result === 'true');
+                      marketStatus = (row.result === 'true'); // <-- AQUÍ LEEMOS SI ESTÁ ABIERTO
                   } else if (row.match_id === 'ACTIVE_MATCHDAY') { 
                       activeMatchdayStr = row.result;
                   } else if (row.match_id.startsWith('CLOSED_')) {
@@ -2205,10 +2248,11 @@ const handleSaveSquad = async () => {
                   }
               }); 
           }
-          setIsMarketOpen(marketStatus);
+          
+          // 🔥 MUY IMPORTANTE: Actualizamos el estado de React para que la interfaz cambie
+          setIsMarketOpen(marketStatus); 
           setCurrentRealMatchday(activeMatchdayStr);
           GLOBAL_ACTIVE_MATCHDAY = activeMatchdayStr;
-
           GLOBAL_MATCHES['MARKET_OPEN'] = marketStatus ? 'true' : 'false';
 
           const { data: dbTeams } = await supabase.from('teams').select('*');
@@ -2538,20 +2582,29 @@ const handleValidateSquad = () => {
 };
   
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(4); };
-// Reinicio Inteligente (No borra la historia)
+// Reinicio Inteligente (No borra la historia en mercado, pero limpia todo desde cero si no lo está)
 const handleResetTeam = async () => { 
     if(confirm(isMarketOpen ? "⚠️ ¿Deshacer fichajes no guardados y volver a la plantilla base?" : "¿Estás seguro? Se borrará todo tu equipo.")) { 
-        const myTeam = allTeams.find((t:any) => t.id === user?.id);
-        const raw = myTeam?.rawSquad || {};
+        
+        // 🛡️ BLINDAJE: Leer la caja fuerte directamente de la base de datos
+        const { data: dbData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
+        let raw = {};
+        if (dbData?.squad) {
+            raw = typeof dbData.squad === 'string' ? JSON.parse(dbData.squad) : dbData.squad;
+        }
 
-        if (isMarketOpen && raw.j1_snapshot) {
-            // Si estamos en mercado, solo restauramos el snapshot (deshacer fichajes)
-            setSelected(raw.j1_snapshot.selected || {}); 
-            setBench(raw.j1_snapshot.bench || {}); 
-            setExtras(raw.j1_snapshot.extras || {}); 
-            setCaptain(raw.j1_snapshot.captain); 
+        if (isMarketOpen) {
+            if (raw.j1_snapshot) {
+                // Si estamos en mercado, solo restauramos el snapshot (deshacer fichajes)
+                setSelected(raw.j1_snapshot.selected || raw.j1_snapshot.titulares || {}); 
+                setBench(raw.j1_snapshot.bench || raw.j1_snapshot.banquillo || {}); 
+                setExtras(raw.j1_snapshot.extras || {}); 
+                setCaptain(raw.j1_snapshot.captain); 
+            } else {
+                alert("❌ No se encontró la copia de seguridad. Cierra y abre el mercado de nuevo en MODO DIOS para regenerarla.");
+            }
         } else {
-            // Si estamos creando equipo desde cero, borramos todo
+            // Si estamos creando equipo desde cero, borramos TODO el rastro
             setSelected({}); setBench({}); setExtras({}); setCaptain(null); 
             if(user && user.id) { 
                 await supabase.from('teams').update({ squad: raw, is_validated: false }).eq('id', user.id); 
@@ -2620,13 +2673,15 @@ const getAssistantText = () => {
     return "";
 };
 
+if (showIntro) {
+    return <IntroScreen onFinish={handleFinishIntro} />;
+}
+
   if (!user) return <AuthScreen onLogin={handleLogin} />;
 
   const displayCaptain = isLineupEditing ? lineupCaptain : (lineupViewJornada === currentRealMatchday ? captain : lineupCaptain);
 
-  
-
-  const renderPointsBadge = (player: any, isStarter: boolean = true) => {
+    const renderPointsBadge = (player: any, isStarter: boolean = true) => {
     if (!player) return null;
 
     let pts = getPlayerPointsRow(player.nombre, lineupViewJornada);
