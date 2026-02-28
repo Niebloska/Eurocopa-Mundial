@@ -2148,7 +2148,7 @@ const handleSaveSquad = async () => {
 
     // 🛡️ BLINDAJE SUPREMO: Evita pisar la caja fuerte descargando la versión más reciente de la BD
     const { data: freshTeamData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
-    let raw = {};
+    let raw: any = {};
     if (freshTeamData?.squad) {
         raw = typeof freshTeamData.squad === 'string' ? JSON.parse(freshTeamData.squad) : freshTeamData.squad;
     }
@@ -2588,7 +2588,7 @@ const handleResetTeam = async () => {
         
         // 🛡️ BLINDAJE: Leer la caja fuerte directamente de la base de datos
         const { data: dbData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
-        let raw = {};
+        let raw: any = {};
         if (dbData?.squad) {
             raw = typeof dbData.squad === 'string' ? JSON.parse(dbData.squad) : dbData.squad;
         }
