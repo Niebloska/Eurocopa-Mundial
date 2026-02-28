@@ -850,9 +850,9 @@ const getTournamentStandings = () => {
             const matchId = `${m.t1}-${m.t2}`;
             const res = GLOBAL_MATCHES[matchId] || (m as any).result;
             if (res && res.includes('-')) {
-                const [g1, g2] = res.split('-').map(x => parseInt(x.trim()));
-                const t1 = teams.find(x => x.name === m.t1);
-                const t2 = teams.find(x => x.name === m.t2);
+                const [g1, g2] = res.split('-').map((x:string) => parseInt(x.trim()));
+                const t1 = teams.find((x: any) => x.name === m.t1);
+                const t2 = teams.find((x: any) => x.name === m.t2);
                 if (t1 && t2 && !isNaN(g1) && !isNaN(g2)) {
                     t1.played++; t2.played++;
                     t1.gf += g1; t1.gc += g2; t1.gd = t1.gf - t1.gc;
