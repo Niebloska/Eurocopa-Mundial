@@ -2015,7 +2015,7 @@ const IntroScreen = ({ onFinish }: { onFinish: () => void }) => {
             <div className="w-full h-full max-w-5xl max-h-screen aspect-video relative flex items-center justify-center pointer-events-auto">
                 <iframe
                     className="w-full h-full"
-                    src="https://www.youtube.com/embed/7Kex5Mwm15o?si=zo5BnpIO1GgzqH1S&autoplay=1&controls=1&rel=0&modestbranding=1"
+                    src="https://www.youtube.com/embed/0frioKgccHc?si=iAMxmJrx0yFUaeGM&autoplay=1&controls=1&rel=0&modestbranding=1"
                     title="Intro Eurocopa Fantástica 2024"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
