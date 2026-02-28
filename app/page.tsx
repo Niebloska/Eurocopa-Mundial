@@ -2654,7 +2654,8 @@ const handleSaveTreasury = async () => {
 }, [selected, bench, extras, hasConfirmedNoExtras, captain, view]);
 
 const getAssistantText = () => {
-    if (view === 'squad') { if (isMarketOpen) return "MERCADO ABIERTO. Gestiona tus descartes y fichajes.";
+    if (view === 'squad') { 
+        if (isMarketOpen) return "MERCADO ABIERTO. Gestiona tus descartes y fichajes.";
         if (hasTournamentStarted) return "EL TORNEO HA COMENZADO. El mercado de fichajes está cerrado."; 
         if (squadValidated) return "¡PLANTILLA LISTA! Ve a Alineaciones.";
         if (step === 1) return "PASO 1 DE 4: Elige tu 11 titular";
@@ -2664,9 +2665,19 @@ const getAssistantText = () => {
         return "¡TODO LISTO! Pulsa Guardar Plantilla";
     }
     if (view === 'quiniela') return "Predice los 2 clasificados de cada grupo. ¡Acierta y gana presupuesto!";
+    
     if (view === 'lineups') { 
-        if (lineupViewJornada === currentRealMatchday) return `VISUALIZANDO ${lineupViewJornada}: JORNADA FINALIZADA. Sustituciones aplicadas.`; 
-        if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return "El torneo aún no ha comenzado."; 
+        // 1. Caso especial para la Jornada 1
+        if (lineupViewJornada === 'J1') {
+            if (!hasTournamentStarted) return "VISUALIZANDO J1: Para editar esta alineación dirígete al apartado PLANTILLA.";
+            if (currentRealMatchday === 'J1' && !GLOBAL_CLOSED_MATCHDAYS['J1']) return "Jornada 1 en curso, ya no puedes realizar cambios.";
+        }
+
+        // 2. Comprobaciones generales (J2 en adelante y cierres)
+        if (GLOBAL_CLOSED_MATCHDAYS[lineupViewJornada]) return `VISUALIZANDO ${lineupViewJornada}: JORNADA FINALIZADA. Sustituciones aplicadas.`; 
+        if (lineupViewJornada === currentRealMatchday) return `Jornada ${lineupViewJornada} en curso, ya no puedes realizar cambios.`; 
+        if (!hasTournamentStarted) return "El torneo aún no ha comenzado."; 
+        
         if (isJornadaEditable(lineupViewJornada)) { 
             if (!isValidLineupTactic) return `⚠️ TÁCTICA ${currentLineupTactic} INCORRECTA. Revisa tu 11.`; 
             return `EDITANDO ${lineupViewJornada}: Táctica ${currentLineupTactic} correcta. Haz cambios y guarda.`; 
