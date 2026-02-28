@@ -848,7 +848,7 @@ const getTournamentStandings = () => {
         
         groupMatches.forEach(m => {
             const matchId = `${m.t1}-${m.t2}`;
-            const res = GLOBAL_MATCHES[matchId] || m.result;
+            const res = GLOBAL_MATCHES[matchId] || (m as any).result;
             if (res && res.includes('-')) {
                 const [g1, g2] = res.split('-').map(x => parseInt(x.trim()));
                 const t1 = teams.find(x => x.name === m.t1);
