@@ -15,7 +15,7 @@ const LINEUP_MATCHDAYS = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"];
 const MAX_BUDGET = 400;
 const GAME_START_DATE = "2024-06-14T21:00:00";
 
-const SIMULATED_GAME_START = new Date(Date.now() +1 * 24 * 60 * 60 * 1000).toISOString(); 
+const SIMULATED_GAME_START = new Date(Date.now() -1 * 24 * 60 * 60 * 1000).toISOString(); 
 
 const posColors: Record<string, string> = {
   "POR": "bg-[#facc15] text-black", 
@@ -513,17 +513,28 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                     <div className="flex items-center gap-2">
                         <span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span>
                         <span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span>
-                        {penWinner === match.t1.name && <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">PEN</span>}
+                        {/* Se ha eliminado la etiqueta PEN antigua de aquí */}
                     </div>
-                    <span className={`font-black bg-black/40 px-1.5 rounded ${w1}`}>{s1}</span>
+                    {/* Nueva caja de marcador con la P dorada */}
+                    <div className="flex items-center gap-1">
+                        {penWinner === match.t1.name && (
+                            <span className="bg-[#facc15] text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(250,204,21,0.5)] leading-none">P</span>
+                        )}
+                        <span className={`font-black bg-black/40 px-1.5 rounded ${w1}`}>{s1}</span>
+                    </div>
                 </div>
                 <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
                     <div className="flex items-center gap-2">
                         <span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span>
                         <span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span>
-                        {penWinner === match.t2.name && <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">PEN</span>}
                     </div>
-                    <span className={`font-black bg-black/40 px-1.5 rounded ${w2}`}>{s2}</span>
+                    {/* Nueva caja de marcador con la P dorada */}
+                    <div className="flex items-center gap-1">
+                        {penWinner === match.t2.name && (
+                            <span className="bg-[#facc15] text-black text-[9px] font-black px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(250,204,21,0.5)] leading-none">P</span>
+                        )}
+                        <span className={`font-black bg-black/40 px-1.5 rounded ${w2}`}>{s2}</span>
+                    </div>
                 </div>
             </div>
         );
@@ -1552,9 +1563,20 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             const matchUpserts: any[] = [];
 
             for (const [teamA, teamB] of matchesToSimulate) {
-                const score = `${Math.floor(Math.random() * 4)}-${Math.floor(Math.random() * 4)}`;
+                // Generamos los goles separándolos en variables
+                const goalsA = Math.floor(Math.random() * 4);
+                const goalsB = Math.floor(Math.random() * 4);
+                const score = `${goalsA}-${goalsB}`;
+                
                 matchUpserts.push({ match_id: `${teamA}-${teamB}`, result: score });
                 GLOBAL_MATCHES[`${teamA}-${teamB}`] = score;
+
+                // NUEVO: Si estamos en fase eliminatoria y hay empate, ¡Lanzamos una moneda al aire para los penaltis!
+                if (!['J1', 'J2', 'J3'].includes(jornada) && goalsA === goalsB) {
+                    const simulatedPenWinner = Math.random() > 0.5 ? teamA : teamB;
+                    matchUpserts.push({ match_id: `${teamA}-${teamB}_PEN`, result: simulatedPenWinner });
+                    GLOBAL_MATCHES[`${teamA}-${teamB}_PEN`] = simulatedPenWinner;
+                }
 
                 for (const team of [teamA, teamB]) {
                     const squad = PLAYERS_DB.filter((p: any) => p.seleccion === team);
@@ -1572,21 +1594,21 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
             }
 
             // ⚡ MAGIA ATÓMICA: Metemos el avance de jornada DENTRO de los partidos
-    matchUpserts.push({ match_id: 'ACTIVE_MATCHDAY', result: jornada });
+            matchUpserts.push({ match_id: 'ACTIVE_MATCHDAY', result: jornada });
 
-    if (matchUpserts.length > 0) {
-        // 🛡️ Filtro anti-duplicados para los partidos
-        const uniqueMatchUpserts = Array.from(new Map(matchUpserts.map(item => [item.match_id, item])).values());
-        const { error: errM } = await supabase.from('match_results').upsert(uniqueMatchUpserts, { onConflict: 'match_id' });
-        if (errM) console.error("Error partidos:", errM);
-    }
-    
-    if (playerUpserts.length > 0) {
-        // 🛡️ Filtro anti-duplicados para los jugadores (Esto soluciona tu error de raíz)
-        const uniquePlayerUpserts = Array.from(new Map(playerUpserts.map(item => [item.player_name, item])).values());
-        const { error: errP } = await supabase.from('player_scores').upsert(uniquePlayerUpserts, { onConflict: 'player_name' });
-        if (errP) alert("Aviso Supabase: " + errP.message);
-    }
+            if (matchUpserts.length > 0) {
+                // 🛡️ Filtro anti-duplicados para los partidos
+                const uniqueMatchUpserts = Array.from(new Map(matchUpserts.map(item => [item.match_id, item])).values());
+                const { error: errM } = await supabase.from('match_results').upsert(uniqueMatchUpserts, { onConflict: 'match_id' });
+                if (errM) console.error("Error partidos:", errM);
+            }
+            
+            if (playerUpserts.length > 0) {
+                // 🛡️ Filtro anti-duplicados para los jugadores (Esto soluciona tu error de raíz)
+                const uniquePlayerUpserts = Array.from(new Map(playerUpserts.map(item => [item.player_name, item])).values());
+                const { error: errP } = await supabase.from('player_scores').upsert(uniquePlayerUpserts, { onConflict: 'player_name' });
+                if (errP) alert("Aviso Supabase: " + errP.message);
+            }
 
             setCurrentRealMatchday(jornada);
             GLOBAL_ACTIVE_MATCHDAY = jornada;
@@ -2055,6 +2077,8 @@ export default function EuroApp() {
   const [user, setUser] = useState<{email: string, username: string, teamName?: string, id?: string} | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [view, setView] = useState<'rules' | 'squad' | 'classification' | 'calendar' | 'quiniela' | 'scores' | 'lineups' | 'admin'>('squad'); 
+  // Añade esto cerca de los otros useState
+  const [isEditingSquad, setIsEditingSquad] = useState(false);
   const [selected, setSelected] = useState<any>({});
   const [bench, setBench] = useState<any>({});
   const [extras, setExtras] = useState<any>({});
@@ -2134,11 +2158,23 @@ const handleSaveSquad = async () => {
     if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
 
     const numPlayers = allSquadPlayers.length;
-    const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
     
-    if (!isValidCount) {
-        alert("Debes tener entre 17 y 20 jugadores. Si tienes 17, confirma que no quieres extras pulsando el botón rojo.");
-        return;
+    // Lógica dinámica dependiendo de si es Mercado Abierto o Creación de Equipo
+    if (isMarketOpen) {
+        if (numPlayers > 20) {
+            alert("⚠️ Error: No puedes tener más de 20 jugadores en tu plantilla.");
+            return;
+        }
+        if (discardedPlayers.length > 7) {
+            alert("⚠️ Error: Has superado el límite de 7 descartes permitidos en esta ventana.");
+            return;
+        }
+    } else {
+        const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
+        if (!isValidCount) {
+            alert("Debes tener entre 17 y 20 jugadores. Si tienes 17, confirma que no quieres extras pulsando el botón rojo.");
+            return;
+        }
     }
     if (budgetSpent > dynamicMaxBudget) {
         alert(`⚠️ Presupuesto excedido. Gastado: ${budgetSpent}M / Límite: ${dynamicMaxBudget}M`);
@@ -2586,33 +2622,38 @@ const handleValidateSquad = () => {
   
   const handleUnlockSquad = () => { setSquadValidated(false); setStep(4); };
 // Reinicio Inteligente (No borra la historia en mercado, pero limpia todo desde cero si no lo está)
-const handleResetTeam = async () => { 
-    if(confirm(isMarketOpen ? "⚠️ ¿Deshacer fichajes no guardados y volver a la plantilla base?" : "¿Estás seguro? Se borrará todo tu equipo.")) { 
-        
-        // 🛡️ BLINDAJE: Leer la caja fuerte directamente de la base de datos
+// Reinicio Inteligente (Restauración instantánea sin borrar historial si estamos en mercado)
+const handleResetTeam = async () => {
+    const mensaje = isMarketOpen 
+        ? "¿Deshacer los movimientos de esta sesión?\n\nTu plantilla volverá a estar exactamente como la tenías guardada antes de empezar a fichar. No perderás a tus jugadores." 
+        : "⚠️ ¿Estás seguro? Se borrará todo tu equipo actual para empezar a crearlo de cero.";
+
+    if(confirm(mensaje)) { 
+        if (isMarketOpen) {
+            if (snapshot) {
+                // Restauramos inmediatamente desde el snapshot en memoria
+                setSelected(snapshot.selected || snapshot.titulares || {}); 
+                setBench(snapshot.bench || snapshot.banquillo || {}); 
+                setExtras(snapshot.extras || {}); 
+                setCaptain(snapshot.captain); 
+                setSquadValidated(false);
+                return; 
+            } else {
+                alert("❌ No se encontró la copia de seguridad. Cierra y abre el mercado en MODO DIOS.");
+                return;
+            }
+        }
+
+        // Si es la fase inicial (no hay mercado), borrado estándar
         const { data: dbData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
         let raw: any = {};
         if (dbData?.squad) {
             raw = typeof dbData.squad === 'string' ? JSON.parse(dbData.squad) : dbData.squad;
         }
-
-        if (isMarketOpen) {
-            if (raw.j1_snapshot) {
-                // Si estamos en mercado, solo restauramos el snapshot (deshacer fichajes)
-                setSelected(raw.j1_snapshot.selected || raw.j1_snapshot.titulares || {}); 
-                setBench(raw.j1_snapshot.bench || raw.j1_snapshot.banquillo || {}); 
-                setExtras(raw.j1_snapshot.extras || {}); 
-                setCaptain(raw.j1_snapshot.captain); 
-            } else {
-                alert("❌ No se encontró la copia de seguridad. Cierra y abre el mercado de nuevo en MODO DIOS para regenerarla.");
-            }
-        } else {
-            // Si estamos creando equipo desde cero, borramos TODO el rastro
-            setSelected({}); setBench({}); setExtras({}); setCaptain(null); 
-            if(user && user.id) { 
-                await supabase.from('teams').update({ squad: raw, is_validated: false }).eq('id', user.id); 
-            } 
-        }
+        setSelected({}); setBench({}); setExtras({}); setCaptain(null); 
+        if(user && user.id) { 
+            await supabase.from('teams').update({ squad: raw, is_validated: false }).eq('id', user.id); 
+        } 
         setSquadValidated(false); 
     } 
 };
@@ -2831,7 +2872,15 @@ if (showIntro) {
              </div>
 
              <div className="text-left font-black italic text-lg text-white/40 tracking-widest uppercase pl-1 mb-2">TÁCTICA: <span className="text-[#22c55e] ml-2 text-xl drop-shadow-[0_0_5px_rgba(34,197,94,0.8)]">{Object.keys(selected).length === 11 ? `${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}` : '--'}</span></div>
-             <Field selected={selected} step={step >= 4 ? 2 : 1} canInteractField={!squadValidated && !hasTournamentStarted || isMarketOpen} setActiveSlot={setActiveSlot} captain={captain} setCaptain={setCaptain} advancedTeams={advancedTeams} />
+             <Field 
+                selected={selected} 
+                step={step >= 4 ? 2 : 1} 
+                canInteractField={!squadValidated && (!hasTournamentStarted || isMarketOpen)} 
+                setActiveSlot={setActiveSlot} 
+                captain={captain} 
+                setCaptain={setCaptain} 
+                advancedTeams={advancedTeams} 
+                />
              
              <div className={`mt-8 p-4 rounded-[2.5rem] bg-sky-400/10 transition-all duration-300 ${step === 2 ? 'border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border border-white/5 opacity-80'}`}>
                 <p className="text-center font-black italic text-[10px] text-sky-400 mb-3 uppercase tracking-widest">BANQUILLO</p>
