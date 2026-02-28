@@ -613,7 +613,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                             <div className="divide-y divide-white/5">
                                 {g.m.map((m, i) => {
                                     const matchId = `${m.t1}-${m.t2}`;
-                                    const result = GLOBAL_MATCHES[matchId] || m.result; 
+                                    const result = GLOBAL_MATCHES[matchId] || (m as any).result; 
                                     return (
                                         <div key={i} className="flex flex-col relative bg-[#1c2a45] hover:bg-white/5 transition-colors">
                                             {i % 2 === 0 && <div className="bg-white/5 w-full text-center text-[8px] font-black text-white/50 uppercase tracking-widest py-0.5 border-y border-white/5">JORNADA {Math.floor(i/2) + 1}</div>}
