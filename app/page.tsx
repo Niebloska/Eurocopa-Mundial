@@ -47,7 +47,7 @@ const EURO_GROUPS_DATA = [
 const generateFixture = () => {
   return [
     { n: "GRUPO A", m: [
-        {t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00", result: "5 - 1"}, 
+        {t1:"Alemania",t2:"Escocia",d:"14 Jun 21:00"}, 
         {t1:"Hungría",t2:"Suiza",d:"15 Jun 15:00"},
         {t1:"Alemania",t2:"Hungría",d:"19 Jun 18:00"},
         {t1:"Escocia",t2:"Suiza",d:"19 Jun 21:00"},
