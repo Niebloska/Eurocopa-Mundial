@@ -2083,27 +2083,13 @@ export default function EuroApp() {
   const [isMarketOpen, setIsMarketOpen] = useState(false);
   const [currentRealMatchday, setCurrentRealMatchday] = useState("J1");
 
-  // 1. NUEVO ESTADO PARA LA INTRO
-  const [showIntro, setShowIntro] = useState(false);
+// 1. ESTADO PARA LA INTRO (siempre empieza en true al entrar)
+  const [showIntro, setShowIntro] = useState(true);
 
-  // 2. EFECTO PARA CONTROLAR SI YA LA HA VISTO HOY
-  useEffect(() => {
-      // Comprobamos la fecha guardada en el navegador
-      const lastSeen = localStorage.getItem('euro_intro_seen_date');
-      const today = new Date().toDateString();
-      
-      // Si no la ha visto hoy, mostramos la intro
-      if (lastSeen !== today) {
-          setShowIntro(true);
-      }
-  }, []);
-
+  // 2. Función para cerrar la intro y entrar al juego
   const handleFinishIntro = () => {
       setShowIntro(false);
-      // Guardamos en la memoria del navegador que ya la ha visto hoy
-      localStorage.setItem('euro_intro_seen_date', new Date().toDateString());
-  };
-
+  };  
   const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
   const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
   const budgetSpent = Math.round(allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0) * 10) / 10;
