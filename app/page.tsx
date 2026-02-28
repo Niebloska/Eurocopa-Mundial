@@ -2009,21 +2009,38 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
 // ==========================================
 
 const IntroScreen = ({ onFinish }: { onFinish: () => void }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isMuted, setIsMuted] = useState(true);
+
+    const handleUnmute = () => {
+        if (videoRef.current) {
+            videoRef.current.muted = false;
+            setIsMuted(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[9999] bg-[#05080f] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
-            {/* Contenedor del vídeo adaptado */}
-            <div className="w-full h-full max-w-5xl max-h-screen aspect-video relative flex items-center justify-center pointer-events-auto">
-                <iframe
-                    className="w-full h-full"
-                    src="https://www.youtube.com/embed/0frioKgccHc?si=iAMxmJrx0yFUaeGM&autoplay=1&controls=1&rel=0&modestbranding=1"
-                    title="Intro Eurocopa Fantástica 2024"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                ></iframe>
-            </div>
+            <video
+                ref={videoRef}
+                src="https://ymnebogpsqnzftpnxtem.supabase.co/storage/v1/object/public/media/EURO%202024%20intro%20Real%20Life.mp4"
+                autoPlay
+                playsInline
+                muted
+                onEnded={onFinish}
+                className="w-full h-full object-cover"
+            />
+            
+            {isMuted && (
+                <button 
+                    onClick={handleUnmute}
+                    className="absolute bottom-12 bg-[#22c55e] text-black px-6 py-3 rounded-full font-black text-xs uppercase shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-bounce border-2 border-green-400 z-50"
+                >
+                    <IconVolume2 size={16} className="inline mr-2 -mt-0.5"/>
+                    Activar Sonido
+                </button>
+            )}
 
-            {/* Botón para saltar */}
             <button 
                 onClick={onFinish}
                 className="absolute top-8 right-6 bg-black/80 text-white border border-white/40 px-4 py-2 rounded-full font-black text-[10px] uppercase hover:bg-white/20 transition-all backdrop-blur-sm z-50 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
