@@ -13,9 +13,20 @@ const VALID_FORMATIONS = ["3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", 
 const CHART_COLORS = ["#22d3ee", "#f472b6", "#a78bfa", "#34d399", "#fbbf24", "#f87171"];
 const LINEUP_MATCHDAYS = ["J1", "J2", "J3", "OCT", "CUA", "SEM", "FIN"];
 const MAX_BUDGET = 400;
-const GAME_START_DATE = "2024-06-14T21:00:00";
 
-const SIMULATED_GAME_START = new Date(Date.now() -1 * 24 * 60 * 60 * 1000).toISOString(); 
+const GAME_START_DATE = "2026-03-14T21:00:00"; // Tu inicio real
+const SIMULATED_GAME_START = "2024-06-14T21:00:00"; // El inicio oficial de la Euro
+
+// Esta función calcula la diferencia exacta y te devuelve la fecha real equivalente
+function getRealEquivalentDate(simulatedDateString) {
+  const realStartMs = new Date(GAME_START_DATE).getTime();
+  const simulatedStartMs = new Date(SIMULATED_GAME_START).getTime();
+  
+  const targetMs = new Date(simulatedDateString).getTime();
+  const offset = targetMs - simulatedStartMs; // Tiempo transcurrido desde el inicio del torneo
+  
+  return new Date(realStartMs + offset);
+}
 
 const posColors: Record<string, string> = {
   "POR": "bg-[#facc15] text-black", 
@@ -146,24 +157,50 @@ const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: st
   };
   
   const CountdownBlock = ({ label, targetDate }: { label?: string, targetDate?: string }) => {
-    const [timeLeft, setTimeLeft] = useState(0); 
-    useEffect(() => { 
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
         const calculateTimeLeft = () => {
             const target = targetDate ? new Date(targetDate).getTime() : new Date(GAME_START_DATE).getTime();
             const now = new Date().getTime();
             return Math.max(0, Math.floor((target - now) / 1000));
         };
+        
         setTimeLeft(calculateTimeLeft());
-        const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000); 
-        return () => clearInterval(timer); 
+        const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+        return () => clearInterval(timer);
     }, [targetDate]);
-  
-    const formatTime = (s: number) => { 
-        const d = Math.floor(s / 86400); const h = Math.floor((s % 86400) / 3600); const m = Math.floor((s % 3600) / 60); const sec = s % 60; 
-        return `${d}D ${h}H ${m}M ${sec}S`; 
+
+    const formatTime = (s: number) => {
+        const d = Math.floor(s / 86400).toString().padStart(2, '0');
+        const h = Math.floor((s % 86400) / 3600).toString().padStart(2, '0');
+        const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+        const sec = (s % 60).toString().padStart(2, '0');
+        return `${d}D ${h}H ${m}M ${sec}S`;
     };
-    return (<div className="flex items-center justify-between bg-black/40 rounded-xl p-3 border border-white/5 mt-2"><div className="flex flex-col"><span className="text-lg font-black text-[#facc15] font-mono leading-none tracking-tight">{formatTime(timeLeft)}</span><span className="text-[8px] font-bold text-[#22c55e] uppercase tracking-widest mt-1">{label || "TIEMPO RESTANTE PARA EDITAR MI EQUIPO"}</span></div><div className="bg-[#facc15] p-2 rounded-full text-black shadow-lg shadow-yellow-500/20"><IconLock size={18} /></div></div>);
-  };
+
+    if (!isMounted) return null; // Evita parpadeos en SSR
+
+    const isFinished = timeLeft === 0;
+
+    return (
+        <div className={`flex items-center justify-between rounded-xl p-3 border mt-2 transition-all duration-500 ${isFinished ? 'bg-red-900/40 border-red-500/50' : 'bg-black/40 border-white/5'}`}>
+            <div className="flex flex-col">
+                <span className={`text-lg font-black font-mono leading-none tracking-tight ${isFinished ? 'text-red-500 animate-pulse' : 'text-[#facc15]'}`}>
+                    {isFinished ? "¡EL TORNEO HA COMENZADO!" : formatTime(timeLeft)}
+                </span>
+                <span className={`text-[8px] font-bold uppercase tracking-widest mt-1 ${isFinished ? 'text-red-400' : 'text-[#22c55e]'}`}>
+                    {label || (isFinished ? "MERCADO Y ALINEACIONES BLOQUEADAS" : "TIEMPO RESTANTE PARA EDITAR MI EQUIPO")}
+                </span>
+            </div>
+            <div className={`p-2 rounded-full text-black shadow-lg transition-colors ${isFinished ? 'bg-red-500 shadow-red-500/20' : 'bg-[#facc15] shadow-yellow-500/20'}`}>
+                {isFinished ? <IconLock size={18} /> : <IconRefresh size={18} className="animate-spin-slow" />}
+            </div>
+        </div>
+    );
+};
   
   const MusicPlayer = () => {
     const [playing, setPlaying] = useState(false);
@@ -952,22 +989,6 @@ const calculateQuinielaPrize = (selections: any, standings: any) => {
 
 // --- MOTOR INTELIGENTE DE SUSTITUCIONES ---
 
-
-
-
-
-const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: string | undefined, isAdmin: boolean }) => {
-    const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => b.points - a.points); }, [teams]); 
-    return (
-        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
-            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
-            <div className="space-y-4">{sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} isAdmin={isAdmin} />)}</div>
-        </div>
-    );
-};
-// ==========================================
-// 9. TABLAS DE PUNTUACIONES (VISTAS)
-// ==========================================
 const processSubstitutions = (starters: any, bench: any[], captain: number | null, matchday: string, isClosed: boolean) => {
     let total = 0;
     const subbedInIds = new Set();
@@ -1066,6 +1087,21 @@ const processSubstitutions = (starters: any, bench: any[], captain: number | nul
     });
 
     return { total, subbedInIds, subbedOutIds, penalizedSlots };
+};
+
+// ==========================================
+// 9. TABLAS DE PUNTUACIONES (VISTAS)
+// ==========================================
+
+
+const ScoresView = ({ teams, myTeamId, isAdmin }: { teams: any[], myTeamId: string | undefined, isAdmin: boolean }) => {
+    const sortedTeams = useMemo(() => { return [...teams].sort((a, b) => b.points - a.points); }, [teams]); 
+    return (
+        <div className="max-w-4xl mx-auto px-4 mt-24 pb-32 animate-in fade-in">
+            <h1 className="text-2xl font-black italic text-cyan-400 uppercase tracking-tighter mb-6 flex items-center gap-2"><IconClipboard /> TABLA DE PUNTUACIONES</h1>
+            <div className="space-y-4">{sortedTeams.map((team) => <ScoreTeamRow key={team.id} team={team} isMyTeam={team.id === myTeamId} isAdmin={isAdmin} />)}</div>
+        </div>
+    );
 };
 
 const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
@@ -2114,7 +2150,7 @@ export default function EuroApp() {
   const handleFinishIntro = () => {
       setShowIntro(false);
   };  
-  const hasTournamentStarted = useMemo(() => Date.now() >= new Date(SIMULATED_GAME_START).getTime(), []);
+  const hasTournamentStarted = useMemo(() => Date.now() >= new Date(GAME_START_DATE).getTime(), []);
   const allSquadPlayers = useMemo(() => [...Object.values(selected), ...Object.values(bench), ...Object.values(extras)], [selected, bench, extras]);
   const budgetSpent = Math.round(allSquadPlayers.reduce((a:number, p:any) => a + p.precio, 0) * 10) / 10;
   
@@ -2223,7 +2259,7 @@ const handleSaveSquad = async () => {
   }, [lineupSelected]);
 
   const isValidLineupTactic = useMemo(() => VALID_FORMATIONS.includes(currentLineupTactic), [currentLineupTactic]);
-  const isJornadaEditable = (j: string) => { if (Date.now() < new Date(SIMULATED_GAME_START).getTime()) return false; const activeIndex = LINEUP_MATCHDAYS.indexOf(currentRealMatchday); const targetIndex = LINEUP_MATCHDAYS.indexOf(j); return targetIndex === activeIndex + 1; };
+  const isJornadaEditable = (j: string) => { if (Date.now() < new Date(GAME_START_DATE).getTime()) return false; const activeIndex = LINEUP_MATCHDAYS.indexOf(currentRealMatchday); const targetIndex = LINEUP_MATCHDAYS.indexOf(j); return targetIndex === activeIndex + 1; };
 
   // --- SUSTITUCIONES EN TIEMPO REAL (Limpio) ---
   const selectedObj = lineupSelected;
@@ -2808,7 +2844,7 @@ if (showIntro) {
       {['squad', 'lineups', 'quiniela'].includes(view) && (
         <div className="sticky top-[60px] z-[100] bg-[#0d1526]/95 backdrop-blur-md pb-2 shadow-xl border-b border-white/5 px-4 pt-4">
             <div className="flex justify-between items-start bg-[#1c2a45] p-3 rounded-xl border-l-4 border-[#22c55e]">
-               <div className="flex-1"><p className="text-[10px] font-black text-[#22c55e]">ASISTENTE VIRTUAL</p><div className="text-xs font-semibold italic min-h-[1.5rem]"><Typewriter text={getAssistantText()} isError={false}/></div><CountdownBlock targetDate={SIMULATED_GAME_START} /></div>
+               <div className="flex-1"><p className="text-[10px] font-black text-[#22c55e]">ASISTENTE VIRTUAL</p><div className="text-xs font-semibold italic min-h-[1.5rem]"><Typewriter text={getAssistantText()} isError={false}/></div><CountdownBlock targetDate={GAME_START_DATE} /></div>
             </div>
             {view === 'squad' && (
                 <div className="mt-2 flex gap-2">
