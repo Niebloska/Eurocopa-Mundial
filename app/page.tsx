@@ -18,7 +18,7 @@ const GAME_START_DATE = "2026-03-14T21:00:00"; // Tu inicio real
 const SIMULATED_GAME_START = "2024-06-14T21:00:00"; // El inicio oficial de la Euro
 
 // Esta función calcula la diferencia exacta y te devuelve la fecha real equivalente
-function getRealEquivalentDate(simulatedDateString) {
+function getRealEquivalentDate(simulatedDateString: string) {
   const realStartMs = new Date(GAME_START_DATE).getTime();
   const simulatedStartMs = new Date(SIMULATED_GAME_START).getTime();
   
