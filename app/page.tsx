@@ -1839,7 +1839,7 @@ const AdminView = ({ onRefresh, allTeams, onToggleBet, onSaveTreasury, currentRe
 // 11. PANTALLAS MODALES Y LOGIN SENCILLO
 // ==========================================
 
-const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, teamName?: string) => void }) => {
+const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, teamName?: string, userId?: string) => void }) => {
     const [isRegister, setIsRegister] = useState(false); const [username, setUsername] = useState(""); const [teamName, setTeamName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [errorMsg, setErrorMsg] = useState("");
     
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1848,7 +1848,8 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
           if (isRegister) {
               if (!email || !password || !username || !teamName) throw new Error("Rellena todos los campos");
               const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username, team_name: teamName } } });
-              if (error) throw error; if (data.user) onLogin(data.user.email!, username, teamName);
+              if (error) throw error; 
+              if (data.user) onLogin(data.user.email!, username, teamName, data.user.id);
           } else {
                if (!email || !password) throw new Error("Rellena email y contraseña");
                // ¡MAGIA AQUÍ! Ignoramos el Auth de Supabase y forzamos la entrada para que la app busque en tu tabla
@@ -2413,7 +2414,7 @@ const handleSaveSquad = async () => {
       } catch(e) { console.error("Error cargando datos:", e); }
   };
 
-  const handleLogin = async (e: string, u: string, t?: string) => {
+  const handleLogin = async (e: string, u: string, t?: string, userId?: string) => {
     // 1. Forzamos el Modo Dios si es tu email
     setIsAdmin(e === MASTER_EMAIL);
 
@@ -2437,11 +2438,11 @@ const handleSaveSquad = async () => {
         setCurrentTeamName(fakeUser.teamName);
         loadUserData(fakeUser);
         
-    } else if (u && t) {
-        // ¡NUEVA LÓGICA! Si no existe en 'teams' pero nos llega 'username' (u) y 'teamName' (t), es un registro nuevo.
-        // Lo insertamos automáticamente en la tabla 'teams'.
+    } else if (u && t && userId) { // <-- ¡Añadido userId aquí para asegurar que lo tenemos!
+        // ¡NUEVA LÓGICA! Si no existe en 'teams' pero nos llega 'username' (u), 'teamName' (t) y 'userId'.
+        // Lo insertamos automáticamente en la tabla 'teams' CON SU ID VINCULADO.
         const { data: newUser, error } = await supabase.from('teams').insert([
-            { email: e, username: u, team_name: t, is_validated: false }
+            { id: userId, email: e, username: u, team_name: t, is_validated: false } // <-- ¡MAGIA AQUÍ! Añadimos el id
         ]).select().single();
 
         if (!error && newUser) {
@@ -2462,7 +2463,7 @@ const handleSaveSquad = async () => {
         // Intento de login normal, pero el email de verdad no existe
         alert("Este email no está registrado en el torneo.");
     }
-  };
+};
 
   const confirmLogout = async () => { 
       setUser(null); 
