@@ -1843,19 +1843,50 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
     const [isRegister, setIsRegister] = useState(false); const [username, setUsername] = useState(""); const [teamName, setTeamName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [loading, setLoading] = useState(false); const [errorMsg, setErrorMsg] = useState("");
     
     const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault(); setErrorMsg(""); setLoading(true);
-      try {
-          if (isRegister) {
-              if (!email || !password || !username || !teamName) throw new Error("Rellena todos los campos");
-              const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username, team_name: teamName } } });
-              if (error) throw error; 
-              if (data.user) onLogin(data.user.email!, username, teamName, data.user.id);
-          } else {
-               if (!email || !password) throw new Error("Rellena email y contraseña");
-               // ¡MAGIA AQUÍ! Ignoramos el Auth de Supabase y forzamos la entrada para que la app busque en tu tabla
-               onLogin(email, "", "");
-          }
-      } catch (err: any) { setErrorMsg(err.message || "Error al entrar"); } finally { setLoading(false); }
+        e.preventDefault();
+        setErrorMsg("");
+        setLoading(true);
+        
+        try {
+            if (isRegister) {
+                if (!email || !password || !username || !teamName) throw new Error("Rellena todos los campos");
+                
+                // 1. Registramos al usuario en Supabase Auth
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { username, team_name: teamName } }
+                });
+                
+                if (error) throw error;
+                
+                // Si requiere confirmación de email, data.session será null. Asumiremos que no la requiere por ahora.
+                if (data.user) {
+                     onLogin(data.user.email!, username, teamName, data.user.id);
+                }
+                
+            } else {
+                if (!email || !password) throw new Error("Rellena email y contraseña");
+                
+                // 2. HACEMOS LOGIN REAL EN SUPABASE
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                
+                if (error) throw new Error("Credenciales incorrectas o usuario no existe.");
+                
+                if (data.user) {
+                    // Si el login es exitoso, pasamos los datos. 
+                    // No tenemos username ni teamName aquí, pero handleLogin los sacará de la BD.
+                    onLogin(data.user.email!, "", "", data.user.id); 
+                }
+            }
+        } catch (err: any) {
+            setErrorMsg(err.message || "Error de autenticación");
+        } finally {
+            setLoading(false);
+        }
     };
     
     return ( 
@@ -2415,53 +2446,71 @@ const handleSaveSquad = async () => {
   };
 
   const handleLogin = async (e: string, u: string, t?: string, userId?: string) => {
-    // 1. Forzamos el Modo Dios si es tu email
     setIsAdmin(e === MASTER_EMAIL);
 
-    // 2. Limpiamos la memoria del equipo anterior
     setSelected({}); setBench({}); setExtras({}); setCaptain(null); 
     setLineupSelected({}); setLineupBench({}); setLineupExtras({}); setLineupCaptain(null);
     setSquadValidated(false);
 
-    // 3. BUSCAMOS DIRECTO EN TU TABLA 'teams' (evitando el bloqueo del Auth)
-    const { data } = await supabase.from('teams').select('*').eq('email', e).single();
+    // Si por algún motivo no llega el ID (no debería pasar con el nuevo código), abortamos
+    if (!userId) {
+        alert("Error de sesión. Inténtalo de nuevo.");
+        return;
+    }
+
+    // 1. BUSCAMOS AL USUARIO EN LA TABLA 'teams' POR SU ID
+    const { data, error: selectError } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('id', userId)
+        .single();
     
-    if (data || e === MASTER_EMAIL) {
-        // Login normal de un usuario que ya existe
+    if (data) {
+        // EL USUARIO YA EXISTÍA EN LA TABLA TEAMS (Login)
         const fakeUser = { 
             email: e, 
-            username: data?.username || e.split('@')[0], 
-            id: data?.id || 'admin-local-id', 
-            teamName: data?.team_name || "Mi Equipo" 
+            username: data.username, 
+            id: userId, 
+            teamName: data.team_name 
         };
         setUser(fakeUser);
         setCurrentTeamName(fakeUser.teamName);
         loadUserData(fakeUser);
         
-    } else if (u && t && userId) { // <-- ¡Añadido userId aquí para asegurar que lo tenemos!
-        // ¡NUEVA LÓGICA! Si no existe en 'teams' pero nos llega 'username' (u), 'teamName' (t) y 'userId'.
-        // Lo insertamos automáticamente en la tabla 'teams' CON SU ID VINCULADO.
-        const { data: newUser, error } = await supabase.from('teams').insert([
-            { id: userId, email: e, username: u, team_name: t, is_validated: false } // <-- ¡MAGIA AQUÍ! Añadimos el id
-        ]).select().single();
+    } else if (u && t) {
+        // EL USUARIO NO EXISTÍA EN LA TABLA TEAMS (Nuevo Registro)
+        // Lo insertamos ahora
+        const { data: newUser, error: insertError } = await supabase
+            .from('teams')
+            .insert([
+                { id: userId, email: e, username: u, team_name: t, is_validated: false } 
+            ])
+            .select()
+            .single();
 
-        if (!error && newUser) {
+        if (insertError) {
+            console.error("Error al insertar equipo:", insertError);
+            alert("Error al registrar tu equipo en la base de datos.");
+            // Opcional: Podrías hacer un supabase.auth.signOut() aquí si quieres ser estricto
+            return;
+        }
+
+        if (newUser) {
             const fakeUser = { 
                 email: e, 
                 username: u, 
-                id: newUser.id, 
+                id: userId, 
                 teamName: t 
             };
             setUser(fakeUser);
             setCurrentTeamName(fakeUser.teamName);
             loadUserData(fakeUser);
-        } else {
-            alert("Error al registrar tu equipo en la base de datos: " + (error?.message || ""));
         }
-        
     } else {
-        // Intento de login normal, pero el email de verdad no existe
-        alert("Este email no está registrado en el torneo.");
+        // Este caso ocurre si hacen login con una cuenta que existe en Auth 
+        // pero que por algún fallo previo no se creó en la tabla 'teams'.
+        alert("Tu cuenta existe, pero no tienes un equipo asignado. Por favor, contacta con el administrador.");
+        // supabase.auth.signOut(); // Sería buena idea forzar el cierre de sesión aquí
     }
 };
 
