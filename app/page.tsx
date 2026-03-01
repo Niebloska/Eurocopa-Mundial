@@ -2426,6 +2426,7 @@ const handleSaveSquad = async () => {
     const { data } = await supabase.from('teams').select('*').eq('email', e).single();
     
     if (data || e === MASTER_EMAIL) {
+        // Login normal de un usuario que ya existe
         const fakeUser = { 
             email: e, 
             username: data?.username || e.split('@')[0], 
@@ -2435,11 +2436,33 @@ const handleSaveSquad = async () => {
         setUser(fakeUser);
         setCurrentTeamName(fakeUser.teamName);
         loadUserData(fakeUser);
+        
+    } else if (u && t) {
+        // ¡NUEVA LÓGICA! Si no existe en 'teams' pero nos llega 'username' (u) y 'teamName' (t), es un registro nuevo.
+        // Lo insertamos automáticamente en la tabla 'teams'.
+        const { data: newUser, error } = await supabase.from('teams').insert([
+            { email: e, username: u, team_name: t, is_validated: false }
+        ]).select().single();
+
+        if (!error && newUser) {
+            const fakeUser = { 
+                email: e, 
+                username: u, 
+                id: newUser.id, 
+                teamName: t 
+            };
+            setUser(fakeUser);
+            setCurrentTeamName(fakeUser.teamName);
+            loadUserData(fakeUser);
+        } else {
+            alert("Error al registrar tu equipo en la base de datos: " + (error?.message || ""));
+        }
+        
     } else {
+        // Intento de login normal, pero el email de verdad no existe
         alert("Este email no está registrado en el torneo.");
     }
-
-};
+  };
 
   const confirmLogout = async () => { 
       setUser(null); 
