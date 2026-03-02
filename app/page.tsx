@@ -142,6 +142,19 @@ const IconSave = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.or
 const IconArrowUpDown = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>;
 const IconArrowDownUp = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>;
 
+// Justo debajo de los iconos y encima de Typewriter
+const PlayerValueBadge = ({ value, className = "" }) => {
+    if (!value) return null; 
+    return (
+      <div className={`z-50 flex items-center bg-[#facc15] text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-yellow-600 leading-none ${className}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 mr-0.5 text-yellow-800">
+          <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.902 7.098a3.75 3.75 0 013.903-.884.75.75 0 10.498-1.415A5.25 5.25 0 008.005 9.75H7.125a.75.75 0 000 1.5h.627a2.25 2.25 0 01.259 1.05v.268a2.25 2.25 0 01-.26 1.05H7.125a.75.75 0 000 1.5h.898a5.25 5.25 0 006.477 2.702.75.75 0 10-.498-1.415 3.75 3.75 0 01-3.903-.884v-.223c0-1.082.76-1.996 1.81-2.185.353-.063.73-.09 1.114-.09h.858c1.628 0 2.95-1.322 2.95-2.95v-.268a2.95 2.95 0 00-2.95-2.95h-.858a4.84 4.84 0 00-1.114.09c-1.05.189-1.81 1.103-1.81 2.185v.223z" clipRule="evenodd" />
+        </svg>
+        <span>{value}M</span>
+      </div>
+    );
+  };
+
 const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: string, isError?: boolean }) => {
     const [displayedText, setDisplayedText] = useState("");
     useEffect(() => {
@@ -381,9 +394,14 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                           <span className="text-[10px] font-black text-white">-1</span>
                                       </div>
                                   )}
-                              </div>
+
+                                 {/* ¡NUEVA POSICIÓN AQUÍ! Centrada justo en el borde inferior del círculo */}
+                                 {p && !isPenalized && <PlayerValueBadge value={p.precio} className="absolute -bottom-2.5 left-1/2 -translate-x-1/2" />}
+                                </div>
+                              
                               {p && !isPenalized && <span className={`mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>{getFlag(p.seleccion)}</span>}
                               {isPenalized && p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter grayscale opacity-50">{getFlag(p.seleccion)}</span>}
+                             
                           </div>
                       );
                       
@@ -411,31 +429,40 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
     const isEliminated = isKnockoutPhase && advancedTeams && advancedTeams.size > 0 && !advancedTeams.has(player.seleccion);
     
     return (
-      <div onClick={onClick} className={`relative w-full h-full flex flex-col items-center justify-between p-2 rounded-xl border transition-all cursor-pointer active:scale-95 shadow-lg ${isSubbedIn ? 'bg-[#1c2a45] border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]' : (isEliminated ? 'bg-gray-800 border-gray-600 opacity-60' : 'bg-[#1c2a45] border-white/10 hover:bg-white/5')}`}>
-          
-          {isSubbedIn && (
-              <div className="absolute top-1 right-1 flex flex-col items-center z-40">
-                  <IconSub size={16} className="text-[#22c55e] drop-shadow-md"/>
-                  {pts !== undefined && pts !== null && (
-                      <span className="text-[10px] font-black text-[#22c55e] leading-none mt-0.5">
-                          {pts > 0 ? `+${pts}` : pts}
-                      </span>
-                  )}
-              </div>
-          )}
+      // ... código anterior de BenchCard ...
+<div onClick={onClick} className={`relative w-full h-full flex flex-col items-center p-2 rounded-xl border transition-all cursor-pointer active:scale-95 shadow-lg ${isSubbedIn ? 'bg-[#1c2a45] border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.3)]' : (isEliminated ? 'bg-gray-800 border-gray-600 opacity-60' : 'bg-[#1c2a45] border-white/10 hover:bg-white/5')}`}>
 
-          <span className={`text-[10px] font-black text-white text-center uppercase leading-tight truncate w-full ${isSubbedIn ? 'pr-3' : ''}`}>
-              {player.nombre.split(' ').pop()}
-          </span>
-          
-          <div className="flex-1 flex items-center justify-center mt-1">
-              <span className={`text-4xl leading-none drop-shadow-md filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>{getFlag(player.seleccion)}</span>
-          </div>
-          
-          <div className={`w-full text-center text-[9px] font-black uppercase py-0.5 mt-1 rounded ${posColor}`}>
-              {player.posicion}
-          </div>
-      </div>
+{isSubbedIn && (
+    <div className="absolute top-1 right-1 flex flex-col items-center z-40">
+        <IconSub size={16} className="text-[#22c55e] drop-shadow-md"/>
+        {pts !== undefined && pts !== null && (
+            <span className="text-[10px] font-black text-[#22c55e] leading-none mt-0.5">
+                {pts > 0 ? `+${pts}` : pts}
+            </span>
+        )}
+    </div>
+)}
+
+{/* 1. EL NOMBRE (shrink-0 asegura que no se comprima hasta desaparecer) */}
+<span className={`text-[10px] font-black text-white text-center uppercase leading-tight truncate w-full shrink-0 ${isSubbedIn ? 'pr-3' : ''}`}>
+    {player.nombre.split(' ').pop()}
+</span>
+
+{/* 2. LA ETIQUETA (ajustada con margen moderado) */}
+<PlayerValueBadge value={player.precio} className="my-1 z-40 scale-90 shrink-0" />
+
+{/* 3. LA BANDERA (min-h-0 evita que la bandera empuje al nombre fuera de la tarjeta) */}
+<div className="flex-1 flex items-center justify-center min-h-0">
+    <span className={`text-4xl leading-none drop-shadow-md filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>
+        {getFlag(player.seleccion)}
+    </span>
+</div>
+
+{/* 4. LA POSICIÓN (mt-auto lo clava en la parte inferior) */}
+<div className={`w-full text-center text-[9px] font-black uppercase py-0.5 mt-auto rounded shrink-0 ${posColor}`}>
+    {player.posicion}
+</div>
+</div>
     );
   };
 
