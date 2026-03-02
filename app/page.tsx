@@ -2260,7 +2260,7 @@ const handleSaveSquad = async () => {
         const maxPerCountry = isMarketOpen ? 8 : 7;
         const countryCounts: Record<string, number> = {};
         
-        for (const p of allSquadPlayers) {
+        for (const p of allSquadPlayers as any[]) {
             if (!p) continue;
             const country = p.seleccion;
             countryCounts[country] = (countryCounts[country] || 0) + 1;
