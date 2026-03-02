@@ -2249,62 +2249,80 @@ if (isMarketOpen && snapshot) {
 
 // --- FUNCIÓN ÚNICA Y BLINDADA PARA GUARDAR/VALIDAR PLANTILLA ---
 const handleSaveSquad = async () => {
-    if(!isValidTactic) return alert("⚠️ Táctica inválida."); 
-    if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
-
-    const numPlayers = allSquadPlayers.length;
+        if(!isValidTactic) return alert("⚠️ Táctica inválida."); 
+        if(!captain) return alert("⚠️ ¡Debes elegir un CAPITÁN para tu plantilla!"); 
     
-    // Lógica dinámica dependiendo de si es Mercado Abierto o Creación de Equipo
-    if (isMarketOpen) {
-        if (numPlayers > 20) {
-            alert("⚠️ Error: No puedes tener más de 20 jugadores en tu plantilla.");
-            return;
-        }
-        if (discardedPlayers.length > 7) {
-            alert("⚠️ Error: Has superado el límite de 7 descartes permitidos en esta ventana.");
-            return;
-        }
-    } else {
-        const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
-        if (!isValidCount) {
-            alert("Debes tener entre 17 y 20 jugadores. Si tienes 17, confirma que no quieres extras pulsando el botón rojo.");
-            return;
-        }
-    }
-    if (budgetSpent > dynamicMaxBudget) {
-        alert(`⚠️ Presupuesto excedido. Gastado: ${budgetSpent}M / Límite: ${dynamicMaxBudget}M`);
-        return;
-    }
-    if (isMarketOpen && marketChangesCount > 7) {
-        alert("⚠️ Has superado el límite de 7 fichajes.");
-        return;
-    }
-
-    // 🛡️ BLINDAJE SUPREMO: Evita pisar la caja fuerte descargando la versión más reciente de la BD
-    const { data: freshTeamData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
-    let raw: any = {};
-    if (freshTeamData?.squad) {
-        raw = typeof freshTeamData.squad === 'string' ? JSON.parse(freshTeamData.squad) : freshTeamData.squad;
-    }
-
-    const newSquad = {
-        ...raw, // <-- Ahora sí es 100% la versión real y no borraremos el j1_snapshot
-        selected,
-        bench,
-        extras,
-        captain
+        const numPlayers = allSquadPlayers.length;
+    
+        // ---------------------------------------------------------
+        // 🚨 NUEVA VALIDACIÓN: LÍMITE DE JUGADORES POR SELECCIÓN 🚨
+        // ---------------------------------------------------------
+        const maxPerCountry = isMarketOpen ? 8 : 7;
+        const countryCounts: Record<string, number> = {};
+        
+        for (const p of allSquadPlayers) {
+            if (!p) continue;
+            const country = p.seleccion;
+            countryCounts[country] = (countryCounts[country] || 0) + 1;
+            
+            if (countryCounts[country] > maxPerCountry) {
+                alert(`⚠️ Error: Tienes demasiados jugadores de ${country}. El límite actual es de ${maxPerCountry} por selección.`);
+                return; // Frena en seco y evita que se guarde
+            }
+        }
+        // ---------------------------------------------------------
+        
+        // Lógica dinámica dependiendo de si es Mercado Abierto o Creación de Equipo
+        if (isMarketOpen) {
+            if (numPlayers > 20) {
+                alert("⚠️ Error: No puedes tener más de 20 jugadores en tu plantilla.");
+                return;
+            }
+            if (discardedPlayers.length > 7) {
+                alert("⚠️ Error: Has superado el límite de 7 descartes permitidos en esta ventana.");
+                return;
+            }
+        } else {
+            const isValidCount = (numPlayers >= 18 && numPlayers <= 20) || (numPlayers === 17 && hasConfirmedNoExtras);
+            if (!isValidCount) {
+                alert("Debes tener entre 17 y 20 jugadores. Si tienes 17, confirma que no quieres extras pulsando el botón rojo.");
+                return;
+            }
+        }
+        if (budgetSpent > dynamicMaxBudget) {
+            alert(`⚠️ Presupuesto excedido. Gastado: ${budgetSpent}M / Límite: ${dynamicMaxBudget}M`);
+            return;
+        }
+        if (isMarketOpen && marketChangesCount > 7) {
+            alert("⚠️ Has superado el límite de 7 fichajes.");
+            return;
+        }
+    
+        // 🛡️ BLINDAJE SUPREMO: Evita pisar la caja fuerte descargando la versión más reciente de la BD
+        const { data: freshTeamData } = await supabase.from('teams').select('squad').eq('id', user?.id).single();
+        let raw: any = {};
+        if (freshTeamData?.squad) {
+            raw = typeof freshTeamData.squad === 'string' ? JSON.parse(freshTeamData.squad) : freshTeamData.squad;
+        }
+    
+        const newSquad = {
+            ...raw, 
+            selected,
+            bench,
+            extras,
+            captain
+        };
+    
+        const { error } = await supabase.from('teams').update({ squad: newSquad, is_validated: true }).eq('id', user?.id);
+        
+        if (!error) {
+            setSquadValidated(true);
+            alert("✅ ¡Plantilla guardada y validada con éxito!");
+            loadUserData(user); 
+        } else {
+            alert("Error al guardar: " + error.message);
+        }
     };
-
-    const { error } = await supabase.from('teams').update({ squad: newSquad, is_validated: true }).eq('id', user?.id);
-    
-    if (!error) {
-        setSquadValidated(true);
-        alert("✅ ¡Plantilla guardada y validada con éxito!");
-        loadUserData(user); 
-    } else {
-        alert("Error al guardar: " + error.message);
-    }
-};
 
   const isValidTactic = useMemo(() => VALID_FORMATIONS.includes(`${Object.keys(selected).filter(k=>k.startsWith("DEF")).length}-${Object.keys(selected).filter(k=>k.startsWith("MED")).length}-${Object.keys(selected).filter(k=>k.startsWith("DEL")).length}`), [selected]);
   
