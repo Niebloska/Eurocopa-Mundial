@@ -143,7 +143,7 @@ const IconArrowUpDown = ({ size=24, className="" }:any) => <svg xmlns="http://ww
 const IconArrowDownUp = ({ size=24, className="" }:any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>;
 
 // Justo debajo de los iconos y encima de Typewriter
-const PlayerValueBadge = ({ value, className = "" }) => {
+const PlayerValueBadge = ({ value, className = "" }: { value: string | number; className?: string }) => {
     if (!value) return null; 
     return (
       <div className={`z-50 flex items-center bg-[#facc15] text-black text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-yellow-600 leading-none ${className}`}>
