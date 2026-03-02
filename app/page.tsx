@@ -36,15 +36,17 @@ const posColors: Record<string, string> = {
 };
 
 const getFlag = (country: string) => {
-  const flags: Record<string, string> = {
-    "España": "🇪🇸", "Alemania": "🇩🇪", "Francia": "🇫🇷", "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 
-    "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Turquía": "🇹🇷", "Georgia": "🇬🇪", "Portugal": "🇵🇹", "Países Bajos": "🇳🇱",
-    "Italia": "🇮🇹", "Albania": "🇦🇱", "Hungría": "🇭🇺", "Suiza": "🇨🇭", "Croacia": "🇭🇷",
-    "Eslovenia": "🇸🇮", "Dinamarca": "🇩🇰", "Serbia": "🇷🇸", "Polonia": "🇵🇱", "Austria": "🇦🇹",
-    "Bélgica": "🇧🇪", "Eslovaquia": "🇸🇰", "Rumanía": "🇷🇴", "Ucrania": "🇺🇦", "República Checa": "🇨🇿"
+    const countryCodes: Record<string, string> = {
+      "España": "es", "Alemania": "de", "Francia": "fr", "Inglaterra": "gb-eng", 
+      "Escocia": "gb-sct", "Turquía": "tr", "Georgia": "ge", "Portugal": "pt", "Países Bajos": "nl",
+      "Italia": "it", "Albania": "al", "Hungría": "hu", "Suiza": "ch", "Croacia": "hr",
+      "Eslovenia": "si", "Dinamarca": "dk", "Serbia": "rs", "Polonia": "pl", "Austria": "at",
+      "Bélgica": "be", "Eslovaquia": "sk", "Rumanía": "ro", "Ucrania": "ua", "República Checa": "cz"
+    };
+    
+    const code = countryCodes[country];
+    return code ? `https://flagcdn.com/w40/${code}.png` : "";
   };
-  return flags[country] || "🏳️";
-};
 
 const EURO_GROUPS_DATA = [
   { name: "GRUPO A", teams: ["Alemania", "Escocia", "Hungría", "Suiza"] },
@@ -247,7 +249,7 @@ const Typewriter = ({ text, stepTitle, isError }: { text: string, stepTitle?: st
           {p ? <span className="text-[9px] font-black text-black text-center leading-none uppercase italic">{p.nombre.split(' ').pop()}</span> : <IconPlus size={18} />}
           {p && showCap && (<button onClick={(e) => { e.stopPropagation(); if (editable) setCap(); }} className={`absolute -top-2 -right-2 w-5 h-5 rounded-full border-2 font-black text-[9px] flex items-center justify-center transition-all z-50 ${cap ? 'bg-[#facc15] text-black border-white scale-110 shadow-lg' : 'bg-black/60 text-white/30 border-white/10'} ${editable ? 'hover:bg-black/80 hover:text-white cursor-pointer' : 'cursor-default'}`}>{cap ? <IconCheck size={8} /> : 'C'}</button>)}
       </div>
-      {p && (<span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter">{getFlag(p.seleccion)}</span>)}
+      {p && (<img src={getFlag(p.seleccion)} alt={p.seleccion} className="mt-1 w-8 h-6 object-cover rounded shadow-black drop-shadow-lg z-20 filter" />)}
     </div>
   );
   
@@ -311,10 +313,10 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
            <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
               <div className={`border rounded-2xl p-4 relative overflow-hidden ${isChampion ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-[#2e9d4a]/10 border-[#22c55e]/20'}`}>
                 <p className={`text-[9px] font-black uppercase mb-3 text-center ${isChampion ? 'text-[#ffd700]' : 'text-[#22c55e]'}`}>ONCE INICIAL</p>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
-                <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><span className="text-xl leading-none">{getFlag(p.seleccion)}</span></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#ef4444] text-white text-[8px] font-black text-center">DEL</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEL').length > 0 ? filterByPos('DEL').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><img src={getFlag(p.seleccion)} alt={p.seleccion} className="w-6 h-4 object-cover rounded shadow-sm" /></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#10b981] text-white text-[8px] font-black text-center">MED</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('MED').length > 0 ? filterByPos('MED').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><img src={getFlag(p.seleccion)} alt={p.seleccion} className="w-6 h-4 object-cover rounded shadow-sm" /></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2 mb-2"><div className="w-8 py-1 rounded bg-[#3b82f6] text-white text-[8px] font-black text-center">DEF</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('DEF').length > 0 ? filterByPos('DEF').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><img src={getFlag(p.seleccion)} alt={p.seleccion} className="w-6 h-4 object-cover rounded shadow-sm" /></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
+                <div className="flex items-center gap-2"><div className="w-8 py-1 rounded bg-[#facc15] text-black text-[8px] font-black text-center">POR</div><div className="flex flex-wrap gap-2 flex-1 justify-center">{filterByPos('POR').length > 0 ? filterByPos('POR').map((p:any) => (<div key={p.id} className="flex flex-col items-center"><span className="text-[9px] font-bold text-white">{p.nombre.split(' ').pop()}</span><img src={getFlag(p.seleccion)} alt={p.seleccion} className="w-6 h-4 object-cover rounded shadow-sm" /></div>)) : <span className="text-[8px] text-white/20 italic">Vacío</span>}</div></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                  <div className="border border-sky-500/20 rounded-2xl bg-sky-900/10 p-3"><p className="text-[9px] font-black uppercase text-sky-400 mb-3 text-center">BANQUILLO</p><div className="grid grid-cols-2 gap-2">{squadData.banquillo && squadData.banquillo.length > 0 ? squadData.banquillo.map((p:any) => <BenchCard key={p.id} player={p} id="S" posColor={posColors[p?.posicion]} />) : <span className="text-[8px] text-white/20 italic col-span-2 text-center self-center">Vacío</span>}</div></div>
@@ -399,8 +401,8 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                  {p && !isPenalized && <PlayerValueBadge value={p.precio} className="absolute -bottom-2.5 left-1/2 -translate-x-1/2" />}
                                 </div>
                               
-                              {p && !isPenalized && <span className={`mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>{getFlag(p.seleccion)}</span>}
-                              {isPenalized && p && <span className="mt-1 text-3xl leading-none block shadow-black drop-shadow-lg z-20 filter grayscale opacity-50">{getFlag(p.seleccion)}</span>}
+                                {p && !isPenalized && <img src={getFlag(p.seleccion)} alt={`Bandera de ${p.seleccion}`} className={`mt-1 w-8 h-6 object-cover rounded shadow-black drop-shadow-lg z-20 filter ${isEliminated ? 'grayscale opacity-50' : ''}`} />}
+                              {isPenalized && p && <img src={getFlag(p.seleccion)} alt={p.seleccion} className={`mt-1 w-8 h-6 object-cover rounded shadow-black drop-shadow-lg z-20 filter ${isEliminated || isPenalized ? 'grayscale opacity-50' : ''}`} />}
                              
                           </div>
                       );
@@ -453,9 +455,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
 
 {/* 3. LA BANDERA (min-h-0 evita que la bandera empuje al nombre fuera de la tarjeta) */}
 <div className="flex-1 flex items-center justify-center min-h-0">
-    <span className={`text-4xl leading-none drop-shadow-md filter ${isEliminated ? 'grayscale opacity-50' : ''}`}>
-        {getFlag(player.seleccion)}
-    </span>
+<img src={getFlag(player.seleccion)} alt={player.seleccion} className={`w-9 h-6 object-cover rounded drop-shadow-md filter ${isEliminated ? 'grayscale opacity-50' : ''}`} />
 </div>
 
 {/* 4. LA POSICIÓN (mt-auto lo clava en la parte inferior) */}
@@ -575,7 +575,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
             <div className="bg-[#1c2a45] border border-white/10 rounded-lg p-2 shadow-lg w-full mb-3 relative overflow-hidden">
                 <div className={`flex items-center justify-between py-1 border-b border-white/5 ${match.t1.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
                     <div className="flex items-center gap-2">
-                        <span className="text-lg">{match.t1.isKnown ? getFlag(match.t1.name) : '🏳️'}</span>
+                    {match.t1.isKnown ? <img src={getFlag(match.t1.name)} alt={match.t1.name} className="w-6 h-4 object-cover rounded" /> : <span className="text-lg">🏳️</span>}
                         <span className="text-[9px] font-black uppercase truncate">{match.t1.name}</span>
                         {/* Se ha eliminado la etiqueta PEN antigua de aquí */}
                     </div>
@@ -801,7 +801,8 @@ const QuinielaView = ({ selections, onToggle, locked, onEdit, canEdit }: any) =>
                                     }
                                     return ( 
                                         <button key={team} disabled={isLocked} onClick={() => onToggle(group.name, team)} className={`p-3 rounded-xl border flex items-center justify-between transition-all ${btnStyle} ${isLocked ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:scale-95'}`}>
-                                            <div className="flex items-center gap-2"><span className="text-2xl">{getFlag(team)}</span><span className="text-[10px] font-black uppercase">{team}</span></div>{iconContent}
+                                            <div className="flex items-center gap-2"><img src={getFlag(team)} alt={team} className="w-7 h-5 object-cover rounded shadow-sm" /> 
+// (Ajusta m.t1 o team según la variable local)<span className="text-[10px] font-black uppercase">{team}</span></div>{iconContent}
                                         </button> 
                                     );
                                 })}
@@ -1267,7 +1268,9 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
                                 return ( 
                                     <tr key={p.id} className={`hover:bg-white/5 transition-colors group ${p.isSold ? 'bg-gray-800/40 opacity-70 grayscale' : ''}`}>
                                         <td className="p-3"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${p.isSold ? 'bg-gray-700 text-gray-400 opacity-60' : posColors[p.posicion]}`}>{p.posicion}</span></td>
-                                        <td className="p-3 text-center text-lg">{p.isSold ? <span className="grayscale opacity-40">{getFlag(p.seleccion)}</span> : getFlag(p.seleccion)}</td>
+                                        <td className="p-3 text-center flex justify-center items-center">
+    <img src={getFlag(p.seleccion)} alt={p.seleccion} className={`w-6 h-4 object-cover rounded ${p.isSold ? 'grayscale opacity-40' : ''}`} />
+</td>
                                         <td className="p-3 truncate max-w-[120px] font-medium text-white/90 flex items-center gap-2">
                                             <span className={p.isSold ? 'text-white/50 italic' : 'group-hover:text-white'}>{p.nombre}</span>
                                             {p.isSold ? <span className="bg-gray-700 text-gray-300 text-[8px] px-1 py-0.5 rounded font-black tracking-widest border border-gray-500">DESCARTADO</span> : (isCapInSomePhase && <IconCaptain className="scale-75"/>)}
@@ -1471,7 +1474,8 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
     return (
         <div className={`relative flex flex-col p-3 rounded-xl border mb-2 transition-colors ${isLocked ? 'bg-green-900/10 border-green-500/30' : 'bg-[#1c2a45] border-white/5 hover:bg-white/5'}`}>
             <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <span className="text-xl">{getFlag(m.t1)}</span></div>
+                <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <img src={getFlag(team)} alt={team} className="w-7 h-5 object-cover rounded shadow-sm" /> 
+// (Ajusta m.t1 o team según la variable local)</div>
                 
                 <div className="flex items-center gap-1 justify-center w-[20%]">
                     <input type="number" disabled={isLocked} value={score1} onChange={e=>setScore1(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
@@ -2070,7 +2074,7 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
                             const countInSquad = getCountryCount(c);
                             return (
                                 <option key={c} value={c}>
-                                    {c === "TODOS" ? "🌍 TODOS LOS PAÍSES" : `${getFlag(c)} ${c} (${countInSquad}/${maxCountryLimit})`}
+                                {c === "TODOS" ? "🌍 TODOS LOS PAÍSES" : `${c} (${countInSquad}/${maxCountryLimit})`}
                                 </option>
                             );
                         })}
@@ -2087,24 +2091,25 @@ const AuthScreen = ({ onLogin }: { onLogin: (email: string, username: string, te
             </div>
             
             {mode === 'market' && ( 
-                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
-                    {uniqueCountries.map(c => { 
-                        const count = getCountryCount(c); 
-                        const isMaxed = count >= maxCountryLimit; 
-                        return ( 
-                            <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>
-                                {c !== "TODOS" && <span>{getFlag(c)}</span>} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/{maxCountryLimit})</span>}
-                            </button> 
-                        ); 
-                    })}
-                </div> 
-            )}
+    <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
+        {uniqueCountries.map(c => { 
+            const count = getCountryCount(c); 
+            const isMaxed = count >= maxCountryLimit; 
+            return ( 
+                <button key={c} onClick={()=>setFilterCountry(c)} className={`px-3 py-1 rounded-lg text-[9px] font-black border whitespace-nowrap flex items-center gap-1 ${filterCountry===c?'bg-[#22c55e] text-black':'border-white/20'} ${isMaxed ? 'opacity-50' : ''}`}>
+                    {/* 👇 AQUÍ ESTÁ EL CAMBIO 👇 */}
+                    {c !== "TODOS" && <img src={getFlag(c)} alt={c} className="w-4 h-3 object-cover rounded-[2px]" />} {c} {c !== "TODOS" && <span className={isMaxed ? "text-red-500 ml-1" : "opacity-50 ml-1"}>({count}/{maxCountryLimit})</span>}
+                </button> 
+            ); 
+        })}
+    </div> 
+)}
             
             <div className="space-y-3 overflow-y-auto flex-1 pb-10">
                 {filteredPlayers.length === 0 ? <p className="text-center text-white/30 italic mt-10">No hay jugadores disponibles.</p> : filteredPlayers.map((p: any) => (
                     <div key={p.id} onClick={() => onSelect(p)} className={`p-4 rounded-xl border flex justify-between items-center active:scale-95 transition-transform ${mode === 'lineup' ? getStatusBg(p.id) : 'bg-[#162136] border-white/10'}`}>
                         <div className="flex items-center gap-3">
-                            <span className="text-2xl">{getFlag(p.seleccion)}</span>
+                        <img src={getFlag(p.seleccion)} alt={p.seleccion} className="w-6 h-4 object-cover rounded-[2px] shadow-sm border border-white/20" />
                             <div className="flex flex-col">
                                 <span className="text-sm font-bold text-white">{p.nombre}</span>
                                 <div className="flex items-center gap-2">
