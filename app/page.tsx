@@ -1475,8 +1475,10 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
     return (
         <div className={`relative flex flex-col p-3 rounded-xl border mb-2 transition-colors ${isLocked ? 'bg-green-900/10 border-green-500/30' : 'bg-[#1c2a45] border-white/5 hover:bg-white/5'}`}>
             <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <img src={getFlag(team)} alt={team} className="w-7 h-5 object-cover rounded shadow-sm" /> 
-                </div>
+            <div className="flex items-center gap-2 w-[40%] justify-end">
+  <span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span>
+  <img src={getFlag(m.t1)} alt={m.t1} className="w-7 h-5 object-cover rounded shadow-sm" />
+</div>
                 
                 <div className="flex items-center gap-1 justify-center w-[20%]">
                     <input type="number" disabled={isLocked} value={score1} onChange={e=>setScore1(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
@@ -1484,7 +1486,10 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
                     <input type="number" disabled={isLocked} value={score2} onChange={e=>setScore2(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
                 </div>
                 
-                <div className="flex items-center gap-2 w-[40%] justify-start"><span className="text-xl">{getFlag(m.t2)}</span> <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span></div>
+                <div className="flex items-center gap-2 w-[40%] justify-start">
+  <img src={getFlag(m.t2)} alt={m.t2} className="w-7 h-5 object-cover rounded shadow-sm" />
+  <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span>
+</div>
                 
                 <div className="absolute right-4 flex items-center">
                     {isLocked ? (
