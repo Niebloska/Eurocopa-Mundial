@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { PLAYERS_DB } from './players'; 
@@ -802,7 +803,7 @@ const QuinielaView = ({ selections, onToggle, locked, onEdit, canEdit }: any) =>
                                     return ( 
                                         <button key={team} disabled={isLocked} onClick={() => onToggle(group.name, team)} className={`p-3 rounded-xl border flex items-center justify-between transition-all ${btnStyle} ${isLocked ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:scale-95'}`}>
                                             <div className="flex items-center gap-2"><img src={getFlag(team)} alt={team} className="w-7 h-5 object-cover rounded shadow-sm" /> 
-// (Ajusta m.t1 o team según la variable local)<span className="text-[10px] font-black uppercase">{team}</span></div>{iconContent}
+                                         <span className="text-[10px] font-black uppercase">{team}</span></div>{iconContent}
                                         </button> 
                                     );
                                 })}
@@ -1475,7 +1476,7 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
         <div className={`relative flex flex-col p-3 rounded-xl border mb-2 transition-colors ${isLocked ? 'bg-green-900/10 border-green-500/30' : 'bg-[#1c2a45] border-white/5 hover:bg-white/5'}`}>
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2 w-[40%] justify-end"><span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span> <img src={getFlag(team)} alt={team} className="w-7 h-5 object-cover rounded shadow-sm" /> 
-// (Ajusta m.t1 o team según la variable local)</div>
+                </div>
                 
                 <div className="flex items-center gap-1 justify-center w-[20%]">
                     <input type="number" disabled={isLocked} value={score1} onChange={e=>setScore1(e.target.value)} className={`w-8 h-8 bg-black text-white text-center font-black rounded outline-none focus:border-red-500 border ${isLocked ? 'border-green-500/50 opacity-80' : 'border-white/10'}`} />
