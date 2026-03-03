@@ -590,7 +590,11 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                 </div>
                 <div className={`flex items-center justify-between py-1 ${match.t2.isKnown ? 'text-white' : 'text-white/40 italic'}`}>
                     <div className="flex items-center gap-2">
-                        <span className="text-lg">{match.t2.isKnown ? getFlag(match.t2.name) : '🏳️'}</span>
+                    {match.t2.isKnown ? (
+    <img src={getFlag(match.t2.name)} alt={match.t2.name} className="w-6 h-4 object-cover rounded shadow-sm" />
+) : (
+    <span className="text-lg">🏳️</span>
+)}
                         <span className="text-[9px] font-black uppercase truncate">{match.t2.name}</span>
                     </div>
                     {/* Nueva caja de marcador con la P dorada */}
@@ -628,7 +632,7 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                         {standings[g.n]?.map((t, idx) => (
                                             <tr key={t.name} className={`border-b border-white/5 last:border-0 ${idx < 2 ? 'bg-green-900/10 text-white' : idx === 2 ? 'bg-yellow-900/10 text-yellow-100' : 'text-white/40'}`}>
                                                 <td className="py-1.5 pl-1">{idx+1}</td>
-                                                <td className="py-1.5 flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span> <span className="truncate max-w-[70px]">{t.name}</span></td>
+                                                <td className="py-1.5 flex items-center gap-1.5"><img src={getFlag(t.name)} alt={t.name} className="w-5 h-3.5 object-cover rounded shadow-sm" /> <span className="truncate max-w-[70px]">{t.name}</span></td>
                                                 <td className="py-1.5 text-center">{t.played}</td>
                                                 <td className="py-1.5 text-center">{t.gf}</td>
                                                 <td className="py-1.5 text-center">{t.gc}</td>
@@ -646,12 +650,12 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                         <div key={i} className="flex flex-col relative bg-[#1c2a45] hover:bg-white/5 transition-colors">
                                             {i % 2 === 0 && <div className="bg-white/5 w-full text-center text-[8px] font-black text-white/50 uppercase tracking-widest py-0.5 border-y border-white/5">JORNADA {Math.floor(i/2) + 1}</div>}
                                             <div className="p-3 flex items-center justify-between">
-                                                <div className="w-[40%] flex items-center justify-end gap-2 text-right"><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t1}</span><span className="text-2xl">{getFlag(m.t1)}</span></div>
+                                                <div className="w-[40%] flex items-center justify-end gap-2 text-right"><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t1}</span><img src={getFlag(m.t1)} alt={m.t1} className="w-8 h-6 object-cover rounded shadow-md" /></div>
                                                 <div className="w-[20%] text-center">
                                                     {result ? ( <span className="text-lg font-black text-[#22c55e] tracking-widest drop-shadow-md bg-black/40 px-2 py-1 rounded">{result}</span>
                                                     ) : ( <><span className="text-[8px] text-[#facc15] font-mono font-bold block mb-0.5">{m.d.split(' ')[0]} {m.d.split(' ')[1]}</span><span className="text-[8px] text-white/40 block">{m.d.split(' ')[2]}</span></> )}
                                                 </div>
-                                                <div className="w-[40%] flex items-center justify-start gap-2 text-left"><span className="text-2xl">{getFlag(m.t2)}</span><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t2}</span></div>
+                                                <div className="w-[40%] flex items-center justify-start gap-2 text-left"><img src={getFlag(m.t2)} alt={m.t2} className="w-8 h-6 object-cover rounded shadow-md" /><span className="text-[10px] font-black uppercase text-white leading-tight">{m.t2}</span></div>
                                             </div>
                                         </div>
                                     )
@@ -1477,7 +1481,11 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
             <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 w-[40%] justify-end">
   <span className="text-[10px] font-black uppercase text-white truncate">{m.t1}</span>
-  <img src={getFlag(m.t1)} alt={m.t1} className="w-7 h-5 object-cover rounded shadow-sm" />
+  <img 
+    src={getFlag(m.t1)} 
+    alt={`Bandera de ${m.t1}`} 
+    className="w-7 h-5 object-cover rounded shadow-sm" 
+  />
 </div>
                 
                 <div className="flex items-center gap-1 justify-center w-[20%]">
@@ -1487,7 +1495,11 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
                 </div>
                 
                 <div className="flex items-center gap-2 w-[40%] justify-start">
-  <img src={getFlag(m.t2)} alt={m.t2} className="w-7 h-5 object-cover rounded shadow-sm" />
+  <img 
+    src={getFlag(m.t2)} 
+    alt={`Bandera de ${m.t2}`} 
+    className="w-7 h-5 object-cover rounded shadow-sm" 
+  />
   <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span>
 </div>
                 
