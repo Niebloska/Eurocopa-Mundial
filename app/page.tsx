@@ -1363,7 +1363,11 @@ const PlayerAdminRow = ({ p, onRefresh, adminMatchday, isMatchdayClosed }: any) 
         <div className={`bg-[#1c2a45] border rounded-xl p-3 flex flex-col gap-3 transition-all ${isLocked ? 'border-yellow-500/30 bg-yellow-900/10' : (dnp ? 'bg-[#0d1526] border-red-900/50' : 'border-white/5 hover:bg-white/5')}`}>
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
-                    <span className={`text-2xl ${dnp ? 'grayscale opacity-50' : ''}`}>{getFlag(p.seleccion)}</span>
+                <img 
+    src={getFlag(p.seleccion)} 
+    alt={p.seleccion}
+    className={`w-7 h-5 object-cover rounded shadow-sm ${dnp ? 'grayscale opacity-50' : ''}`} 
+/>    
                     <div>
                         <span className={`font-bold block leading-none ${dnp ? 'text-white/50 line-through' : 'text-white'}`}>{p.nombre}</span>
                         <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded mt-1 inline-block ${posColors[p.posicion]} ${dnp ? 'opacity-50' : ''}`}>{p.posicion}</span>
@@ -1485,7 +1489,7 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
     src={getFlag(m.t1)} 
     alt={`Bandera de ${m.t1}`} 
     className="w-7 h-5 object-cover rounded shadow-sm" 
-  />
+/>
 </div>
                 
                 <div className="flex items-center gap-1 justify-center w-[20%]">
@@ -1495,11 +1499,11 @@ const MatchAdminRow = ({ m, onRefresh }: any) => {
                 </div>
                 
                 <div className="flex items-center gap-2 w-[40%] justify-start">
-  <img 
+                <img 
     src={getFlag(m.t2)} 
     alt={`Bandera de ${m.t2}`} 
     className="w-7 h-5 object-cover rounded shadow-sm" 
-  />
+/>            
   <span className="text-[10px] font-black uppercase text-white truncate">{m.t2}</span>
 </div>
                 
