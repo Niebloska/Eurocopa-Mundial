@@ -260,7 +260,7 @@ const safeArray = (data: any) => { if (!data) return []; return Array.isArray(da
 // TEAM CARD 
 const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
     const [expanded, setExpanded] = useState(false);
-    const canView = isMyTeam || isAdmin;
+    
     
     useEffect(() => { if (isMyTeam) setExpanded(true); }, [isMyTeam]);
   
@@ -295,7 +295,7 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
              </div>
          )}
   
-         <div onClick={() => canView && setExpanded(!expanded)} className={`p-4 flex items-center justify-between ${!canView ? 'cursor-default' : 'cursor-pointer hover:bg-white/5'} transition-colors relative z-0`}>
+  <div onClick={() => setExpanded(!expanded)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors relative z-0">
             <div className="flex items-center gap-4">
                 <span className={`text-2xl font-black italic w-8 text-center ${getRankColor(rank)}`}>#{rank}</span>
                 <div>
@@ -306,11 +306,14 @@ const TeamCard = ({ team, rank, isMyTeam, isAdmin }: any) => {
             </div>
             <div className="flex items-center gap-4">
                 <div className="text-right"><span className={`block font-black text-lg ${isChampion ? 'text-[#ffd700]' : 'text-[#22c55e]'}`}>{team.points} PTS</span><span className="text-[9px] text-white/30 font-bold uppercase">{team.value}M</span></div>
-                {!canView ? <IconLock size={16} /> : (expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />)}
+                {/* Fuera el candado, ahora todos ven las flechitas de abrir/cerrar */}
+                {expanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
             </div>
          </div>
-         {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
-         {expanded && canView && (
+         {/* Quitamos el div oculto con la alerta */}
+         
+         {/* Quitamos la condición canView del renderizado del contenido */}
+         {expanded && (
            <div className="border-t border-white/10 bg-[#0d1526] p-4 space-y-4">
               <div className={`border rounded-2xl p-4 relative overflow-hidden ${isChampion ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-[#2e9d4a]/10 border-[#22c55e]/20'}`}>
                 <p className={`text-[9px] font-black uppercase mb-3 text-center ${isChampion ? 'text-[#ffd700]' : 'text-[#22c55e]'}`}>ONCE INICIAL</p>
@@ -1166,7 +1169,7 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
         if (posDiff !== 0) return posDiff; return a.nombre.localeCompare(b.nombre); 
     });
         
-    const canView = isMyTeam || isAdmin;
+    
     useEffect(() => { if (isMyTeam) setIsOpen(true); }, [isMyTeam]);
 
     const getPhaseObj = (j: string) => {
@@ -1190,12 +1193,21 @@ const ScoreTeamRow = ({ team, isMyTeam, isAdmin }: any) => {
 
     return (
         <div className={`rounded-2xl overflow-hidden shadow-xl transition-all mb-4 ${isMyTeam ? 'border-2 border-[#facc15] shadow-[#facc15]/20 bg-[#facc15]/10' : 'border border-white/5 bg-[#1c2a45]'}`}>
-            <div onClick={() => canView && setIsOpen(!isOpen)} className={`p-4 flex justify-between items-center ${canView ? 'cursor-pointer hover:bg-white/5' : 'cursor-default'} transition-colors`}>
-                <div><h2 className={`text-lg font-black italic uppercase ${isMyTeam ? 'text-[#facc15]' : 'text-white'}`}>{team.name}</h2><span className="text-[10px] text-white/50 font-bold uppercase tracking-widest flex items-center gap-1"><IconUser size={10}/> {team.user}</span></div>
-                <div className="flex items-center gap-4"><span className="block text-2xl font-black text-cyan-400">{team.points} PTS</span>{!canView ? <IconLock size={16} /> : (isOpen ? <IconChevronUp size={20} className="text-white/40"/> : <IconChevronDown size={20} className="text-white/40"/>)}</div>
+            {/* Ahora el onClick siempre cambia el estado isOpen y el cursor siempre es pointer */}
+            <div onClick={() => setIsOpen(!isOpen)} className="p-4 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors">
+                <div>
+                    <h2 className={`text-lg font-black italic uppercase ${isMyTeam ? 'text-[#facc15]' : 'text-white'}`}>{team.name}</h2>
+                    <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest flex items-center gap-1"><IconUser size={10}/> {team.user}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="block text-2xl font-black text-cyan-400">{team.points} PTS</span>
+                    {/* Eliminamos el candado, ahora solo mostramos las flechas de abrir/cerrar */}
+                    {isOpen ? <IconChevronUp size={20} className="text-white/40"/> : <IconChevronDown size={20} className="text-white/40"/>}
+                </div>
             </div>
-            {!canView && <div onClick={() => alert("🔒 Plantilla oculta hasta el inicio del torneo")} className="h-0" />} 
-            {isOpen && canView && (
+            
+            {/* Si isOpen es true, mostramos la tabla (hemos quitado la condición canView de aquí también) */}
+            {isOpen && (
                 <div className="overflow-x-auto custom-scrollbar animate-in slide-in-from-top duration-300">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
