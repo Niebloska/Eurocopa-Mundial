@@ -390,13 +390,13 @@ const Field = ({ selected, step, canInteractField, setActiveSlot, captain, setCa
                                   {p && !isEditable && !isSubbedOut && !isPenalized && renderPointsBadge && renderPointsBadge(p, true)}
 
                                   {isSubbedOut && (
-                                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
+                                      <div className="absolute -top-2 -left-2 z-50 w-7 h-7 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center shadow-lg z-50 animate-in zoom-in">
                                           <IconSub size={16} className="text-white" />
                                       </div>
                                   )}
 
                                   {isPenalized && p && (
-                                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-red-900 border-2 border-red-500 flex items-center justify-center shadow-lg z-50 animate-pulse">
+                                      <div className="absolute -top-2 -left-2 z-50 w-7 h-7 rounded-full bg-red-900 border-2 border-red-500 flex items-center justify-center shadow-lg z-50 animate-pulse">
                                           <span className="text-[10px] font-black text-white">-1</span>
                                       </div>
                                   )}
@@ -2942,7 +2942,7 @@ if (showIntro) {
     if (typeof pts !== 'number') {
         if (isStarter && isClosed && isSubbedOut) {
             return (
-                <div className="absolute -bottom-2 -right-2 flex items-center gap-1 z-20">
+                <div className="absolute -top-2 -left-2 z-50 flex items-center gap-1 z-20">
                     <div className="bg-red-600 rounded-full p-0.5 border border-white shadow-lg z-30">
                         <IconArrowDown size={12} className="text-white" />
                     </div>
@@ -2968,7 +2968,7 @@ if (showIntro) {
     const isVirtual = !isStarter && !isClosed; 
 
     return (
-        <div className={`absolute -bottom-2 -right-2 flex items-center gap-1 z-20 transition-opacity ${isVirtual ? 'opacity-40 hover:opacity-100' : 'opacity-100'}`}>
+        <div className={`absolute -top-2 -left-2 z-50 flex items-center gap-1 z-20 transition-opacity ${isVirtual ? 'opacity-40 hover:opacity-100' : 'opacity-100'}`}>
             {!isStarter && isSubbedIn && (
                 <div className="bg-[#22c55e] rounded-full p-0.5 border border-white shadow-lg z-30 animate-in zoom-in">
                     <IconArrowUp size={12} className="text-black" />
